@@ -19,7 +19,8 @@ use App\Modules\CategoriasProducto\Application\Interfaces\CategoriaProductoRepos
 use App\Modules\CategoriasProducto\Infrastructure\Repositories\CategoriaProductoRepository;
 use App\Modules\UnidadesMedida\Application\Interfaces\UnidadMedidaRepositoryInterface;
 use App\Modules\UnidadesMedida\Infrastructure\Repositories\UnidadMedidaRepository;
-
+use App\Modules\Productos\Application\Interfaces\ProductoRepositoryInterface;
+use App\Modules\Productos\Infrastructure\Repositories\ProductoRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -33,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(MarcaRepositoryInterface::class, MarcaRepository::class);
         $this->app->bind(CategoriaProductoRepositoryInterface::class, CategoriaProductoRepository::class);
         $this->app->bind(UnidadMedidaRepositoryInterface::class,UnidadMedidaRepository::class);
+        $this->app->bind(ProductoRepositoryInterface::class, ProductoRepository::class);
     }
 
     public function boot(): void

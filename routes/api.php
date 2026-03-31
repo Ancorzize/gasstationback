@@ -10,6 +10,7 @@ use App\Modules\Roles\Presentation\Controllers\RoleController;
 use App\Modules\Marcas\Presentation\Controllers\MarcaController;
 use App\Modules\CategoriasProducto\Presentation\Controllers\CategoriaProductoController;
 use App\Modules\UnidadesMedida\Presentation\Controllers\UnidadMedidaController;
+use App\Modules\Productos\Presentation\Controllers\ProductoController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -95,6 +96,15 @@ Route::middleware(['auth:sanctum'])->prefix('unidades-medida')->group(function (
     Route::get('/{id}', [UnidadMedidaController::class, 'show']);
     Route::post('/', [UnidadMedidaController::class, 'store']);
     Route::put('/{id}', [UnidadMedidaController::class, 'update']);
-    Route::patch('/{id}/estado', [UnidadMedidaController::class, 'changeStatus']);
+    Route::patch('/{id}/status', [UnidadMedidaController::class, 'changeStatus']);
     Route::delete('/{id}', [UnidadMedidaController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('productos')->group(function () {
+    Route::get('/', [ProductoController::class, 'index']);
+    Route::get('/{id}', [ProductoController::class, 'show']);
+    Route::post('/', [ProductoController::class, 'store']);
+    Route::put('/{id}', [ProductoController::class, 'update']);
+    Route::patch('/{id}/status', [ProductoController::class, 'changeStatus']);
+    Route::delete('/{id}', [ProductoController::class, 'destroy']);
 });
