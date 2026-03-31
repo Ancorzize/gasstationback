@@ -21,6 +21,8 @@ use App\Modules\UnidadesMedida\Application\Interfaces\UnidadMedidaRepositoryInte
 use App\Modules\UnidadesMedida\Infrastructure\Repositories\UnidadMedidaRepository;
 use App\Modules\Productos\Application\Interfaces\ProductoRepositoryInterface;
 use App\Modules\Productos\Infrastructure\Repositories\ProductoRepository;
+use App\Modules\Servicios\Application\Interfaces\ServicioRepositoryInterface;
+use App\Modules\Servicios\Infrastructure\Repositories\ServicioRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -35,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CategoriaProductoRepositoryInterface::class, CategoriaProductoRepository::class);
         $this->app->bind(UnidadMedidaRepositoryInterface::class,UnidadMedidaRepository::class);
         $this->app->bind(ProductoRepositoryInterface::class, ProductoRepository::class);
+        $this->app->bind(ServicioRepositoryInterface::class, ServicioRepository::class);
     }
 
     public function boot(): void

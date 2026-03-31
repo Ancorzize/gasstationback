@@ -11,6 +11,7 @@ use App\Modules\Marcas\Presentation\Controllers\MarcaController;
 use App\Modules\CategoriasProducto\Presentation\Controllers\CategoriaProductoController;
 use App\Modules\UnidadesMedida\Presentation\Controllers\UnidadMedidaController;
 use App\Modules\Productos\Presentation\Controllers\ProductoController;
+use App\Modules\Servicios\Presentation\Controllers\ServicioController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -107,4 +108,13 @@ Route::middleware(['auth:sanctum'])->prefix('productos')->group(function () {
     Route::put('/{id}', [ProductoController::class, 'update']);
     Route::patch('/{id}/status', [ProductoController::class, 'changeStatus']);
     Route::delete('/{id}', [ProductoController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('servicios')->group(function () {
+    Route::get('/', [ServicioController::class, 'index']);
+    Route::get('/{id}', [ServicioController::class, 'show']);
+    Route::post('/', [ServicioController::class, 'store']);
+    Route::put('/{id}', [ServicioController::class, 'update']);
+    Route::patch('/{id}/status', [ServicioController::class, 'changeStatus']);
+    Route::delete('/{id}', [ServicioController::class, 'destroy']);
 });
