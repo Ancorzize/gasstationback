@@ -23,7 +23,10 @@ use App\Modules\Productos\Application\Interfaces\ProductoRepositoryInterface;
 use App\Modules\Productos\Infrastructure\Repositories\ProductoRepository;
 use App\Modules\Servicios\Application\Interfaces\ServicioRepositoryInterface;
 use App\Modules\Servicios\Infrastructure\Repositories\ServicioRepository;
-
+use App\Modules\Ubicaciones\Application\Interfaces\UbicacionRepositoryInterface;
+use App\Modules\Ubicaciones\Infrastructure\Repositories\UbicacionRepository;
+use App\Modules\ConfiguracionEmpresa\Application\Interfaces\ConfiguracionEmpresaRepositoryInterface;
+use App\Modules\ConfiguracionEmpresa\Infrastructure\Repositories\ConfiguracionEmpresaRepository;
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -38,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UnidadMedidaRepositoryInterface::class,UnidadMedidaRepository::class);
         $this->app->bind(ProductoRepositoryInterface::class, ProductoRepository::class);
         $this->app->bind(ServicioRepositoryInterface::class, ServicioRepository::class);
+        $this->app->bind(UbicacionRepositoryInterface::class, UbicacionRepository::class);
+        $this->app->bind(ConfiguracionEmpresaRepositoryInterface::class, ConfiguracionEmpresaRepository::class);
     }
 
     public function boot(): void

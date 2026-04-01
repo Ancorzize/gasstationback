@@ -12,6 +12,8 @@ use App\Modules\CategoriasProducto\Presentation\Controllers\CategoriaProductoCon
 use App\Modules\UnidadesMedida\Presentation\Controllers\UnidadMedidaController;
 use App\Modules\Productos\Presentation\Controllers\ProductoController;
 use App\Modules\Servicios\Presentation\Controllers\ServicioController;
+use App\Modules\Ubicaciones\Presentation\Controllers\UbicacionController;
+use App\Modules\ConfiguracionEmpresa\Presentation\Controllers\ConfiguracionEmpresaController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -117,4 +119,15 @@ Route::middleware(['auth:sanctum'])->prefix('servicios')->group(function () {
     Route::put('/{id}', [ServicioController::class, 'update']);
     Route::patch('/{id}/status', [ServicioController::class, 'changeStatus']);
     Route::delete('/{id}', [ServicioController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('ubicaciones')->group(function () {
+    Route::get('/paises', [UbicacionController::class, 'paises']);
+    Route::get('/paises/{paisId}/departamentos', [UbicacionController::class, 'departamentosPorPais']);
+    Route::get('/departamentos/{departamentoId}/ciudades', [UbicacionController::class, 'ciudadesPorDepartamento']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('configuracion-empresa')->group(function () {
+    Route::get('/', [ConfiguracionEmpresaController::class, 'show']);
+    Route::put('/', [ConfiguracionEmpresaController::class, 'update']);
 });
