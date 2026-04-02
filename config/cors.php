@@ -17,7 +17,7 @@ return [
 
    'paths' => ['api/*', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['https://tu-app-frontend.onrender.com', 'http://localhost:5173'], // Tu URL de Render y la de local
+    'allowed_origins' => ['https://gasstationfront.onrender.com/', 'http://localhost:5173'], // Tu URL de Render y la de local
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
