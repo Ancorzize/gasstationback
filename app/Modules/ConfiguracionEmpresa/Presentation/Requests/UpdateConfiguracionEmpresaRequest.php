@@ -66,6 +66,7 @@ class UpdateConfiguracionEmpresaRequest extends FormRequest
             'fecha_resolucion.date' => 'La fecha de resolución no es válida.',
             'fecha_vencimiento.date' => 'La fecha de vencimiento no es válida.',
             'decimales.integer' => 'Los decimales deben ser un número entero.',
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 }

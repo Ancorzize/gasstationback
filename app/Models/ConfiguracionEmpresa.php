@@ -34,6 +34,8 @@ class ConfiguracionEmpresa extends Model
         'moneda',
         'simbolo_moneda',
         'decimales',
+        'logo_base64',
+        'logo_mime_type',
     ];
 
     protected $casts = [

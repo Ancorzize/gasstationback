@@ -2,10 +2,10 @@
 
 namespace App\Modules\ConfiguracionEmpresa\Application\Services;
 
+use App\Models\Ciudad;
+use App\Models\Departamento;
 use App\Models\ConfiguracionEmpresa;
 use Symfony\Component\HttpKernel\Exception\HttpException;
-use App\Models\Departamento;
-use App\Models\Ciudad;
 use App\Modules\ConfiguracionEmpresa\Application\DTOs\UpdateConfiguracionEmpresaDTO;
 use App\Modules\ConfiguracionEmpresa\Application\Interfaces\ConfiguracionEmpresaRepositoryInterface;
 
@@ -39,7 +39,6 @@ class ConfiguracionEmpresaService
             'pais_id' => $dto->pais_id,
             'departamento_id' => $dto->departamento_id,
             'ciudad_id' => $dto->ciudad_id,
-            'logo_url' => $dto->logo_url,
             'responsable_iva' => $dto->responsable_iva,
             'regimen' => $dto->regimen,
             'porcentaje_iva' => $dto->porcentaje_iva,
@@ -54,6 +53,16 @@ class ConfiguracionEmpresaService
             'simbolo_moneda' => $dto->simbolo_moneda,
             'decimales' => $dto->decimales,
         ];
+
+        if (request()->hasFile('logo')) {
+            $file = request()->file('logo');
+
+            $data['logo_base64'] = base64_encode(
+                file_get_contents($file->getRealPath())
+            );
+
+            $data['logo_mime_type'] = $file->getMimeType();
+        }
 
         $configuracion = $this->repository->first();
 

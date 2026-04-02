@@ -41,7 +41,11 @@ class ConfiguracionEmpresaResource extends JsonResource
                 'codigo' => $this->ciudad->codigo,
             ] : null,
 
-            'logo_url' => $this->logo_url,
+            'logo' => $this->logo_base64 ? [
+                'base64' => $this->logo_base64,
+                'mime_type' => $this->logo_mime_type,
+                'src' => 'data:' . $this->logo_mime_type . ';base64,' . $this->logo_base64,
+            ] : null,
 
             'responsable_iva' => $this->responsable_iva,
             'regimen' => $this->regimen,

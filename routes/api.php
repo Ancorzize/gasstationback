@@ -125,10 +125,6 @@ Route::middleware(['auth:sanctum'])->prefix('configuracion-empresa')->group(func
 
 Route::get('/configuracion-empresa', [ConfiguracionEmpresaController::class, 'show']);
 
-Route::middleware(['auth:sanctum'])->prefix('uploads')->group(function () {
-    Route::post('/logo', [UploadController::class, 'uploadLogo']);
-});
-
 Route::middleware(['auth:sanctum'])->prefix('perfil')->group(function () {
     Route::put('/', [PerfilController::class, 'update']);
 });
