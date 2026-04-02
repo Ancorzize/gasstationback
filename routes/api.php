@@ -14,6 +14,9 @@ use App\Modules\Productos\Presentation\Controllers\ProductoController;
 use App\Modules\Servicios\Presentation\Controllers\ServicioController;
 use App\Modules\Ubicaciones\Presentation\Controllers\UbicacionController;
 use App\Modules\ConfiguracionEmpresa\Presentation\Controllers\ConfiguracionEmpresaController;
+use App\Modules\Uploads\Presentation\Controllers\UploadController;
+use App\Modules\Perfil\Presentation\Controllers\PerfilController;
+
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -23,17 +26,6 @@ Route::prefix('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
     });
 });
-
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-    Route::get('/admin', function () {
-        return 'solo admin';
-    });
-});
-
-Route::middleware(['auth:sanctum', 'permission:crear_clientes'])->group(function () {
-    //Route::post('/clientes', [ClienteController::class, 'store']);
-});
-
 
 Route::middleware(['auth:sanctum'])->prefix('usuarios')->group(function () {
     Route::get('/roles', [RoleController::class, 'index']);
@@ -127,7 +119,16 @@ Route::middleware(['auth:sanctum'])->prefix('ubicaciones')->group(function () {
     Route::get('/departamentos/{departamentoId}/ciudades', [UbicacionController::class, 'ciudadesPorDepartamento']);
 });
 
-Route::middleware(['auth:sanctum'])->prefix('configuracion-empresa')->group(function () {
-    Route::get('/', [ConfiguracionEmpresaController::class, 'show']);
+Route::middleware(['auth:sanctum'])->prefix('configuracion-empresa')->group(function () { 
     Route::put('/', [ConfiguracionEmpresaController::class, 'update']);
+});
+
+Route::get('/configuracion-empresa', [ConfiguracionEmpresaController::class, 'show']);
+
+Route::middleware(['auth:sanctum'])->prefix('uploads')->group(function () {
+    Route::post('/logo', [UploadController::class, 'uploadLogo']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('perfil')->group(function () {
+    Route::put('/', [PerfilController::class, 'update']);
 });
