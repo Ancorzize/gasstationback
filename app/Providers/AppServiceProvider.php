@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 use App\Modules\Auth\Application\Interfaces\AuthRepositoryInterface;
 use App\Modules\Auth\Infrastructure\Repositories\AuthRepository;
 use App\Modules\Usuarios\Application\Interfaces\UserRepositoryInterface;
@@ -47,6 +48,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        if (config('app.env') === 'production') {
+            URL::forceScheme('https');
+        }
     }
 }
