@@ -6,11 +6,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable
 {
     protected string $guard_name = 'sanctum';
-    
+
     use HasApiTokens, Notifiable, HasRoles;
 
     protected $fillable = [
@@ -18,6 +19,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_active',
+        'bodega_id',
     ];
 
     protected $hidden = [
@@ -32,5 +34,10 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function bodega(): BelongsTo
+    {
+        return $this->belongsTo(Bodega::class, 'bodega_id');
     }
 }

@@ -28,6 +28,15 @@ use App\Modules\Ubicaciones\Application\Interfaces\UbicacionRepositoryInterface;
 use App\Modules\Ubicaciones\Infrastructure\Repositories\UbicacionRepository;
 use App\Modules\ConfiguracionEmpresa\Application\Interfaces\ConfiguracionEmpresaRepositoryInterface;
 use App\Modules\ConfiguracionEmpresa\Infrastructure\Repositories\ConfiguracionEmpresaRepository;
+use App\Modules\Bodegas\Application\Interfaces\BodegaRepositoryInterface;
+use App\Modules\Bodegas\Infrastructure\Repositories\BodegaRepository;
+use App\Modules\Inventarios\Application\Interfaces\InventarioRepositoryInterface;
+use App\Modules\Inventarios\Infrastructure\Repositories\InventarioRepository;
+use App\Modules\Inventarios\Application\Interfaces\InventarioImportRepositoryInterface;
+use App\Modules\Inventarios\Infrastructure\Repositories\InventarioImportRepository;
+use App\Modules\MovimientosInventario\Application\Interfaces\MovimientoInventarioRepositoryInterface;
+use App\Modules\MovimientosInventario\Infrastructure\Repositories\MovimientoInventarioRepository;
+
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -44,6 +53,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ServicioRepositoryInterface::class, ServicioRepository::class);
         $this->app->bind(UbicacionRepositoryInterface::class, UbicacionRepository::class);
         $this->app->bind(ConfiguracionEmpresaRepositoryInterface::class, ConfiguracionEmpresaRepository::class);
+        $this->app->bind(BodegaRepositoryInterface::class, BodegaRepository::class);
+        $this->app->bind(InventarioRepositoryInterface::class, InventarioRepository::class);
+        $this->app->bind(InventarioImportRepositoryInterface::class,InventarioImportRepository::class);
+        $this->app->bind(MovimientoInventarioRepositoryInterface::class,MovimientoInventarioRepository::class);
     }
 
     public function boot(): void

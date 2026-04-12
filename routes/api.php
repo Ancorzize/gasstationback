@@ -16,6 +16,11 @@ use App\Modules\Ubicaciones\Presentation\Controllers\UbicacionController;
 use App\Modules\ConfiguracionEmpresa\Presentation\Controllers\ConfiguracionEmpresaController;
 use App\Modules\Uploads\Presentation\Controllers\UploadController;
 use App\Modules\Perfil\Presentation\Controllers\PerfilController;
+use App\Modules\Bodegas\Presentation\Controllers\BodegaController;
+use App\Modules\Inventarios\Presentation\Controllers\ImportInventarioController;
+use App\Modules\Inventarios\Presentation\Controllers\InventarioController;
+use App\Modules\MovimientosInventario\Presentation\Controllers\MovimientoInventarioController;
+
 
 
 Route::prefix('auth')->group(function () {
@@ -127,4 +132,27 @@ Route::get('/configuracion-empresa', [ConfiguracionEmpresaController::class, 'sh
 
 Route::middleware(['auth:sanctum'])->prefix('perfil')->group(function () {
     Route::put('/', [PerfilController::class, 'update']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('bodegas')->group(function () {
+    Route::get('/', [BodegaController::class, 'index']);
+    Route::get('/{id}', [BodegaController::class, 'show']);
+    Route::post('/', [BodegaController::class, 'store']);
+    Route::put('/{id}', [BodegaController::class, 'update']);
+    Route::patch('/{id}/status', [BodegaController::class, 'changeStatus']);
+    Route::delete('/{id}', [BodegaController::class, 'destroy']);
+});
+
+
+Route::middleware(['auth:sanctum'])->prefix('inventarios')->group(function () {
+    Route::get('/', [InventarioController::class, 'index']);
+    Route::get('/resumen', [InventarioController::class, 'resumen']);
+    Route::get('/mi-bodega', [InventarioController::class, 'miBodega']);
+    Route::get('/bodega/{bodegaId}', [InventarioController::class, 'porBodega']);
+    Route::post('/importar', [ImportInventarioController::class, 'importar']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('movimientos-inventario')->group(function () {
+    Route::get('/', [MovimientoInventarioController::class, 'index']);
+    Route::post('/', [MovimientoInventarioController::class, 'store']);
 });
