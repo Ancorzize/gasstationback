@@ -20,7 +20,7 @@ use App\Modules\Bodegas\Presentation\Controllers\BodegaController;
 use App\Modules\Inventarios\Presentation\Controllers\ImportInventarioController;
 use App\Modules\Inventarios\Presentation\Controllers\InventarioController;
 use App\Modules\MovimientosInventario\Presentation\Controllers\MovimientoInventarioController;
-
+use App\Modules\Compras\Presentation\Controllers\CompraController;
 
 
 Route::prefix('auth')->group(function () {
@@ -155,4 +155,15 @@ Route::middleware(['auth:sanctum'])->prefix('inventarios')->group(function () {
 Route::middleware(['auth:sanctum'])->prefix('movimientos-inventario')->group(function () {
     Route::get('/', [MovimientoInventarioController::class, 'index']);
     Route::post('/', [MovimientoInventarioController::class, 'store']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('compras')->group(function () {
+    Route::get('/', [CompraController::class, 'index']);
+    Route::get('/{id}', [CompraController::class, 'show']);
+    Route::post('/', [CompraController::class, 'store']);
+    Route::put('/{id}', [CompraController::class, 'update']);
+    Route::post('/{id}/confirmar', [CompraController::class, 'confirmar']);
+
+    Route::get('/{id}/pagos', [CompraController::class, 'pagos']);
+    Route::post('/{id}/pagos', [CompraController::class, 'registrarPago']);
 });

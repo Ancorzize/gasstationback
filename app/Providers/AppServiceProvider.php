@@ -36,6 +36,8 @@ use App\Modules\Inventarios\Application\Interfaces\InventarioImportRepositoryInt
 use App\Modules\Inventarios\Infrastructure\Repositories\InventarioImportRepository;
 use App\Modules\MovimientosInventario\Application\Interfaces\MovimientoInventarioRepositoryInterface;
 use App\Modules\MovimientosInventario\Infrastructure\Repositories\MovimientoInventarioRepository;
+use App\Modules\Compras\Application\Interfaces\CompraRepositoryInterface;
+use App\Modules\Compras\Infrastructure\Repositories\CompraRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -57,6 +59,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(InventarioRepositoryInterface::class, InventarioRepository::class);
         $this->app->bind(InventarioImportRepositoryInterface::class,InventarioImportRepository::class);
         $this->app->bind(MovimientoInventarioRepositoryInterface::class,MovimientoInventarioRepository::class);
+        $this->app->bind(CompraRepositoryInterface::class, CompraRepository::class);
     }
 
     public function boot(): void
