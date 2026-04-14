@@ -13,13 +13,13 @@ class ProveedorRepository implements ProveedorRepositoryInterface
         $query = Proveedor::query();
 
         if (!empty($filters['search'])) {
-            $search = $filters['search'];
+            $search = strtolower($filters['search']);
 
             $query->where(function ($q) use ($search) {
-                $q->where('nombre', 'like', "%{$search}%")
-                  ->orWhere('nit', 'like', "%{$search}%")
-                  ->orWhere('telefono', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                $q->whereRaw('LOWER(nombre) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(nit) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(telefono) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
             });
         }
 

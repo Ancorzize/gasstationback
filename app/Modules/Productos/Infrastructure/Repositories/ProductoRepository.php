@@ -14,12 +14,12 @@ class ProductoRepository implements ProductoRepositoryInterface
             ->with(['marca', 'categoriaProducto', 'unidadMedida']);
 
         if (!empty($filters['search'])) {
-            $search = $filters['search'];
+            $search = strtolower($filters['search']);
 
             $query->where(function ($q) use ($search) {
-                $q->where('codigo', 'like', "%{$search}%")
-                    ->orWhere('nombre', 'like', "%{$search}%")
-                    ->orWhere('descripcion', 'like', "%{$search}%");
+                $q->whereRaw('LOWER(codigo) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(nombre) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(descripcion) LIKE ?', ["%{$search}%"]);
             });
         }
 

@@ -20,35 +20,35 @@ class ProveedorController extends Controller
     ) {}
 
     public function index(Request $request)
-{
-    try {
-        if (!$request->user()->can('ver_proveedores')) {
-            return ApiResponse::error('Sin permisos.', 403);
+    {
+        try {
+            if (!$request->user()->can('ver_proveedores')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $filters = [
+                'search' => $request->get('search'),
+                'is_active' => $request->get('is_active'),
+            ];
+
+            $proveedores = $this->service->paginate(
+                $filters,
+                (int) $request->get('per_page', 10)
+            );
+
+            return ApiResponse::success([
+                'items' => ProveedorResource::collection($proveedores->items()),
+                'pagination' => [
+                    'current_page' => $proveedores->currentPage(),
+                    'last_page' => $proveedores->lastPage(),
+                    'per_page' => $proveedores->perPage(),
+                    'total' => $proveedores->total(),
+                ]
+            ], 'Listado de proveedores.');
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
         }
-
-        $filters = [
-            'search' => $request->get('search'),
-            'is_active' => $request->get('is_active'),
-        ];
-
-        $proveedores = $this->service->paginate(
-            $filters,
-            (int) $request->get('per_page', 10)
-        );
-
-        return ApiResponse::success([
-            'items' => ProveedorResource::collection($proveedores->items()),
-            'pagination' => [
-                'current_page' => $proveedores->currentPage(),
-                'last_page' => $proveedores->lastPage(),
-                'per_page' => $proveedores->perPage(),
-                'total' => $proveedores->total(),
-            ]
-        ], 'Listado de proveedores.');
-    } catch (\Throwable $e) {
-        return ApiResponse::error('Error interno del servidor.', 500);
     }
-}
     public function store(StoreProveedorRequest $request)
     {
         if (!$request->user()->can('crear_proveedores')) {
