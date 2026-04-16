@@ -38,6 +38,12 @@ use App\Modules\MovimientosInventario\Application\Interfaces\MovimientoInventari
 use App\Modules\MovimientosInventario\Infrastructure\Repositories\MovimientoInventarioRepository;
 use App\Modules\Compras\Application\Interfaces\CompraRepositoryInterface;
 use App\Modules\Compras\Infrastructure\Repositories\CompraRepository;
+use App\Modules\Caja\Application\Interfaces\CajaRepositoryInterface;
+use App\Modules\Caja\Infrastructure\Repositories\CajaRepository;
+use App\Modules\CategoriasGasto\Application\Interfaces\CategoriaGastoRepositoryInterface;
+use App\Modules\CategoriasGasto\Infrastructure\Repositories\CategoriaGastoRepository;
+use App\Modules\Gastos\Application\Interfaces\GastoRepositoryInterface;
+use App\Modules\Gastos\Infrastructure\Repositories\GastoRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -60,6 +66,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(InventarioImportRepositoryInterface::class,InventarioImportRepository::class);
         $this->app->bind(MovimientoInventarioRepositoryInterface::class,MovimientoInventarioRepository::class);
         $this->app->bind(CompraRepositoryInterface::class, CompraRepository::class);
+        $this->app->bind(CajaRepositoryInterface::class, CajaRepository::class);
+        $this->app->bind(CategoriaGastoRepositoryInterface::class, CategoriaGastoRepository::class);
+        $this->app->bind( GastoRepositoryInterface::class, GastoRepository::class);
     }
 
     public function boot(): void

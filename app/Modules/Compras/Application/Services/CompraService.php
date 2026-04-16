@@ -209,6 +209,25 @@ class CompraService
                 'observacion' => $dto->observacion,
             ]);
 
+            $cajaAbierta = $this->compraRepository->getCajaAbierta();
+        
+            if (!$cajaAbierta) {
+                throw new HttpException(422, 'No se puede registrar el pago porque no hay una caja abierta.');
+            }
+
+            $this->compraRepository->createMovimientoCaja([
+                'caja_id' => $cajaAbierta->id,
+                'tipo_movimiento' => 'egreso',
+                'categoria_movimiento' => 'pago_proveedor',
+                'origen_modulo' => 'compras',
+                'origen_id' => $compra->id,
+                'medio_pago' => $dto->metodo_pago, // Importante para el cuadre
+                'monto' => $dto->monto,
+                'descripcion' => "Pago a proveedor por Compra #{$compra->id}",
+                'user_id' => $dto->user_id,
+                'fecha_movimiento' => now(),
+            ]);
+
             $nuevoTotalPagado = (float) $compra->total_pagado + (float) $dto->monto;
             $nuevoSaldoPendiente = (float) $compra->total - $nuevoTotalPagado;
 

@@ -36,4 +36,5 @@ interface CompraRepositoryInterface
     public function createPago(array $data): PagoCompra;
 
     public function getPagosByCompra(int $compraId): Collection;
+    
 }

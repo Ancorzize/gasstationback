@@ -21,7 +21,9 @@ use App\Modules\Inventarios\Presentation\Controllers\ImportInventarioController;
 use App\Modules\Inventarios\Presentation\Controllers\InventarioController;
 use App\Modules\MovimientosInventario\Presentation\Controllers\MovimientoInventarioController;
 use App\Modules\Compras\Presentation\Controllers\CompraController;
-
+use App\Modules\Caja\Presentation\Controllers\CajaController;
+use App\Modules\CategoriasGasto\Presentation\Controllers\CategoriaGastoController;
+use App\Modules\Gastos\Presentation\Controllers\GastoController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -166,4 +168,26 @@ Route::middleware(['auth:sanctum'])->prefix('compras')->group(function () {
 
     Route::get('/{id}/pagos', [CompraController::class, 'pagos']);
     Route::post('/{id}/pagos', [CompraController::class, 'registrarPago']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('caja')->group(function () {
+    Route::get('/actual', [CajaController::class, 'actual']);
+    Route::post('/abrir', [CajaController::class, 'abrir']);
+    Route::post('/cerrar', [CajaController::class, 'cerrar']);
+    Route::get('/movimientos', [CajaController::class, 'movimientos']);
+    Route::get('/resumen', [CajaController::class, 'resumen']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('categorias-gasto')->group(function () {
+    Route::get('/', [CategoriaGastoController::class, 'index']);
+    Route::get('/{id}', [CategoriaGastoController::class, 'show']);
+    Route::post('/', [CategoriaGastoController::class, 'store']);
+    Route::put('/{id}', [CategoriaGastoController::class, 'update']);
+    Route::patch('/{id}/status', [CategoriaGastoController::class, 'changeStatus']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('gastos')->group(function () {
+    Route::get('/', [GastoController::class, 'index']);
+    Route::get('/{id}', [GastoController::class, 'show']);
+    Route::post('/', [GastoController::class, 'store']);
 });
