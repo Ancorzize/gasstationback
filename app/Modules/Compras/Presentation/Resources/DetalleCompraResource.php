@@ -33,6 +33,10 @@ class DetalleCompraResource extends JsonResource
             'cantidad' => $this->cantidad,
             'costo_unitario' => $this->costo_unitario,
             'subtotal' => $this->subtotal,
+            'iva' => $this->iva,
+            'soldicom' => $this->soldicom,
+            'total' => $this->total,
+            'iva_valor' => $this->iva_valor,
         ];
     }
 }

@@ -8,6 +8,10 @@ class DetalleCompraDTO
         public  int $producto_id,
         public  float $cantidad,
         public  float $costo_unitario,
+        public  int $iva,
+        public  float $soldicom,
+        public  float $total,
+        public  float $iva_valor,
     ) {}
 
     public function subtotal(): float

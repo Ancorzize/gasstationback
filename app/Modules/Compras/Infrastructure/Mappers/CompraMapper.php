@@ -19,6 +19,10 @@ class CompraMapper
                 producto_id: (int) $item['producto_id'],
                 cantidad: (float) $item['cantidad'],
                 costo_unitario: (float) $item['costo_unitario'],
+                iva: (float) $item['iva'],
+                soldicom: (float) $item['soldicom'],
+                total: (float) $item['total'],
+                iva_valor: (float) $item['iva_valor']
             );
         })->all();
     }

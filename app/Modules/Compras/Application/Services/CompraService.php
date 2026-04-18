@@ -64,7 +64,11 @@ class CompraService
                     'producto_id' => $detalle->producto_id,
                     'cantidad' => $detalle->cantidad,
                     'costo_unitario' => $detalle->costo_unitario,
+                    'iva' => $detalle->iva,
+                    'soldicom' => $detalle->soldicom,
                     'subtotal' => $detalle->subtotal(),
+                    'total' => $detalle->total,
+                    'iva_valor' => $detalle->iva_valor,
                 ]);
             }
 
@@ -109,6 +113,10 @@ class CompraService
                     'cantidad' => $detalle->cantidad,
                     'costo_unitario' => $detalle->costo_unitario,
                     'subtotal' => $detalle->subtotal(),
+                    'iva' => $detalle->iva,
+                    'soldicom' => $detalle->soldicom,
+                    'total' => $detalle->total,
+                    'iva_valor' => $detalle->iva_valor,
                 ]);
             }
 

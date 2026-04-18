@@ -27,6 +27,10 @@ class UpdateCompraRequest extends FormRequest
             'detalles.*.producto_id' => ['required', 'integer', 'exists:productos,id'],
             'detalles.*.cantidad' => ['required', 'numeric', 'gt:0'],
             'detalles.*.costo_unitario' => ['required', 'numeric', 'gt:0'],
+            'detalles.*.iva' => ['required', 'integer', 'min:0'],
+            'detalles.*.soldicom' => ['required', 'numeric', 'gte:0'],
+            'detalles.*.total' => ['required', 'numeric', 'gte:0'],
+            'detalles.*.iva_valor' => ['required', 'numeric', 'gte:0'],
         ];
     }
 
@@ -49,6 +53,10 @@ class UpdateCompraRequest extends FormRequest
             'detalles.*.cantidad.gt' => 'La cantidad debe ser mayor a cero.',
             'detalles.*.costo_unitario.required' => 'El costo unitario es obligatorio.',
             'detalles.*.costo_unitario.gt' => 'El costo unitario debe ser mayor a cero.',
+            'detalles.*.iva' => ['required', 'integer', 'min:0'],
+            'detalles.*.soldicom' => ['required', 'numeric', 'gte:0'],
+            'detalles.*.total' => ['required', 'numeric', 'gte:0'],
+            'detalles.*.iva_valor' => ['required', 'numeric', 'gte:0'],
         ];
     }
 }

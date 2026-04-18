@@ -15,12 +15,20 @@ class DetalleCompra extends Model
         'cantidad',
         'costo_unitario',
         'subtotal',
+        'iva',
+        'soldicom',
+        'total',
+        'iva_valor'
     ];
 
     protected $casts = [
         'cantidad' => 'decimal:2',
         'costo_unitario' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'iva' => 'integer',
+        'soldicom' => 'decimal:2',
+        'total' => 'decimal:2',
+        'iva_valor' => 'decimal:2',
     ];
 
     public function compra(): BelongsTo
