@@ -5,6 +5,8 @@ namespace App\Modules\Compras\Application\Interfaces;
 use App\Models\Compra;
 use App\Models\Inventario;
 use App\Models\PagoCompra;
+use App\Models\Caja;
+use App\Models\MovimientoCaja;
 use App\Models\MovimientoInventario;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -36,5 +38,9 @@ interface CompraRepositoryInterface
     public function createPago(array $data): PagoCompra;
 
     public function getPagosByCompra(int $compraId): Collection;
+
+    public function getCajaAbierta(): ?Caja;
+
+    public function createMovimientoCaja(array $data): MovimientoCaja;
     
 }

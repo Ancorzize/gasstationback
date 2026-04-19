@@ -6,6 +6,8 @@ use App\Models\Compra;
 use App\Models\Producto;
 use App\Models\Inventario;
 use App\Models\PagoCompra;
+use App\Models\Caja;
+use App\Models\MovimientoCaja;
 use App\Models\DetalleCompra;
 use App\Models\MovimientoInventario;
 use Illuminate\Support\Collection;
@@ -144,5 +146,17 @@ class CompraRepository implements CompraRepositoryInterface
             ->where('compra_id', $compraId)
             ->orderByDesc('id')
             ->get();
+    }
+
+    public function getCajaAbierta(): ?Caja
+    {
+        return Caja::query()
+            ->where('estado', 'abierta')
+            ->first();
+    }
+
+    public function createMovimientoCaja(array $data): MovimientoCaja
+    {
+        return MovimientoCaja::create($data);
     }
 }
