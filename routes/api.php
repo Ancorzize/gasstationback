@@ -168,6 +168,8 @@ Route::middleware(['auth:sanctum'])->prefix('compras')->group(function () {
 
     Route::get('/{id}/pagos', [CompraController::class, 'pagos']);
     Route::post('/{id}/pagos', [CompraController::class, 'registrarPago']);
+
+     Route::get('/{id}/pdf', [CompraController::class, 'pdf']); 
 });
 
 Route::middleware(['auth:sanctum'])->prefix('caja')->group(function () {

@@ -38,7 +38,8 @@ class CompraService
         return DB::transaction(function () use ($dto) {
             $subtotal = collect($dto->detalles)->sum(fn ($item) => $item->subtotal());
             $impuesto = $dto->impuesto;
-            $total = $subtotal + $impuesto;
+            $soldicom = $dto->soldicom;
+            $total = $subtotal + $impuesto + $soldicom;
 
             $compra = $this->compraRepository->create([
                 'proveedor_id' => $dto->proveedor_id,
@@ -52,6 +53,7 @@ class CompraService
                 'estado_pago' => 'pendiente',
                 'subtotal' => $subtotal,
                 'impuesto' => $impuesto,
+                'soldicom' => $soldicom,
                 'total' => $total,
                 'total_pagado' => 0,
                 'saldo_pendiente' => $total,
@@ -87,7 +89,8 @@ class CompraService
 
             $subtotal = collect($dto->detalles)->sum(fn ($item) => $item->subtotal());
             $impuesto = $dto->impuesto;
-            $total = $subtotal + $impuesto;
+            $soldicom = $dto->soldicom;
+            $total = $subtotal + $impuesto + $soldicom;
 
             $this->compraRepository->update($compra, [
                 'proveedor_id' => $dto->proveedor_id,
@@ -98,6 +101,7 @@ class CompraService
                 'tipo_pago' => $dto->tipo_pago,
                 'subtotal' => $subtotal,
                 'impuesto' => $impuesto,
+                'soldicom' => $soldicom,
                 'total' => $total,
                 'total_pagado' => 0,
                 'saldo_pendiente' => $total,

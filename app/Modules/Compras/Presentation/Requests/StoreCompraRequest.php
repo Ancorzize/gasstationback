@@ -20,7 +20,8 @@ class StoreCompraRequest extends FormRequest
             'fecha_compra' => ['required', 'date'],
             'fecha_vencimiento' => ['nullable', 'date'],
             'tipo_pago' => ['required', 'in:contado,credito'],
-            'impuesto' => ['nullable', 'numeric', 'min:0'],
+            'impuesto' => ['required', 'numeric', 'gte:0'],
+            'soldicom' => ['required', 'numeric', 'gte:0'],
             'observacion' => ['nullable', 'string'],
 
             'detalles' => ['required', 'array', 'min:1'],
@@ -44,6 +45,8 @@ class StoreCompraRequest extends FormRequest
             'fecha_compra.required' => 'La fecha de compra es obligatoria.',
             'tipo_pago.required' => 'El tipo de pago es obligatorio.',
             'tipo_pago.in' => 'El tipo de pago debe ser contado o credito.',
+            'impuesto.required' => 'El impuesto es requerido',
+            'soldicom.required' => 'El impuesto soldicom es requerido',
             'detalles.required' => 'Debe agregar al menos un detalle.',
             'detalles.array' => 'El detalle debe ser un arreglo.',
             'detalles.min' => 'Debe agregar al menos un producto.',

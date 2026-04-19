@@ -38,8 +38,9 @@ class CompraMapper
             fecha_vencimiento: $data['fecha_vencimiento'] ?? null,
             tipo_pago: $data['tipo_pago'],
             impuesto: (float) ($data['impuesto'] ?? 0),
+            soldicom: (float) ($data['soldicom'] ?? 0),
             observacion: $data['observacion'] ?? null,
-            detalles: self::mapDetalles($data['detalles']),
+            detalles: self::mapDetalles($data['detalles'])
         );
     }
 
@@ -53,6 +54,7 @@ class CompraMapper
             fecha_vencimiento: $data['fecha_vencimiento'] ?? null,
             tipo_pago: $data['tipo_pago'],
             impuesto: (float) ($data['impuesto'] ?? 0),
+            soldicom: (float) ($data['soldicom'] ?? 0),
             observacion: $data['observacion'] ?? null,
             detalles: self::mapDetalles($data['detalles']),
         );

@@ -14,7 +14,8 @@ use App\Modules\Compras\Presentation\Requests\UpdateCompraRequest;
 use App\Modules\Compras\Presentation\Requests\StorePagoCompraRequest;
 use App\Modules\Compras\Presentation\Resources\CompraResource;
 use App\Modules\Compras\Presentation\Resources\PagoCompraResource;
-
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\ConfiguracionEmpresa;
 class CompraController extends Controller
 {
     public function __construct(
@@ -184,6 +185,36 @@ class CompraController extends Controller
                 new CompraResource($compra),
                 'Pago registrado correctamente.'
             );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function pdf(Request $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('ver_compras')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $compra = $this->compraService->findById($id);
+
+            $empresa = ConfiguracionEmpresa::with(['pais', 'departamento', 'ciudad'])->first();
+
+            $pdf = Pdf::loadView('pdfs.compras.show', [
+                'compra' => $compra,
+                'empresa' => $empresa,
+            ])->setPaper('a4', 'portrait');
+
+            $fileName = 'compra_' . $compra->id . '.pdf';
+
+            if ($request->boolean('download')) {
+                return $pdf->download($fileName);
+            }
+
+            return $pdf->stream($fileName);
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {

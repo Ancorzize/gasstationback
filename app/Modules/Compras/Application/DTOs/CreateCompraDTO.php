@@ -16,6 +16,7 @@ class CreateCompraDTO
         public  ?string $fecha_vencimiento,
         public  string $tipo_pago,
         public  float $impuesto,
+        public  float $soldicom,
         public  ?string $observacion,
         public  array $detalles,
     ) {}
