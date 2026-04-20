@@ -13,7 +13,7 @@ use App\Modules\Compras\Presentation\Requests\StoreCompraRequest;
 use App\Modules\Compras\Presentation\Requests\UpdateCompraRequest;
 use App\Modules\Compras\Presentation\Requests\StorePagoCompraRequest;
 use App\Modules\Compras\Presentation\Resources\CompraResource;
-use App\Modules\Compras\Presentation\Resources\PagoCompraResource;
+use App\Modules\PagosCompra\Presentation\Resources\PagoCompraResource;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ConfiguracionEmpresa;
 class CompraController extends Controller

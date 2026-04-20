@@ -7,7 +7,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\UnidadesMedida\Application\DTOs\CreateUnidadMedidaDTO;
 use App\Modules\UnidadesMedida\Application\DTOs\UpdateUnidadMedidaDTO;
 use App\Modules\UnidadesMedida\Application\Interfaces\UnidadMedidaRepositoryInterface;
-
+use Illuminate\Database\QueryException;
 class UnidadMedidaService
 {
     public function __construct(
@@ -62,6 +62,13 @@ class UnidadMedidaService
     {
         $unidadMedida = $this->findById($id);
 
-        $this->unidadMedidaRepository->delete($unidadMedida);
+        try {
+            $this->unidadMedidaRepository->delete($unidadMedida);
+        } catch (QueryException $e) {
+            throw new HttpException(
+                422,
+                'No se puede eliminar la unidad de medida porque tiene registros asociados en el sistema.'
+            );
+        }
     }
 }
