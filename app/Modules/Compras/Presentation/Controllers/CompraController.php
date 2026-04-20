@@ -221,4 +221,5 @@ class CompraController extends Controller
             return ApiResponse::error('Error interno del servidor.', 500);
         }
     }
+    
 }

@@ -24,6 +24,7 @@ use App\Modules\Compras\Presentation\Controllers\CompraController;
 use App\Modules\Caja\Presentation\Controllers\CajaController;
 use App\Modules\CategoriasGasto\Presentation\Controllers\CategoriaGastoController;
 use App\Modules\Gastos\Presentation\Controllers\GastoController;
+use App\Modules\PagosCompra\Presentation\Controllers\PagoCompraController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -192,4 +193,10 @@ Route::middleware(['auth:sanctum'])->prefix('gastos')->group(function () {
     Route::get('/', [GastoController::class, 'index']);
     Route::get('/{id}', [GastoController::class, 'show']);
     Route::post('/', [GastoController::class, 'store']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('pagos-compra')->group(function () {
+    Route::get('/', [PagoCompraController::class, 'index']);
+    Route::get('/{id}', [PagoCompraController::class, 'show']);
+    Route::get('/{id}/pdf', [PagoCompraController::class, 'pdf']);
 });
