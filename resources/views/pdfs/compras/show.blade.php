@@ -136,7 +136,8 @@
                     <th>Subt</th>
                     <th>IVA%</th>
                     <th>IVA</th>
-                    <th>Sold</th>
+                    <th>Soldicom</th>
+                    <th>Sobre tasa</th>
                     <th>Total</th>
                 </tr>
             </thead>
@@ -152,6 +153,7 @@
                     <td class="text-right">{{ $detalle->iva }}</td>
                     <td class="text-right">${{ number_format($detalle->iva_valor, 0, ',', '.') }}</td>
                     <td class="text-right">${{ number_format($detalle->soldicom, 0, ',', '.') }}</td>
+                    <td class="text-right">${{ number_format($detalle->sobre_tasa, 0, ',', '.') }}</td>
                     <td class="text-right">${{ number_format($detalle->total, 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
@@ -168,7 +170,7 @@
             </tr>
             <tr>
                 <td><strong>Impuestos</strong></td>
-                <td class="text-right">${{ number_format(($compra->impuesto + $compra->soldicom), 0, ',', '.') }}</td>
+                <td class="text-right">${{ number_format(($compra->impuesto + $compra->soldicom + $compra->sobre_tasa), 0, ',', '.') }}</td>
             </tr>
             <tr>
                 <td><strong>Total</strong></td>

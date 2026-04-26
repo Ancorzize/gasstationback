@@ -26,11 +26,11 @@ class CajaController extends Controller
                 return ApiResponse::error('Sin permisos.', 403);
             }
 
-            $caja = $this->cajaService->getCajaActual();
+            $cajas = $this->cajaService->getCajaActual();
 
             return ApiResponse::success(
-                $caja ? new CajaResource($caja) : null,
-                'Caja actual.'
+                CajaResource::collection($cajas),
+                'Cajas actuales.'
             );
         } catch (\Throwable $e) {
             return ApiResponse::error('Error interno del servidor.', 500);
@@ -52,9 +52,12 @@ class CajaController extends Controller
             $resultado = $this->cajaService->abrirCaja($dto);
 
             return ApiResponse::success([
-                'caja' => new CajaResource($resultado['caja']),
+                'cajas' => [
+                    'efectivo' => new CajaResource($resultado['cajas']['efectivo']),
+                    'digital' => new CajaResource($resultado['cajas']['digital']),
+                ],
                 'resumen' => $resultado['resumen'],
-            ], 'Caja abierta correctamente.', 201);
+            ], 'Cajas abiertas correctamente.', 201);
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
@@ -74,12 +77,14 @@ class CajaController extends Controller
                 $request->user()->id
             );
 
-            $caja = $this->cajaService->cerrarCaja($dto);
+            $resultado = $this->cajaService->cerrarCaja($dto);
 
-            return ApiResponse::success(
-                new CajaResource($caja),
-                'Caja cerrada correctamente.'
-            );
+            return ApiResponse::success([
+                'cajas' => [
+                    'efectivo' => new CajaResource($resultado['cajas']['efectivo']),
+                    'digital' => new CajaResource($resultado['cajas']['digital']),
+                ],
+            ], 'Cajas cerradas correctamente.');
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
@@ -103,6 +108,7 @@ class CajaController extends Controller
                 'fecha_desde' => $request->get('fecha_desde'),
                 'fecha_hasta' => $request->get('fecha_hasta'),
                 'search' => $request->get('search'),
+                'tipo_caja' => $request->get('tipo_caja'),
             ];
 
             $movimientos = $this->cajaService->paginateMovimientos(
@@ -116,7 +122,7 @@ class CajaController extends Controller
                     'current_page' => $movimientos->currentPage(),
                     'last_page' => $movimientos->lastPage(),
                     'per_page' => $movimientos->perPage(),
-                    'total' => $movimientos->total(),
+                    'total' => $movimientos->total()
                 ]
             ], 'Listado de movimientos de caja.');
         } catch (\Throwable $e) {

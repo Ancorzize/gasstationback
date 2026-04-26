@@ -11,6 +11,7 @@ class Caja extends Model
     protected $table = 'cajas';
 
     protected $fillable = [
+        'tipo_caja',
         'fecha_apertura',
         'fecha_cierre',
         'monto_apertura',

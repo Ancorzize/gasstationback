@@ -14,9 +14,11 @@ class CerrarCajaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'monto_cierre_real' => ['required', 'numeric', 'min:0'],
+            'monto_cierre_real_efectivo' => ['required', 'numeric', 'min:0'],
+            'monto_cierre_real_digital' => ['required', 'numeric', 'min:0'],
             'observacion_cierre' => ['nullable', 'string'],
         ];
+
     }
 
     public function messages(): array

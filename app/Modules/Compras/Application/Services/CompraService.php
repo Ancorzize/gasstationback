@@ -39,7 +39,8 @@ class CompraService
             $subtotal = collect($dto->detalles)->sum(fn ($item) => $item->subtotal());
             $impuesto = $dto->impuesto;
             $soldicom = $dto->soldicom;
-            $total = $subtotal + $impuesto + $soldicom;
+            $sobre_tasa = $dto->sobre_tasa;
+            $total = $subtotal + $impuesto + $soldicom + $sobre_tasa;
 
             $compra = $this->compraRepository->create([
                 'proveedor_id' => $dto->proveedor_id,
@@ -54,10 +55,12 @@ class CompraService
                 'subtotal' => $subtotal,
                 'impuesto' => $impuesto,
                 'soldicom' => $soldicom,
+                'sobre_tasa' => $sobre_tasa,
                 'total' => $total,
                 'total_pagado' => 0,
                 'saldo_pendiente' => $total,
                 'observacion' => $dto->observacion,
+                'numero_comprobante' => $dto->numero_comprobante
             ]);
 
             foreach ($dto->detalles as $detalle) {
@@ -71,6 +74,7 @@ class CompraService
                     'subtotal' => $detalle->subtotal(),
                     'total' => $detalle->total,
                     'iva_valor' => $detalle->iva_valor,
+                    'sobre_tasa' => $detalle->sobre_tasa,
                 ]);
             }
 
@@ -90,7 +94,8 @@ class CompraService
             $subtotal = collect($dto->detalles)->sum(fn ($item) => $item->subtotal());
             $impuesto = $dto->impuesto;
             $soldicom = $dto->soldicom;
-            $total = $subtotal + $impuesto + $soldicom;
+            $sobre_tasa = $dto->sobre_tasa;
+            $total = $subtotal + $impuesto + $soldicom + $sobre_tasa;
 
             $this->compraRepository->update($compra, [
                 'proveedor_id' => $dto->proveedor_id,
@@ -102,10 +107,12 @@ class CompraService
                 'subtotal' => $subtotal,
                 'impuesto' => $impuesto,
                 'soldicom' => $soldicom,
+                'sobre_tasa' => $sobre_tasa,
                 'total' => $total,
                 'total_pagado' => 0,
                 'saldo_pendiente' => $total,
                 'observacion' => $dto->observacion,
+                'numero_comprobante' => $dto->numero_comprobante
             ]);
 
             $this->compraRepository->deleteDetallesByCompra($compra->id);
@@ -121,6 +128,7 @@ class CompraService
                     'soldicom' => $detalle->soldicom,
                     'total' => $detalle->total,
                     'iva_valor' => $detalle->iva_valor,
+                    'sobre_tasa' => $detalle->sobre_tasa
                 ]);
             }
 
@@ -173,9 +181,9 @@ class CompraService
                 );
             }
 
-            $estadoPago = $compra->tipo_pago === 'contado' ? 'pagado' : 'pendiente';
-            $totalPagado = $compra->tipo_pago === 'contado' ? (float) $compra->total : 0;
-            $saldoPendiente = $compra->tipo_pago === 'contado' ? 0 : (float) $compra->total;
+            $estadoPago = $compra->tipo_pago === 'efectivo' ? 'pagado' : 'pendiente';
+            $totalPagado = $compra->tipo_pago === 'efectivo' ? (float) $compra->total : 0;
+            $saldoPendiente = $compra->tipo_pago === 'efectivo' ? 0 : (float) $compra->total;
 
             $this->compraRepository->update($compra, [
                 'estado' => 'confirmada',
@@ -183,6 +191,31 @@ class CompraService
                 'total_pagado' => $totalPagado,
                 'saldo_pendiente' => $saldoPendiente,
             ]);
+
+            if($compra->tipo_pago != 'credito')
+            {
+                $tipoCaja = $compra->tipo_pago === 'efectivo' ? 'efectivo' : 'digital';
+
+                $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
+
+                if (!$caja) {
+                    throw new HttpException(422, "No hay caja {$compra->tipo_pago} abierta.");
+                }
+
+                $this->compraRepository->createMovimientoCaja([
+                    'caja_id' => $caja->id,
+                    'tipo_movimiento' => 'egreso',
+                    'categoria_movimiento' => 'compra',
+                    'origen_modulo' => 'compras',
+                    'origen_id' => $compra->id,
+                    'medio_pago' => $compra->tipo_pago,
+                    'monto' => $compra->total,
+                    'descripcion' => "Compra #{$compra->id}",
+                    'user_id' => $compra->user_id,
+                    'fecha_movimiento' => now(),
+                ]);
+            }
+            
 
             return $this->findById($compra->id);
         });
@@ -233,7 +266,7 @@ class CompraService
                 'categoria_movimiento' => 'pago_proveedor',
                 'origen_modulo' => 'compras',
                 'origen_id' => $compra->id,
-                'medio_pago' => $dto->metodo_pago, // Importante para el cuadre
+                'medio_pago' => $dto->metodo_pago,
                 'monto' => $dto->monto,
                 'descripcion' => "Pago a proveedor por Compra #{$compra->id}",
                 'user_id' => $dto->user_id,

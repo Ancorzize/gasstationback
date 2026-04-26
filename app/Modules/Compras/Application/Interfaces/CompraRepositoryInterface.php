@@ -42,5 +42,7 @@ interface CompraRepositoryInterface
     public function getCajaAbierta(): ?Caja;
 
     public function createMovimientoCaja(array $data): MovimientoCaja;
+
+    public function getCajaAbiertaPorTipo(string $tipoCaja): ?Caja;
     
 }

@@ -46,8 +46,12 @@ class CompraResource extends JsonResource
             'total' => $this->total,
             'total_pagado' => $this->total_pagado,
             'saldo_pendiente' => $this->saldo_pendiente,
+            'soldicom' => $this->soldicom,
+            'sobre_tasa' => $this->sobre_tasa,
+            'saldo_pendiente' => $this->saldo_pendiente,
 
             'observacion' => $this->observacion,
+            'numero_comprobante' => $this->numero_comprobante,
 
             'detalles' => DetalleCompraResource::collection($this->whenLoaded('detalles')),
 

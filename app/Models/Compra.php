@@ -23,10 +23,12 @@ class Compra extends Model
         'subtotal',
         'impuesto',
         'soldicom',
+        'sobre_tasa',
         'total',
         'total_pagado',
         'saldo_pendiente',
         'observacion',
+        'numero_comprobante'
     ];
 
     protected $casts = [
@@ -35,6 +37,7 @@ class Compra extends Model
         'subtotal' => 'decimal:2',
         'impuesto' => 'decimal:2',
         'soldicom' => 'decimal:2',
+        'sobre_tasa' => 'decimal:2',
         'total' => 'decimal:2',
         'total_pagado' => 'decimal:2',
         'saldo_pendiente' => 'decimal:2',

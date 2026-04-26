@@ -37,6 +37,7 @@ class DetalleCompraResource extends JsonResource
             'soldicom' => $this->soldicom,
             'total' => $this->total,
             'iva_valor' => $this->iva_valor,
+            'sobre_tasa' => $this->sobre_tasa,
         ];
     }
 }

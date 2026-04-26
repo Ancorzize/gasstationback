@@ -22,7 +22,8 @@ class CompraMapper
                 iva: (float) $item['iva'],
                 soldicom: (float) $item['soldicom'],
                 total: (float) $item['total'],
-                iva_valor: (float) $item['iva_valor']
+                iva_valor: (float) $item['iva_valor'],
+                sobre_tasa: isset($item['sobre_tasa']) ? (float) $item['sobre_tasa'] : 0,
             );
         })->all();
     }
@@ -39,7 +40,9 @@ class CompraMapper
             tipo_pago: $data['tipo_pago'],
             impuesto: (float) ($data['impuesto'] ?? 0),
             soldicom: (float) ($data['soldicom'] ?? 0),
+            sobre_tasa: (float) ($data['sobre_tasa'] ?? 0),
             observacion: $data['observacion'] ?? null,
+            numero_comprobante: $data['numero_comprobante'] ?? null,
             detalles: self::mapDetalles($data['detalles'])
         );
     }
@@ -55,7 +58,9 @@ class CompraMapper
             tipo_pago: $data['tipo_pago'],
             impuesto: (float) ($data['impuesto'] ?? 0),
             soldicom: (float) ($data['soldicom'] ?? 0),
+            sobre_tasa: (float) ($data['sobre_tasa'] ?? 0),
             observacion: $data['observacion'] ?? null,
+            numero_comprobante: $data['numero_comprobante'] ?? null,
             detalles: self::mapDetalles($data['detalles']),
         );
     }

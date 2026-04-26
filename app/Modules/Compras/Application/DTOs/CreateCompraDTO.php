@@ -17,7 +17,9 @@ class CreateCompraDTO
         public  string $tipo_pago,
         public  float $impuesto,
         public  float $soldicom,
+        public  float $sobre_tasa,
         public  ?string $observacion,
+        public  ?string $numero_comprobante,
         public  array $detalles,
     ) {}
 }

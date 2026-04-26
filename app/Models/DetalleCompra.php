@@ -18,7 +18,8 @@ class DetalleCompra extends Model
         'iva',
         'soldicom',
         'total',
-        'iva_valor'
+        'iva_valor',
+        'sobre_tasa',
     ];
 
     protected $casts = [
@@ -29,6 +30,7 @@ class DetalleCompra extends Model
         'soldicom' => 'decimal:2',
         'total' => 'decimal:2',
         'iva_valor' => 'decimal:2',
+        'sobre_tasa' => 'decimal:2',
     ];
 
     public function compra(): BelongsTo

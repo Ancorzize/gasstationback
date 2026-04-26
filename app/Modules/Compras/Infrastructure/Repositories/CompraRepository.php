@@ -159,4 +159,12 @@ class CompraRepository implements CompraRepositoryInterface
     {
         return MovimientoCaja::create($data);
     }
+
+    public function getCajaAbiertaPorTipo(string $tipoCaja): ?Caja
+    {
+        return Caja::query()
+            ->where('estado', 'abierta')
+            ->where('tipo_caja', $tipoCaja)
+            ->first();
+    }
 }

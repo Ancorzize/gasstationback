@@ -104,4 +104,37 @@ class CajaRepository implements CajaRepositoryInterface
             ->where('medio_pago', $medioPago)
             ->sum('monto');
     }
+
+    public function getCajasAbiertas(): Collection
+    {
+        return Caja::query()
+            ->with(['usuarioApertura', 'usuarioCierre'])
+            ->where('estado', 'abierta')
+            ->orderBy('tipo_caja')
+            ->get();
+    }
+
+    public function getCajaAbiertaByTipo(string $tipoCaja): ?Caja
+    {
+        return Caja::query()
+            ->with(['usuarioApertura', 'usuarioCierre'])
+            ->where('estado', 'abierta')
+            ->where('tipo_caja', $tipoCaja)
+            ->first();
+    }
+
+    public function existsCajaAbierta(): bool
+    {
+        return Caja::query()
+            ->where('estado', 'abierta')
+            ->exists();
+    }
+
+    public function sumMovimientosByTipo(int $cajaId, string $tipoMovimiento): float
+    {
+        return (float) MovimientoCaja::query()
+            ->where('caja_id', $cajaId)
+            ->where('tipo_movimiento', $tipoMovimiento)
+            ->sum('monto');
+    }
 }

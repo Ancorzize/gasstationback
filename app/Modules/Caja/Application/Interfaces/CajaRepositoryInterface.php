@@ -9,7 +9,11 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface CajaRepositoryInterface
 {
-    public function getCajaAbierta(): ?Caja;
+    public function getCajasAbiertas(): Collection;
+
+    public function getCajaAbiertaByTipo(string $tipoCaja): ?Caja;
+
+    public function existsCajaAbierta(): bool;
 
     public function findById(int $id): ?Caja;
 
@@ -23,5 +27,5 @@ interface CajaRepositoryInterface
 
     public function getMovimientosByCaja(int $cajaId): Collection;
 
-    public function sumMovimientosByTipoAndMedio(int $cajaId, string $tipoMovimiento, string $medioPago): float;
+    public function sumMovimientosByTipo(int $cajaId, string $tipoMovimiento): float;
 }

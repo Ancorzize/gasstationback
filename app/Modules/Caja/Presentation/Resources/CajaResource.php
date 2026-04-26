@@ -19,6 +19,7 @@ class CajaResource extends JsonResource
             'diferencia_cierre' => $this->diferencia_cierre,
             'estado' => $this->estado,
             'user_apertura_id' => $this->user_apertura_id,
+            'tipo_caja' => $this->tipo_caja,
             'usuario_apertura' => $this->usuarioApertura ? [
                 'id' => $this->usuarioApertura->id,
                 'name' => $this->usuarioApertura->name,

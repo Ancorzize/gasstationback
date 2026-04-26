@@ -10,6 +10,7 @@ class DetalleCompraDTO
         public  float $costo_unitario,
         public  int $iva,
         public  float $soldicom,
+        public float $sobre_tasa,
         public  float $total,
         public  float $iva_valor,
     ) {}

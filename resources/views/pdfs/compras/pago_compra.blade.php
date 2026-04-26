@@ -137,7 +137,8 @@
                     <th>Subt</th>
                     <th>IVA%</th>
                     <th>IVA</th>
-                    <th>Sold</th>
+                    <th>Soldicom</th>
+                    <th>sobre_tasa</th>
                     <th>Total</th>
                 </tr>
             </thead>
@@ -153,6 +154,7 @@
                         <td class="text-right">{{ $detalle['iva'] ?? 0 }}</td>
                         <td class="text-right">${{ number_format((float) ($detalle['iva_valor'] ?? 0), 0, ',', '.') }}</td>
                         <td class="text-right">${{ number_format((float) ($detalle['soldicom'] ?? 0), 0, ',', '.') }}</td>
+                        <td class="text-right">${{ number_format((float) ($detalle['sobre_tasa'] ?? 0), 0, ',', '.') }}</td>
                         <td class="text-right">${{ number_format((float) ($detalle['total'] ?? 0), 0, ',', '.') }}</td>
                     </tr>
                 @empty
@@ -174,7 +176,7 @@
             <tr>
                 <td><strong>Impuestos</strong></td>
                 <td class="text-right">
-                    ${{ number_format((float) (($data['compra']['impuesto'] ?? 0) + ($data['compra']['soldicom'] ?? 0)), 0, ',', '.') }}
+                    ${{ number_format((float) (($data['compra']['impuesto'] ?? 0) + ($data['compra']['soldicom'] ?? 0) + ($data['compra']['sobre_tasa'] ?? 0)), 0, ',', '.') }}
                 </td>
             </tr>
             <tr>

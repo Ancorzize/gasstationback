@@ -18,6 +18,7 @@ class StorePagoCompraRequest extends FormRequest
             'monto' => ['required', 'numeric', 'gt:0'],
             'metodo_pago' => ['required', 'string', 'max:30'],
             'observacion' => ['nullable', 'string'],
+            'numero_comprobante' => ['nullable', 'string'],
         ];
     }
 
