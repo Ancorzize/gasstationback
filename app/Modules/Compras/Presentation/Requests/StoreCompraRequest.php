@@ -33,6 +33,7 @@ class StoreCompraRequest extends FormRequest
             'detalles.*.soldicom' => ['required', 'numeric', 'gte:0'],
             'detalles.*.total' => ['required', 'numeric', 'gte:0'],
             'detalles.*.iva_valor' => ['required', 'numeric', 'gte:0'],
+            'detalles.*.sobre_tasa' => ['required', 'numeric', 'gte:0'],
         ];
     }
 
