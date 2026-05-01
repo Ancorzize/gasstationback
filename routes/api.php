@@ -25,6 +25,7 @@ use App\Modules\Caja\Presentation\Controllers\CajaController;
 use App\Modules\CategoriasGasto\Presentation\Controllers\CategoriaGastoController;
 use App\Modules\Gastos\Presentation\Controllers\GastoController;
 use App\Modules\PagosCompra\Presentation\Controllers\PagoCompraController;
+Route::get('/historico', [CajaController::class, 'historico']);
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -179,6 +180,7 @@ Route::middleware(['auth:sanctum'])->prefix('caja')->group(function () {
     Route::post('/cerrar', [CajaController::class, 'cerrar']);
     Route::get('/movimientos', [CajaController::class, 'movimientos']);
     Route::get('/resumen', [CajaController::class, 'resumen']);
+    Route::get('/historico', [CajaController::class, 'historico']);
 });
 
 Route::middleware(['auth:sanctum'])->prefix('categorias-gasto')->group(function () {

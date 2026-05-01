@@ -28,4 +28,6 @@ interface CajaRepositoryInterface
     public function getMovimientosByCaja(int $cajaId): Collection;
 
     public function sumMovimientosByTipo(int $cajaId, string $tipoMovimiento): float;
+
+    public function paginateHistorico(array $filters = [], int $perPage = 10): LengthAwarePaginator;
 }

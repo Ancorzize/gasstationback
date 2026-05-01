@@ -165,4 +165,9 @@ class CajaService
     {
         return $this->cajaRepository->paginateMovimientos($filters, $perPage);
     }
+
+    public function paginateHistorico(array $filters = [], int $perPage = 10)
+    {
+        return $this->cajaRepository->paginateHistorico($filters, $perPage);
+    }
 }

@@ -10,11 +10,13 @@ use App\Modules\Compras\Application\DTOs\CreateCompraDTO;
 use App\Modules\Compras\Application\DTOs\UpdateCompraDTO;
 use App\Modules\Compras\Application\DTOs\CreatePagoCompraDTO;
 use App\Modules\Compras\Application\Interfaces\CompraRepositoryInterface;
+use App\Modules\Caja\Application\Interfaces\CajaRepositoryInterface;
 
 class CompraService
 {
     public function __construct(
-        protected CompraRepositoryInterface $compraRepository
+        protected CompraRepositoryInterface $compraRepository,
+        protected CajaRepositoryInterface $cajaRepository
     ) {}
 
     public function paginate(array $filters = [], int $perPage = 10)
@@ -202,6 +204,16 @@ class CompraService
                     throw new HttpException(422, "No hay caja {$compra->tipo_pago} abierta.");
                 }
 
+                $ingresos = $this->cajaRepository->sumMovimientosByTipo($caja->id, 'ingreso');
+                $egresos = $this->cajaRepository->sumMovimientosByTipo($caja->id, 'egreso');
+
+                $saldoActual = $ingresos - $egresos;
+
+                if($compra->total > $saldoActual)
+                {
+                    throw new HttpException(422, 'No hay saldo soficiente en caja');
+                }
+
                 $this->compraRepository->createMovimientoCaja([
                     'caja_id' => $caja->id,
                     'tipo_movimiento' => 'egreso',
@@ -254,14 +266,26 @@ class CompraService
                 'observacion' => $dto->observacion,
             ]);
 
-            $cajaAbierta = $this->compraRepository->getCajaAbierta();
-        
-            if (!$cajaAbierta) {
-                throw new HttpException(422, 'No se puede registrar el pago porque no hay una caja abierta.');
+            $tipoCaja = $dto->metodo_pago === 'efectivo' ? 'efectivo' : 'digital';
+
+            $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
+
+            if (!$caja) {
+                throw new HttpException(422, "No hay caja {$compra->tipo_pago} abierta.");
+            }
+
+            $ingresos = $this->cajaRepository->sumMovimientosByTipo($caja->id, 'ingreso');
+            $egresos = $this->cajaRepository->sumMovimientosByTipo($caja->id, 'egreso');
+
+            $saldoActual = $ingresos - $egresos;
+
+            if($dto->monto > $saldoActual)
+            {
+                throw new HttpException(422, 'No hay saldo soficiente en caja');
             }
 
             $this->compraRepository->createMovimientoCaja([
-                'caja_id' => $cajaAbierta->id,
+                'caja_id' => $caja->id,
                 'tipo_movimiento' => 'egreso',
                 'categoria_movimiento' => 'pago_proveedor',
                 'origen_modulo' => 'compras',
@@ -272,6 +296,7 @@ class CompraService
                 'user_id' => $dto->user_id,
                 'fecha_movimiento' => now(),
             ]);
+            
 
             $nuevoTotalPagado = (float) $compra->total_pagado + (float) $dto->monto;
             $nuevoSaldoPendiente = (float) $compra->total - $nuevoTotalPagado;

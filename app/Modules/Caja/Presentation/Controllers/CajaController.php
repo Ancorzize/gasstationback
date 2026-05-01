@@ -149,4 +149,40 @@ class CajaController extends Controller
             return ApiResponse::error('Error interno del servidor.', 500);
         }
     }
+
+    public function historico(Request $request)
+    {
+        try {
+            if (!$request->user()->can('ver_caja')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $filters = [
+                'tipo_caja' => $request->get('tipo_caja'),
+                'estado' => $request->get('estado'),
+                'fecha_desde' => $request->get('fecha_desde'),
+                'fecha_hasta' => $request->get('fecha_hasta'),
+                'user_apertura_id' => $request->get('user_apertura_id'),
+                'user_cierre_id' => $request->get('user_cierre_id'),
+                'search' => $request->get('search'),
+            ];
+
+            $cajas = $this->cajaService->paginateHistorico(
+                $filters,
+                (int) $request->get('per_page', 10)
+            );
+
+            return ApiResponse::success([
+                'items' => CajaResource::collection($cajas->items()),
+                'pagination' => [
+                    'current_page' => $cajas->currentPage(),
+                    'last_page' => $cajas->lastPage(),
+                    'per_page' => $cajas->perPage(),
+                    'total' => $cajas->total(),
+                ]
+            ], 'Histórico de cajas.');
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
 }

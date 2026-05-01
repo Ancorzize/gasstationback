@@ -137,4 +137,55 @@ class CajaRepository implements CajaRepositoryInterface
             ->where('tipo_movimiento', $tipoMovimiento)
             ->sum('monto');
     }
+
+    public function paginateHistorico(array $filters = [], int $perPage = 10): LengthAwarePaginator
+    {
+        $query = Caja::query()
+            ->with(['usuarioApertura', 'usuarioCierre']);
+
+        if (!empty($filters['tipo_caja'])) {
+            $query->where('tipo_caja', $filters['tipo_caja']);
+        }
+
+        if (!empty($filters['estado'])) {
+            $query->where('estado', $filters['estado']);
+        }
+
+        if (!empty($filters['fecha_desde'])) {
+            $query->whereDate('fecha_apertura', '>=', $filters['fecha_desde']);
+        }
+
+        if (!empty($filters['fecha_hasta'])) {
+            $query->whereDate('fecha_apertura', '<=', $filters['fecha_hasta']);
+        }
+
+        if (!empty($filters['user_apertura_id'])) {
+            $query->where('user_apertura_id', $filters['user_apertura_id']);
+        }
+
+        if (!empty($filters['user_cierre_id'])) {
+            $query->where('user_cierre_id', $filters['user_cierre_id']);
+        }
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+
+            $query->where(function ($q) use ($search) {
+                $q->where('tipo_caja', 'like', "%{$search}%")
+                    ->orWhere('estado', 'like', "%{$search}%")
+                    ->orWhere('observacion_apertura', 'like', "%{$search}%")
+                    ->orWhere('observacion_cierre', 'like', "%{$search}%")
+                    ->orWhereHas('usuarioApertura', function ($sub) use ($search) {
+                        $sub->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('usuarioCierre', function ($sub) use ($search) {
+                        $sub->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        return $query->orderByDesc('fecha_apertura')->paginate($perPage);
+    }
 }
