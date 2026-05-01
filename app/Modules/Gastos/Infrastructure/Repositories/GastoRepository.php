@@ -60,7 +60,13 @@ class GastoRepository implements GastoRepositoryInterface
 
     public function findById(int $id): ?Gasto
     {
-        return Gasto::with(['proveedor', 'categoriaGasto', 'caja', 'usuario'])->find($id);
+        return Gasto::with([
+                'proveedor',
+                'categoriaGasto',
+                'caja',
+                'usuario',
+                'usuarioAnulacion',
+            ])->find($id);
     }
 
     public function create(array $data): Gasto
@@ -100,5 +106,17 @@ class GastoRepository implements GastoRepositoryInterface
             ->sum('monto');
 
         return (float) $ingresos - (float) $egresos;
+    }
+
+    public function update(Gasto $gasto, array $data): Gasto
+    {
+        $gasto->update($data);
+
+        return $gasto->fresh()->load([
+            'proveedor',
+            'categoriaGasto',
+            'caja',
+            'usuario',
+        ]);
     }
 }

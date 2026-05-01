@@ -19,11 +19,15 @@ class Gasto extends Model
         'valor',
         'descripcion',
         'estado',
+        'motivo_anulacion',
+        'user_anulacion_id',
+        'fecha_anulacion',
     ];
 
     protected $casts = [
         'fecha_gasto' => 'date',
         'valor' => 'decimal:2',
+        'fecha_anulacion' => 'datetime',
     ];
 
     public function proveedor(): BelongsTo
@@ -44,5 +48,10 @@ class Gasto extends Model
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function usuarioAnulacion(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_anulacion_id');
     }
 }

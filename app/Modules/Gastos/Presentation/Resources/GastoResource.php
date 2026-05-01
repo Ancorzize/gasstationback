@@ -29,6 +29,7 @@ class GastoResource extends JsonResource
             'caja_id' => $this->caja_id,
             'caja' => $this->caja ? [
                 'id' => $this->caja->id,
+                'tipo_caja' => $this->caja->tipo_caja,
                 'estado' => $this->caja->estado,
                 'fecha_apertura' => $this->caja->fecha_apertura,
             ] : null,
@@ -47,6 +48,14 @@ class GastoResource extends JsonResource
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'motivo_anulacion' => $this->motivo_anulacion,
+            'user_anulacion_id' => $this->user_anulacion_id,
+            'usuario_anulacion' => $this->usuarioAnulacion ? [
+                'id' => $this->usuarioAnulacion->id,
+                'name' => $this->usuarioAnulacion->name,
+                'email' => $this->usuarioAnulacion->email,
+            ] : null,
+            'fecha_anulacion' => $this->fecha_anulacion,
         ];
     }
 }

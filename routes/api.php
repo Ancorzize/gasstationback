@@ -195,6 +195,7 @@ Route::middleware(['auth:sanctum'])->prefix('gastos')->group(function () {
     Route::get('/', [GastoController::class, 'index']);
     Route::get('/{id}', [GastoController::class, 'show']);
     Route::post('/', [GastoController::class, 'store']);
+    Route::post('/{id}/anular', [GastoController::class, 'anular']);
 });
 
 Route::middleware(['auth:sanctum'])->prefix('pagos-compra')->group(function () {
@@ -202,3 +203,4 @@ Route::middleware(['auth:sanctum'])->prefix('pagos-compra')->group(function () {
     Route::get('/{id}', [PagoCompraController::class, 'show']);
     Route::get('/{id}/pdf', [PagoCompraController::class, 'pdf']);
 });
+

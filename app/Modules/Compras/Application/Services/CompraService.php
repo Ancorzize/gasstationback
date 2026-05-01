@@ -211,7 +211,7 @@ class CompraService
 
                 if($compra->total > $saldoActual)
                 {
-                    throw new HttpException(422, 'No hay saldo soficiente en caja');
+                    throw new HttpException(422, 'No hay saldo suficiente en caja');
                 }
 
                 $this->compraRepository->createMovimientoCaja([
@@ -281,7 +281,7 @@ class CompraService
 
             if($dto->monto > $saldoActual)
             {
-                throw new HttpException(422, 'No hay saldo soficiente en caja');
+                throw new HttpException(422, 'No hay saldo suficiente en caja');
             }
 
             $this->compraRepository->createMovimientoCaja([

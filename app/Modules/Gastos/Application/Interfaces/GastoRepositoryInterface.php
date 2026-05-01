@@ -23,4 +23,6 @@ interface GastoRepositoryInterface
     public function createMovimientoCaja(array $data): MovimientoCaja;
 
     public function getSaldoEfectivoCaja(int $cajaId): float;
+
+    public function update(Gasto $gasto, array $data): Gasto;
 }

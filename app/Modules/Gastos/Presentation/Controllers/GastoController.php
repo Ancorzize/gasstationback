@@ -10,6 +10,7 @@ use App\Modules\Gastos\Application\Services\GastoService;
 use App\Modules\Gastos\Infrastructure\Mappers\GastoMapper;
 use App\Modules\Gastos\Presentation\Requests\StoreGastoRequest;
 use App\Modules\Gastos\Presentation\Resources\GastoResource;
+use App\Modules\Gastos\Presentation\Requests\AnularGastoRequest;
 
 class GastoController extends Controller
 {
@@ -91,6 +92,30 @@ class GastoController extends Controller
                 new GastoResource($gasto),
                 'Gasto registrado correctamente.',
                 201
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function anular(AnularGastoRequest $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('anular_gastos')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $gasto = $this->gastoService->anular(
+                $id,
+                $request->validated()['motivo_anulacion'],
+                $request->user()->id
+            );
+
+            return ApiResponse::success(
+                new GastoResource($gasto),
+                'Gasto anulado correctamente.'
             );
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
