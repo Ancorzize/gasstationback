@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-
+//ejecutar: php artisan db:seed --class=RolesAndPermissionsSeeder
 class RolesAndPermissionsSeeder extends Seeder
 {
     public function run(): void
@@ -43,7 +43,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'cambiar_estado_marcas',
             'eliminar_marcas',
 
-            // Categorías
+            // Categorías producto
             'ver_categorias_producto',
             'crear_categorias_producto',
             'editar_categorias_producto',
@@ -71,12 +71,50 @@ class RolesAndPermissionsSeeder extends Seeder
             'cambiar_estado_servicios',
             'eliminar_servicios',
 
-            // Configuración
+            // Configuración empresa
             'ver_configuracion_empresa',
             'editar_configuracion_empresa',
+
+            // Bodegas
+            'ver_bodegas',
+            'crear_bodegas',
+            'editar_bodegas',
+            'cambiar_estado_bodegas',
+            'eliminar_bodegas',
+
+            // Inventario
+            'ver_inventario',
+            'ver_mis_productos_bodega',
+            'ver_movimientos_inventario',
+            'crear_movimientos_inventario',
+            'importar_inventario',
+
+            // Compras
+            'ver_compras',
+            'crear_compras',
+            'editar_compras',
+            'confirmar_compras',
+            'ver_pagos_compra',
+            'registrar_pagos_compra',
+
+            // Caja
+            'ver_caja',
+            'abrir_caja',
+            'cerrar_caja',
+            'ver_movimientos_caja',
+
+            // Categorías gasto
+            'ver_categorias_gasto',
+            'crear_categorias_gasto',
+            'editar_categorias_gasto',
+            'cambiar_estado_categorias_gasto',
+
+            // Gastos
+            'ver_gastos',
+            'crear_gastos',
+            'anular_gastos',
         ];
 
-        // Crear permisos
         foreach ($permissions as $perm) {
             Permission::firstOrCreate([
                 'name' => $perm,
@@ -84,21 +122,17 @@ class RolesAndPermissionsSeeder extends Seeder
             ]);
         }
 
-        // Crear rol admin
         $adminRole = Role::firstOrCreate([
             'name' => 'admin',
             'guard_name' => 'sanctum',
         ]);
 
-        // Asignar TODOS los permisos al admin
         $adminRole->syncPermissions($permissions);
 
-        // Crear otros roles básicos
         Role::firstOrCreate(['name' => 'cajero', 'guard_name' => 'sanctum']);
         Role::firstOrCreate(['name' => 'vendedor', 'guard_name' => 'sanctum']);
         Role::firstOrCreate(['name' => 'islero', 'guard_name' => 'sanctum']);
 
-        // Crear usuario administrador por defecto
         $adminUser = User::firstOrCreate(
             ['email' => 'admin@admin.com'],
             [
@@ -108,9 +142,10 @@ class RolesAndPermissionsSeeder extends Seeder
             ]
         );
 
-        // Asignar rol admin
         if (!$adminUser->hasRole('admin')) {
             $adminUser->assignRole($adminRole);
         }
+
+        $adminUser->syncPermissions($permissions);
     }
 }

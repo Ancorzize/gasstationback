@@ -47,7 +47,7 @@ class GastoService
                 throw new HttpException(422, 'La categoría de gasto está inactiva.');
             }
 
-            $tipoCaja = $dto->medio_pago === 'efectivo' ? 'efectivo' : 'digital';
+            $tipoCaja = $dto->medio_pago === 'efectivo' || $dto->medio_pago === 'consignacion'? 'efectivo' : 'digital';
 
             $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
 
@@ -111,7 +111,7 @@ class GastoService
                 throw new HttpException(422, 'El gasto ya se encuentra anulado.');
             }
 
-            $tipoCaja = $gasto->medio_pago === 'efectivo' ? 'efectivo' : 'digital';
+            $tipoCaja = $gasto->medio_pago === 'efectivo' || $gasto->medio_pago === 'consignacion'? 'efectivo' : 'digital';
 
             $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
 

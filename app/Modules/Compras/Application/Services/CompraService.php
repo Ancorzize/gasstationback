@@ -183,9 +183,9 @@ class CompraService
                 );
             }
 
-            $estadoPago = $compra->tipo_pago === 'efectivo' ? 'pagado' : 'pendiente';
-            $totalPagado = $compra->tipo_pago === 'efectivo' ? (float) $compra->total : 0;
-            $saldoPendiente = $compra->tipo_pago === 'efectivo' ? 0 : (float) $compra->total;
+            $estadoPago = $compra->tipo_pago != 'credito' ? 'pagado' : 'pendiente';
+            $totalPagado = $compra->tipo_pago != 'credito' ? (float) $compra->total : 0;
+            $saldoPendiente = $compra->tipo_pago != 'credito' ? 0 : (float) $compra->total;
 
             $this->compraRepository->update($compra, [
                 'estado' => 'confirmada',
@@ -196,7 +196,7 @@ class CompraService
 
             if($compra->tipo_pago != 'credito')
             {
-                $tipoCaja = $compra->tipo_pago === 'efectivo' ? 'efectivo' : 'digital';
+                $tipoCaja = $compra->tipo_pago === 'efectivo' || $compra->tipo_pago === 'consignacion'? 'efectivo' : 'digital';
 
                 $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
 
@@ -266,7 +266,7 @@ class CompraService
                 'observacion' => $dto->observacion,
             ]);
 
-            $tipoCaja = $dto->metodo_pago === 'efectivo' ? 'efectivo' : 'digital';
+            $tipoCaja = $compra->tipo_pago === 'efectivo' || $compra->tipo_pago === 'consignacion'? 'efectivo' : 'digital';
 
             $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
 
