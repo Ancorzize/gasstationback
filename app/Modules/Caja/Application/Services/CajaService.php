@@ -36,7 +36,7 @@ class CajaService
             $cajaDigital = $this->crearCajaPorTipo(
                 tipoCaja: 'digital',
                 montoApertura: $dto->monto_apertura_digital,
-                medioPago: 'electronico',
+                medioPago: 'digital',
                 dto: $dto
             );
 

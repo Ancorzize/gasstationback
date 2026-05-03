@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('origen_modulo', 50)->nullable(); // caja | ventas | compras | gastos
             $table->unsignedBigInteger('origen_id')->nullable();
 
-            $table->string('medio_pago', 20); // efectivo | electronico
+            $table->string('medio_pago', 20); 
             $table->decimal('monto', 14, 2);
 
             $table->text('descripcion')->nullable();

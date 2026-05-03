@@ -30,7 +30,7 @@ return new class extends Migration
                 ->constrained('users')
                 ->restrictOnDelete();
 
-            $table->string('medio_pago', 20); // efectivo | electronico
+            $table->string('medio_pago', 20); 
             $table->decimal('valor', 14, 2);
             $table->text('descripcion');
             $table->string('estado', 20)->default('registrado'); // registrado

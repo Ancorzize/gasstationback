@@ -73,6 +73,12 @@ class CajaRepository implements CajaRepositoryInterface
             $query->whereDate('fecha_movimiento', '<=', $filters['fecha_hasta']);
         }
 
+        if (!empty($filters['tipo_caja'])) {
+            $query->whereHas('caja', function ($q) use ($filters) {
+                $q->where('tipo_caja', $filters['tipo_caja']);
+            });
+        }
+
         if (!empty($filters['search'])) {
             $search = $filters['search'];
 
