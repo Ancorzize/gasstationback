@@ -12,6 +12,13 @@ class MovimientoCajaResource extends JsonResource
         return [
             'id' => $this->id,
             'caja_id' => $this->caja_id,
+            'caja' => $this->caja ? [
+                'id' => $this->caja->id,
+                'tipo_caja' => $this->caja->tipo_caja,
+                'estado' => $this->caja->estado,
+                'fecha_apertura' => $this->caja->fecha_apertura,
+                'fecha_cierre' => $this->caja->fecha_cierre,
+            ] : null,
             'tipo_movimiento' => $this->tipo_movimiento,
             'categoria_movimiento' => $this->categoria_movimiento,
             'origen_modulo' => $this->origen_modulo,
