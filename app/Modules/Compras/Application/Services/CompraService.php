@@ -265,13 +265,13 @@ class CompraService
                 'metodo_pago' => $dto->metodo_pago,
                 'observacion' => $dto->observacion,
             ]);
-
-            $tipoCaja = $compra->tipo_pago === 'efectivo' || $compra->tipo_pago === 'consignacion'? 'efectivo' : 'digital';
+            
+            $tipoCaja = $dto->metodo_pago === 'efectivo' || $dto->metodo_pago === 'consignacion'? 'efectivo' : 'digital';
 
             $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
 
             if (!$caja) {
-                throw new HttpException(422, "No hay caja {$compra->tipo_pago} abierta.");
+                throw new HttpException(422, "No hay caja {$tipoCaja} abierta.");
             }
 
             $ingresos = $this->cajaRepository->sumMovimientosByTipo($caja->id, 'ingreso');
