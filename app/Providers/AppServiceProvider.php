@@ -46,6 +46,8 @@ use App\Modules\Gastos\Application\Interfaces\GastoRepositoryInterface;
 use App\Modules\Gastos\Infrastructure\Repositories\GastoRepository;
 use App\Modules\PagosCompra\Application\Interfaces\PagoCompraRepositoryInterface;
 use App\Modules\PagosCompra\Infrastructure\Repositories\PagoCompraRepository;
+use App\Modules\Cartera\Application\Interfaces\CarteraRepositoryInterface;
+use App\Modules\Cartera\Infrastructure\Repositories\CarteraRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -72,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CategoriaGastoRepositoryInterface::class, CategoriaGastoRepository::class);
         $this->app->bind( GastoRepositoryInterface::class, GastoRepository::class);
         $this->app->bind(PagoCompraRepositoryInterface::class, PagoCompraRepository::class);
+        $this->app->bind(CarteraRepositoryInterface::class, CarteraRepository::class);
     }
 
     public function boot(): void

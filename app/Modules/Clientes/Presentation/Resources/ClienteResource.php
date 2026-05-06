@@ -20,6 +20,11 @@ class ClienteResource extends JsonResource
             'email' => $this->email,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at,
+            'maneja_credito' => $this->maneja_credito,
+            'cupo_credito' => $this->cupo_credito,
+            'dias_credito' => $this->dias_credito,
+            'saldo_credito' => $this->saldo_credito,
+            'cupo_disponible' => (float) $this->cupo_credito - (float) $this->saldo_credito,
         ];
     }
 }

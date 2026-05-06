@@ -25,6 +25,8 @@ use App\Modules\Caja\Presentation\Controllers\CajaController;
 use App\Modules\CategoriasGasto\Presentation\Controllers\CategoriaGastoController;
 use App\Modules\Gastos\Presentation\Controllers\GastoController;
 use App\Modules\PagosCompra\Presentation\Controllers\PagoCompraController;
+use App\Modules\Cartera\Presentation\Controllers\CarteraController;
+
 Route::get('/historico', [CajaController::class, 'historico']);
 
 Route::prefix('auth')->group(function () {
@@ -47,9 +49,12 @@ Route::middleware(['auth:sanctum'])->prefix('usuarios')->group(function () {
 });
 
 Route::middleware(['auth:sanctum'])->prefix('clientes')->group(function () {
+
     Route::get('/', [ClienteController::class, 'index']);
-    Route::get('/{id}', [ClienteController::class, 'show']);
     Route::post('/', [ClienteController::class, 'store']);
+    Route::get('/{id}/estado-cuenta', [ClienteController::class, 'estadoCuenta']);
+    Route::patch('/{id}/credito', [ClienteController::class, 'configurarCredito']);
+    Route::get('/{id}', [ClienteController::class, 'show']);
     Route::put('/{id}', [ClienteController::class, 'update']);
     Route::patch('/{id}/status', [ClienteController::class, 'changeStatus']);
 });
@@ -204,3 +209,8 @@ Route::middleware(['auth:sanctum'])->prefix('pagos-compra')->group(function () {
     Route::get('/{id}/pdf', [PagoCompraController::class, 'pdf']);
 });
 
+Route::middleware(['auth:sanctum'])->prefix('cartera')->group(function () {
+    Route::get('/resumen', [CarteraController::class, 'resumen']);
+    Route::get('/movimientos', [CarteraController::class, 'movimientos']);
+    Route::post('/abonos', [CarteraController::class, 'registrarAbono']);
+});

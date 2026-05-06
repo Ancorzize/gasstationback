@@ -12,11 +12,14 @@ use App\Modules\Clientes\Presentation\Requests\StoreClienteRequest;
 use App\Modules\Clientes\Presentation\Requests\UpdateClienteRequest;
 use App\Modules\Clientes\Presentation\Requests\ChangeClienteStatusRequest;
 use App\Modules\Clientes\Presentation\Resources\ClienteResource;
+use App\Modules\Cartera\Application\Services\CarteraService;
+use App\Modules\Cartera\Presentation\Resources\MovimientoCarteraResource;
 
 class ClienteController extends Controller
 {
     public function __construct(
-        protected ClienteService $clienteService
+        protected ClienteService $clienteService,
+        protected CarteraService $carteraService
     ) {}
 
     public function index(Request $request)
@@ -129,6 +132,62 @@ class ClienteController extends Controller
                 new ClienteResource($cliente),
                 'Estado del cliente actualizado correctamente.'
             );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function estadoCuenta(Request $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('ver_estado_cuenta_clientes')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $data = $this->carteraService->estadoCuenta($id);
+
+            return ApiResponse::success([
+                'cliente' => new ClienteResource($data['cliente']),
+                'cupo_credito' => $data['cupo_credito'],
+                'saldo_credito' => $data['saldo_credito'],
+                'cupo_disponible' => $data['cupo_disponible'],
+                'movimientos' => MovimientoCarteraResource::collection($data['movimientos']),
+            ], 'Estado de cuenta del cliente.');
+
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function configurarCredito(Request $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('configurar_credito_clientes')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $validated = $request->validate([
+                'maneja_credito' => ['required', 'boolean'],
+                'cupo_credito' => ['required_if:maneja_credito,true', 'numeric', 'min:0'],
+                'dias_credito' => ['nullable', 'integer', 'min:0'],
+            ]);
+
+            $cliente = $this->carteraService->configurarCredito(
+                $id,
+                (bool) $validated['maneja_credito'],
+                (float) ($validated['cupo_credito'] ?? 0),
+                $validated['dias_credito'] ?? null
+            );
+
+            return ApiResponse::success(
+                new ClienteResource($cliente),
+                'Configuración de crédito actualizada correctamente.'
+            );
+
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
