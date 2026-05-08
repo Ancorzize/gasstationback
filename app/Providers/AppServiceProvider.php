@@ -56,6 +56,8 @@ use App\Modules\Bombas\Application\Interfaces\BombaRepositoryInterface;
 use App\Modules\Bombas\Infrastructure\Repositories\BombaRepository;
 use App\Modules\Mangueras\Application\Interfaces\MangueraRepositoryInterface;
 use App\Modules\Mangueras\Infrastructure\Repositories\MangueraRepository;
+use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterface;
+use App\Modules\TurnosIslero\Infrastructure\Repositories\TurnoIsleroRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -87,6 +89,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(EstacionRepositoryInterface::class, EstacionRepository::class);
         $this->app->bind(BombaRepositoryInterface::class, BombaRepository::class);
         $this->app->bind(MangueraRepositoryInterface::class, MangueraRepository::class);
+        $this->app->bind(TurnoIsleroRepositoryInterface::class, TurnoIsleroRepository::class);
     }
 
     public function boot(): void

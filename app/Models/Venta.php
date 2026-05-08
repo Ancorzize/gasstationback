@@ -31,6 +31,7 @@ class Venta extends Model
         'motivo_anulacion',
         'user_anulacion_id',
         'fecha_anulacion',
+        'turno_islero_id',
     ];
 
     protected $casts = [
@@ -69,5 +70,10 @@ class Venta extends Model
     public function usuarioAnulacion(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_anulacion_id');
+    }
+
+    public function turnoIslero(): BelongsTo
+    {
+        return $this->belongsTo(TurnoIslero::class, 'turno_islero_id');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Manguera extends Model
 {
@@ -31,5 +32,10 @@ class Manguera extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class);
+    }
+
+    public function lecturas(): HasMany
+    {
+        return $this->hasMany(LecturaManguera::class);
     }
 }

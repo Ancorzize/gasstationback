@@ -36,6 +36,18 @@ class AbonoCarteraResource extends JsonResource
                 'email' => $this->usuario->email,
             ] : null,
             'created_at' => $this->created_at,
+            'turno_islero_id' => $this->turno_islero_id,
+            'turno_islero' => $this->turnoIslero ? [
+                'id' => $this->turnoIslero->id,
+                'estado' => $this->turnoIslero->estado,
+                'fecha_apertura' => $this->turnoIslero->fecha_apertura,
+                'fecha_cierre' => $this->turnoIslero->fecha_cierre,
+                'estacion' => $this->turnoIslero->estacion ? [
+                    'id' => $this->turnoIslero->estacion->id,
+                    'nombre' => $this->turnoIslero->estacion->nombre,
+                    'codigo' => $this->turnoIslero->estacion->codigo,
+                ] : null,
+            ] : null,
         ];
     }
 }

@@ -102,6 +102,8 @@ class CarteraService
             $saldoAnterior = (float) $cliente->saldo_credito;
             $saldoNuevo = $saldoAnterior - $dto->valor;
 
+            $turnoAbierto = $this->carteraRepository->getTurnoAbiertoByUser($dto->user_id);
+
             $abono = $this->carteraRepository->createAbono([
                 'cliente_id' => $cliente->id,
                 'caja_id' => $caja->id,
@@ -111,6 +113,7 @@ class CarteraService
                 'observacion' => $dto->observacion,
                 'estado' => 'registrado',
                 'user_id' => $dto->user_id,
+                'turno_islero_id' => $turnoAbierto?->id,
             ]);
 
             $this->carteraRepository->updateCliente($cliente, [

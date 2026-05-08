@@ -12,6 +12,7 @@ use App\Models\MovimientoCaja;
 use App\Models\MovimientoCartera;
 use App\Models\MovimientoInventario;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Models\TurnoIslero;
 
 interface VentaRepositoryInterface
 {
@@ -48,4 +49,6 @@ interface VentaRepositoryInterface
     public function updateVenta(Venta $venta, array $data): Venta;
 
     public function incrementInventario(int $productoId, int $bodegaId, float $cantidad): void;
+
+    public function getTurnoAbiertoByUser(int $userId): ?TurnoIslero;
 }

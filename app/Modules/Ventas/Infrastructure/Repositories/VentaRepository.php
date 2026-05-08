@@ -14,14 +14,14 @@ use App\Models\MovimientoCartera;
 use App\Models\MovimientoInventario;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
-
+use App\Models\TurnoIslero;
 class VentaRepository implements VentaRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
         $query = Venta::query()
-            ->with(['cliente', 'usuario', 'detalles.producto', 'pagos']);
-
+            ->with(['cliente', 'usuario', 'turnoIslero.estacion', 'detalles.producto', 'pagos']);
+                
         if (!empty($filters['search'])) {
             $search = $filters['search'];
 
@@ -67,6 +67,7 @@ class VentaRepository implements VentaRepositoryInterface
         return Venta::with([
             'cliente',
             'usuario',
+            'turnoIslero.estacion',
             'usuarioAnulacion',
             'detalles.producto.marca',
             'detalles.producto.categoriaProducto',
@@ -167,5 +168,13 @@ class VentaRepository implements VentaRepositoryInterface
             ->where('producto_id', $productoId)
             ->where('bodega_id', $bodegaId)
             ->increment('cantidad', $cantidad);
+    }
+
+    public function getTurnoAbiertoByUser(int $userId): ?TurnoIslero
+    {
+        return TurnoIslero::query()
+            ->where('user_id', $userId)
+            ->where('estado', 'abierto')
+            ->first();
     }
 }

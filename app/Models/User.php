@@ -7,6 +7,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -39,5 +40,10 @@ class User extends Authenticatable
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class, 'bodega_id');
+    }
+
+    public function turnosIslero(): HasMany
+    {
+        return $this->hasMany(TurnoIslero::class);
     }
 }

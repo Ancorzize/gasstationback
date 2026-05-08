@@ -139,6 +139,7 @@ class VentaService
                 }
             }
 
+            $turnoAbierto = $this->ventaRepository->getTurnoAbiertoByUser($dto->user_id);
 
             $venta = $this->ventaRepository->createVenta([
                 'prefijo' => 'POS',
@@ -160,6 +161,7 @@ class VentaService
                 'saldo_pendiente' => $saldoPendiente,
                 'fecha_venta' => now(),
                 'observacion' => $dto->observacion,
+                'turno_islero_id' => $turnoAbierto?->id,
             ]);
 
 

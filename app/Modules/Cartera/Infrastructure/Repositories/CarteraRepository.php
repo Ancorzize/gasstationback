@@ -10,7 +10,7 @@ use App\Models\MovimientoCartera;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Modules\Cartera\Application\Interfaces\CarteraRepositoryInterface;
-
+use App\Models\TurnoIslero;
 class CarteraRepository implements CarteraRepositoryInterface
 {
     public function findClienteById(int $id): ?Cliente
@@ -27,7 +27,7 @@ class CarteraRepository implements CarteraRepositoryInterface
 
     public function createAbono(array $data): AbonoCartera
     {
-        return AbonoCartera::create($data)->load(['cliente', 'caja', 'usuario']);
+        return AbonoCartera::create($data)->load(['cliente', 'caja', 'usuario', 'turnoIslero.estacion']);
     }
 
     public function createMovimientoCartera(array $data): MovimientoCartera
@@ -127,5 +127,13 @@ class CarteraRepository implements CarteraRepositoryInterface
             'clientes_con_deuda' => $clientesConDeuda,
             'clientes_al_dia' => $clientesAlDia,
         ];
+    }
+
+    public function getTurnoAbiertoByUser(int $userId): ?TurnoIslero
+    {
+        return TurnoIslero::query()
+            ->where('user_id', $userId)
+            ->where('estado', 'abierto')
+            ->first();
     }
 }

@@ -9,7 +9,7 @@ use App\Models\MovimientoCaja;
 use App\Models\MovimientoCartera;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-
+use App\Models\TurnoIslero;
 interface CarteraRepositoryInterface
 {
     public function findClienteById(int $id): ?Cliente;
@@ -29,4 +29,6 @@ interface CarteraRepositoryInterface
     public function createMovimientoCaja(array $data): MovimientoCaja;
 
     public function resumen(): array;
+
+    public function getTurnoAbiertoByUser(int $userId): ?TurnoIslero;
 }

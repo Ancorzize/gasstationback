@@ -30,6 +30,7 @@ use App\Modules\Ventas\Presentation\Controllers\VentaController;
 use App\Modules\Estaciones\Presentation\Controllers\EstacionController;
 use App\Modules\Bombas\Presentation\Controllers\BombaController;
 use App\Modules\Mangueras\Presentation\Controllers\MangueraController;
+use App\Modules\TurnosIslero\Presentation\Controllers\TurnoIsleroController;
 
 Route::get('/historico', [CajaController::class, 'historico']);
 
@@ -249,4 +250,12 @@ Route::middleware(['auth:sanctum'])->prefix('mangueras')->group(function () {
     Route::post('/', [MangueraController::class, 'store']);
     Route::put('/{id}', [MangueraController::class, 'update']);
     Route::patch('/{id}/status', [MangueraController::class, 'changeStatus']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('turnos-islero')->group(function () {
+    Route::get('/', [TurnoIsleroController::class, 'index']);
+    Route::get('/actual', [TurnoIsleroController::class, 'actual']);
+    Route::get('/{id}', [TurnoIsleroController::class, 'show']);
+    Route::post('/abrir', [TurnoIsleroController::class, 'abrir']);
+    Route::post('/{id}/cerrar', [TurnoIsleroController::class, 'cerrar']);
 });

@@ -24,4 +24,9 @@ class Estacion extends Model
     {
         return $this->hasMany(Bomba::class);
     }
+
+    public function turnosIslero(): HasMany
+    {
+        return $this->hasMany(TurnoIslero::class);
+    }
 }
