@@ -140,4 +140,22 @@ class TurnoIsleroController extends Controller
             return ApiResponse::error('Error interno del servidor.', 500);
         }
     }
+
+    public function resumenCierre(Request $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('ver_turnos_islero')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            return ApiResponse::success(
+                $this->turnoService->resumenCierre($id),
+                'Resumen previo al cierre del turno.'
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
 }

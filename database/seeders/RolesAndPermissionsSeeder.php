@@ -120,7 +120,44 @@ class RolesAndPermissionsSeeder extends Seeder
             'registrar_abonos_cartera',
             'ver_movimientos_cartera',
             'ver_reporte_cartera',
-            'anular_abonos_cartera'
+            'anular_abonos_cartera',
+
+            //ISLEROS
+            // Estaciones
+            'ver_estaciones',
+            'crear_estaciones',
+            'editar_estaciones',
+            'cambiar_estado_estaciones',
+
+            // Bombas
+            'ver_bombas',
+            'crear_bombas',
+            'editar_bombas',
+            'cambiar_estado_bombas',
+
+            // Mangueras
+            'ver_mangueras',
+            'crear_mangueras',
+            'editar_mangueras',
+            'cambiar_estado_mangueras',
+
+            // Turnos Islero
+            'ver_turnos_islero',
+            'abrir_turnos_islero',
+            'cerrar_turnos_islero',
+
+            // Cartera
+            'ver_cartera_clientes',
+            'registrar_abonos_cartera',
+
+            // Ventas
+            'ver_ventas',
+            'crear_ventas',
+            'anular_ventas',
+
+            // Isleros / reportes
+            'ver_reportes_turnos_islero',
+            'ver_resumen_cierre_turnos_islero',
         ];
 
         foreach ($permissions as $perm) {

@@ -30,8 +30,6 @@ class TurnoIsleroMapper
             pagos_transferencia: isset($data['pagos_transferencia']) ? (float) $data['pagos_transferencia'] : 0,
             pagos_consignacion: isset($data['pagos_consignacion']) ? (float) $data['pagos_consignacion'] : 0,
             pagos_efectivo: isset($data['pagos_efectivo']) ? (float) $data['pagos_efectivo'] : 0,
-            total_creditos: isset($data['total_creditos']) ? (float) $data['total_creditos'] : 0,
-            total_abonos: isset($data['total_abonos']) ? (float) $data['total_abonos'] : 0,
             otros_movimientos: isset($data['otros_movimientos']) ? (float) $data['otros_movimientos'] : 0,
             otros_movimientos_detalle: $data['otros_movimientos_detalle'] ?? null,
 

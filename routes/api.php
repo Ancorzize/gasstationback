@@ -255,6 +255,9 @@ Route::middleware(['auth:sanctum'])->prefix('mangueras')->group(function () {
 Route::middleware(['auth:sanctum'])->prefix('turnos-islero')->group(function () {
     Route::get('/', [TurnoIsleroController::class, 'index']);
     Route::get('/actual', [TurnoIsleroController::class, 'actual']);
+
+    Route::get('/{id}/resumen-cierre', [TurnoIsleroController::class, 'resumenCierre']);
+
     Route::get('/{id}', [TurnoIsleroController::class, 'show']);
     Route::post('/abrir', [TurnoIsleroController::class, 'abrir']);
     Route::post('/{id}/cerrar', [TurnoIsleroController::class, 'cerrar']);

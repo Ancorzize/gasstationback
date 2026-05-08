@@ -8,7 +8,8 @@ use App\Models\LecturaManguera;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterface;
-
+use App\Models\Venta;
+use App\Models\AbonoCartera;
 class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
@@ -135,5 +136,29 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
         $lectura->update($data);
 
         return $lectura->fresh()->load(['manguera.producto', 'manguera.bomba']);
+    }
+
+    public function sumVentasPagadasByTurno(int $turnoId): float
+    {
+        return (float) Venta::query()
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'confirmada')
+            ->sum('total_pagado');
+    }
+
+    public function sumVentasCreditoByTurno(int $turnoId): float
+    {
+        return (float) Venta::query()
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'confirmada')
+            ->sum('saldo_pendiente');
+    }
+
+    public function sumAbonosByTurno(int $turnoId): float
+    {
+        return (float) AbonoCartera::query()
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'registrado')
+            ->sum('valor');
     }
 }

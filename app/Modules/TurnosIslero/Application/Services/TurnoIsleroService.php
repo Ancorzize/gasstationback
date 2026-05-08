@@ -146,18 +146,23 @@ class TurnoIsleroService
                 $totalCombustible += $totalVenta;
             }
 
+            $totalVentasLubricantes = $this->turnoRepository->sumVentasPagadasByTurno($turno->id);
+            $totalCreditos = $this->turnoRepository->sumVentasCreditoByTurno($turno->id);
+            $totalAbonos = $this->turnoRepository->sumAbonosByTurno($turno->id);
+
             $totalReportado =
                 $dto->pagos_qr +
                 $dto->pagos_datafono +
                 $dto->pagos_transferencia +
                 $dto->pagos_consignacion +
                 $dto->pagos_efectivo +
-                $dto->total_creditos +
+                $totalCreditos +
                 $dto->otros_movimientos;
 
             $totalSistema =
                 $totalCombustible +
-                $dto->total_abonos;
+                $totalVentasLubricantes +
+                $totalAbonos;
 
             $balanceFinal = $totalSistema - $totalReportado;
 
@@ -166,8 +171,9 @@ class TurnoIsleroService
                 'estado' => 'cerrado',
 
                 'total_ventas_combustible' => $totalCombustible,
-                'total_creditos' => $dto->total_creditos,
-                'total_abonos' => $dto->total_abonos,
+                'total_ventas_lubricantes' => $totalVentasLubricantes,
+                'total_creditos' => $totalCreditos,
+                'total_abonos' => $totalAbonos,
 
                 'pagos_qr' => $dto->pagos_qr,
                 'pagos_datafono' => $dto->pagos_datafono,
@@ -186,5 +192,75 @@ class TurnoIsleroService
 
             return $this->findById($turno->id);
         });
+    }
+
+    public function resumenCierre(int $id): array
+    {
+        $turno = $this->findById($id);
+
+        if ($turno->estado !== 'abierto') {
+            throw new HttpException(422, 'Solo se puede consultar resumen de cierre para turnos abiertos.');
+        }
+
+        $lecturas = $turno->lecturas->map(function ($lectura) {
+            return [
+                'id' => $lectura->id,
+                'manguera_id' => $lectura->manguera_id,
+                'manguera' => $lectura->manguera ? [
+                    'id' => $lectura->manguera->id,
+                    'nombre' => $lectura->manguera->nombre,
+                    'codigo' => $lectura->manguera->codigo,
+                    'bomba' => $lectura->manguera->bomba ? [
+                        'id' => $lectura->manguera->bomba->id,
+                        'nombre' => $lectura->manguera->bomba->nombre,
+                        'codigo' => $lectura->manguera->bomba->codigo,
+                    ] : null,
+                    'producto' => $lectura->manguera->producto ? [
+                        'id' => $lectura->manguera->producto->id,
+                        'codigo' => $lectura->manguera->producto->codigo,
+                        'nombre' => $lectura->manguera->producto->nombre,
+                    ] : null,
+                ] : null,
+                'lectura_inicial' => $lectura->lectura_inicial,
+                'lectura_final' => $lectura->lectura_final,
+                'precio_galon' => $lectura->precio_galon,
+                'galones_vendidos' => $lectura->galones_vendidos,
+                'total_venta' => $lectura->total_venta,
+            ];
+        });
+
+        $totalVentasLubricantes = $this->turnoRepository->sumVentasPagadasByTurno($turno->id);
+        $totalCreditos = $this->turnoRepository->sumVentasCreditoByTurno($turno->id);
+        $totalAbonos = $this->turnoRepository->sumAbonosByTurno($turno->id);
+
+        return [
+            'turno' => [
+                'id' => $turno->id,
+                'estado' => $turno->estado,
+                'fecha_apertura' => $turno->fecha_apertura,
+                'estacion' => $turno->estacion ? [
+                    'id' => $turno->estacion->id,
+                    'nombre' => $turno->estacion->nombre,
+                    'codigo' => $turno->estacion->codigo,
+                ] : null,
+                'usuario' => $turno->usuario ? [
+                    'id' => $turno->usuario->id,
+                    'name' => $turno->usuario->name,
+                    'email' => $turno->usuario->email,
+                ] : null,
+            ],
+
+            'lecturas' => $lecturas,
+
+            'totales_sistema' => [
+                'ventas_combustible' => 0,
+                'ventas_lubricantes' => $totalVentasLubricantes,
+                'creditos' => $totalCreditos,
+                'abonos' => $totalAbonos,
+                'total_sistema_sin_combustible' => $totalVentasLubricantes + $totalAbonos,
+            ],
+
+            'nota' => 'Las ventas de combustible se calculan definitivamente al enviar las lecturas finales en el cierre.',
+        ];
     }
 }

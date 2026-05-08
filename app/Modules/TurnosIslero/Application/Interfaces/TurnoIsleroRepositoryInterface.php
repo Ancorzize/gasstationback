@@ -31,4 +31,11 @@ interface TurnoIsleroRepositoryInterface
     public function findLecturaByTurnoAndManguera(int $turnoId, int $mangueraId): ?LecturaManguera;
 
     public function updateLectura(LecturaManguera $lectura, array $data): LecturaManguera;
+
+    public function sumVentasPagadasByTurno(int $turnoId): float;
+
+    public function sumVentasCreditoByTurno(int $turnoId): float;
+
+    public function sumAbonosByTurno(int $turnoId): float;
+
 }

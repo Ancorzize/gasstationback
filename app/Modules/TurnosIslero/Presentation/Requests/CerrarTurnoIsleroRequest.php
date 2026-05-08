@@ -23,8 +23,7 @@ class CerrarTurnoIsleroRequest extends FormRequest
             'pagos_transferencia' => ['nullable', 'numeric', 'gte:0'],
             'pagos_consignacion' => ['nullable', 'numeric', 'gte:0'],
             'pagos_efectivo' => ['nullable', 'numeric', 'gte:0'],
-            'total_creditos' => ['nullable', 'numeric', 'gte:0'],
-            'total_abonos' => ['nullable', 'numeric', 'gte:0'],
+          
             'otros_movimientos' => ['nullable', 'numeric', 'gte:0'],
             'otros_movimientos_detalle' => ['nullable', 'string'],
 

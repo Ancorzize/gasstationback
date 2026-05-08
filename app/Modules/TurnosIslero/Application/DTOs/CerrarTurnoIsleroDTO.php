@@ -15,8 +15,6 @@ class CerrarTurnoIsleroDTO
         public float $pagos_transferencia,
         public float $pagos_consignacion,
         public float $pagos_efectivo,
-        public float $total_creditos,
-        public float $total_abonos,
         public float $otros_movimientos,
         public ?string $otros_movimientos_detalle,
 
