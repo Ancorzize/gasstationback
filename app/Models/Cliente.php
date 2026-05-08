@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
-
 class Cliente extends Model
 {
     protected $table = 'clientes';
@@ -43,5 +42,10 @@ class Cliente extends Model
     public function abonosCartera(): HasMany
     {
         return $this->hasMany(AbonoCartera::class);
+    }
+
+    public function ventas(): HasMany
+    {
+        return $this->hasMany(Venta::class);
     }
 }

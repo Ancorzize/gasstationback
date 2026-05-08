@@ -26,6 +26,10 @@ use App\Modules\CategoriasGasto\Presentation\Controllers\CategoriaGastoControlle
 use App\Modules\Gastos\Presentation\Controllers\GastoController;
 use App\Modules\PagosCompra\Presentation\Controllers\PagoCompraController;
 use App\Modules\Cartera\Presentation\Controllers\CarteraController;
+use App\Modules\Ventas\Presentation\Controllers\VentaController;
+use App\Modules\Estaciones\Presentation\Controllers\EstacionController;
+use App\Modules\Bombas\Presentation\Controllers\BombaController;
+use App\Modules\Mangueras\Presentation\Controllers\MangueraController;
 
 Route::get('/historico', [CajaController::class, 'historico']);
 
@@ -213,4 +217,36 @@ Route::middleware(['auth:sanctum'])->prefix('cartera')->group(function () {
     Route::get('/resumen', [CarteraController::class, 'resumen']);
     Route::get('/movimientos', [CarteraController::class, 'movimientos']);
     Route::post('/abonos', [CarteraController::class, 'registrarAbono']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('ventas')->group(function () {
+    Route::get('/', [VentaController::class, 'index']);
+    Route::get('/{id}', [VentaController::class, 'show']);
+    Route::post('/', [VentaController::class, 'store']);
+    Route::post('/{id}/anular', [VentaController::class, 'anular']);
+    Route::get('/{id}/pdf', [VentaController::class, 'pdf']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('estaciones')->group(function () {
+    Route::get('/', [EstacionController::class, 'index']);
+    Route::get('/{id}', [EstacionController::class, 'show']);
+    Route::post('/', [EstacionController::class, 'store']);
+    Route::put('/{id}', [EstacionController::class, 'update']);
+    Route::patch('/{id}/status', [EstacionController::class, 'changeStatus']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('bombas')->group(function () {
+    Route::get('/', [BombaController::class, 'index']);
+    Route::get('/{id}', [BombaController::class, 'show']);
+    Route::post('/', [BombaController::class, 'store']);
+    Route::put('/{id}', [BombaController::class, 'update']);
+    Route::patch('/{id}/status', [BombaController::class, 'changeStatus']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('mangueras')->group(function () {
+    Route::get('/', [MangueraController::class, 'index']);
+    Route::get('/{id}', [MangueraController::class, 'show']);
+    Route::post('/', [MangueraController::class, 'store']);
+    Route::put('/{id}', [MangueraController::class, 'update']);
+    Route::patch('/{id}/status', [MangueraController::class, 'changeStatus']);
 });

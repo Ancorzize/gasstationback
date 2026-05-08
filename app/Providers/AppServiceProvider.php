@@ -48,6 +48,14 @@ use App\Modules\PagosCompra\Application\Interfaces\PagoCompraRepositoryInterface
 use App\Modules\PagosCompra\Infrastructure\Repositories\PagoCompraRepository;
 use App\Modules\Cartera\Application\Interfaces\CarteraRepositoryInterface;
 use App\Modules\Cartera\Infrastructure\Repositories\CarteraRepository;
+use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
+use App\Modules\Ventas\Infrastructure\Repositories\VentaRepository;
+use App\Modules\Estaciones\Application\Interfaces\EstacionRepositoryInterface;
+use App\Modules\Estaciones\Infrastructure\Repositories\EstacionRepository;
+use App\Modules\Bombas\Application\Interfaces\BombaRepositoryInterface;
+use App\Modules\Bombas\Infrastructure\Repositories\BombaRepository;
+use App\Modules\Mangueras\Application\Interfaces\MangueraRepositoryInterface;
+use App\Modules\Mangueras\Infrastructure\Repositories\MangueraRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -75,6 +83,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind( GastoRepositoryInterface::class, GastoRepository::class);
         $this->app->bind(PagoCompraRepositoryInterface::class, PagoCompraRepository::class);
         $this->app->bind(CarteraRepositoryInterface::class, CarteraRepository::class);
+        $this->app->bind(VentaRepositoryInterface::class, VentaRepository::class);
+        $this->app->bind(EstacionRepositoryInterface::class, EstacionRepository::class);
+        $this->app->bind(BombaRepositoryInterface::class, BombaRepository::class);
+        $this->app->bind(MangueraRepositoryInterface::class, MangueraRepository::class);
     }
 
     public function boot(): void

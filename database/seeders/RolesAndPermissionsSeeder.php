@@ -113,6 +113,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'ver_gastos',
             'crear_gastos',
             'anular_gastos',
+
+            'ver_cartera',
+            'configurar_credito_clientes',
+            'ver_estado_cuenta_clientes',
+            'registrar_abonos_cartera',
+            'ver_movimientos_cartera',
+            'ver_reporte_cartera',
+            'anular_abonos_cartera'
         ];
 
         foreach ($permissions as $perm) {
