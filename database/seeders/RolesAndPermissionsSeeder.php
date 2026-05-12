@@ -158,6 +158,10 @@ class RolesAndPermissionsSeeder extends Seeder
             // Isleros / reportes
             'ver_reportes_turnos_islero',
             'ver_resumen_cierre_turnos_islero',
+
+            'ver_precios_combustible',
+            'crear_precios_combustible',
+            'cambiar_estado_precios_combustible',
         ];
 
         foreach ($permissions as $perm) {

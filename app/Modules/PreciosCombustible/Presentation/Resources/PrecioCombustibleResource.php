@@ -1,28 +1,16 @@
 <?php
 
-namespace App\Modules\Mangueras\Presentation\Resources;
+namespace App\Modules\PreciosCombustible\Presentation\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class MangueraResource extends JsonResource
+class PrecioCombustibleResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
-
-            'bomba_id' => $this->bomba_id,
-            'bomba' => $this->bomba ? [
-                'id' => $this->bomba->id,
-                'nombre' => $this->bomba->nombre,
-                'codigo' => $this->bomba->codigo,
-                'estacion' => $this->bomba->estacion ? [
-                    'id' => $this->bomba->estacion->id,
-                    'nombre' => $this->bomba->estacion->nombre,
-                    'codigo' => $this->bomba->estacion->codigo,
-                ] : null,
-            ] : null,
 
             'producto_id' => $this->producto_id,
             'producto' => $this->producto ? [
@@ -34,10 +22,13 @@ class MangueraResource extends JsonResource
                 'unidad_medida' => $this->producto->unidadMedida?->abreviatura,
             ] : null,
 
-            'nombre' => $this->nombre,
-            'codigo' => $this->codigo,
+            'precio' => $this->precio,
+            'fecha_inicio' => $this->fecha_inicio,
+            'fecha_fin' => $this->fecha_fin,
             'is_active' => $this->is_active,
+
             'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

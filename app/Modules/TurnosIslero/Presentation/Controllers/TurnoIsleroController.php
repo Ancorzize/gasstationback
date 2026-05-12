@@ -11,7 +11,7 @@ use App\Modules\TurnosIslero\Infrastructure\Mappers\TurnoIsleroMapper;
 use App\Modules\TurnosIslero\Presentation\Requests\AbrirTurnoIsleroRequest;
 use App\Modules\TurnosIslero\Presentation\Requests\CerrarTurnoIsleroRequest;
 use App\Modules\TurnosIslero\Presentation\Resources\TurnoIsleroResource;
-
+use Illuminate\Validation\ValidationException;
 class TurnoIsleroController extends Controller
 {
     public function __construct(
@@ -108,6 +108,12 @@ class TurnoIsleroController extends Controller
                 'Turno abierto correctamente.',
                 201
             );
+        } catch (ValidationException $e) {
+            return ApiResponse::error(
+                'Debe enviar lectura inicial para algunas mangueras.',
+                422,
+                $e->errors()
+            );
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
@@ -156,6 +162,6 @@ class TurnoIsleroController extends Controller
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
             return ApiResponse::error('Error interno del servidor.', 500);
-        }
+        } 
     }
 }

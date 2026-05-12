@@ -49,4 +49,9 @@ class Producto extends Model
     {
         return $this->hasMany(DetalleVenta::class);
     }
+
+    public function preciosCombustible(): HasMany
+    {
+        return $this->hasMany(PrecioCombustible::class);
+    }
 }

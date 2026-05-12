@@ -26,7 +26,7 @@ class UpdateMangueraRequest extends FormRequest
                 'max:50',
                 Rule::unique('mangueras', 'codigo')->ignore($id),
             ],
-            'precio_actual' => ['required', 'numeric', 'gte:0'],
+
         ];
     }
 
@@ -39,9 +39,7 @@ class UpdateMangueraRequest extends FormRequest
             'producto_id.exists' => 'El producto seleccionado no existe.',
             'nombre.required' => 'El nombre de la manguera es obligatorio.',
             'codigo.required' => 'El código de la manguera es obligatorio.',
-            'codigo.unique' => 'Ya existe una manguera con ese código.',
-            'precio_actual.required' => 'El precio actual es obligatorio.',
-            'precio_actual.numeric' => 'El precio actual debe ser numérico.',
+            'codigo.unique' => 'Ya existe una manguera con ese código.'
         ];
     }
 }

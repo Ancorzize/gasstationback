@@ -31,6 +31,7 @@ use App\Modules\Estaciones\Presentation\Controllers\EstacionController;
 use App\Modules\Bombas\Presentation\Controllers\BombaController;
 use App\Modules\Mangueras\Presentation\Controllers\MangueraController;
 use App\Modules\TurnosIslero\Presentation\Controllers\TurnoIsleroController;
+use App\Modules\PreciosCombustible\Presentation\Controllers\PrecioCombustibleController;
 
 Route::get('/historico', [CajaController::class, 'historico']);
 
@@ -261,4 +262,11 @@ Route::middleware(['auth:sanctum'])->prefix('turnos-islero')->group(function () 
     Route::get('/{id}', [TurnoIsleroController::class, 'show']);
     Route::post('/abrir', [TurnoIsleroController::class, 'abrir']);
     Route::post('/{id}/cerrar', [TurnoIsleroController::class, 'cerrar']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('precios-combustible')->group(function () {
+    Route::get('/', [PrecioCombustibleController::class, 'index']);
+    Route::get('/{id}', [PrecioCombustibleController::class, 'show']);
+    Route::post('/', [PrecioCombustibleController::class, 'store']);
+    Route::patch('/{id}/status', [PrecioCombustibleController::class, 'changeStatus']);
 });

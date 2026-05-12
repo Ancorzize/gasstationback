@@ -37,7 +37,6 @@ class MangueraService
             'producto_id' => $dto->producto_id,
             'nombre' => $dto->nombre,
             'codigo' => $dto->codigo,
-            'precio_actual' => $dto->precio_actual,
             'is_active' => true,
         ]);
     }
@@ -51,7 +50,6 @@ class MangueraService
             'producto_id' => $dto->producto_id,
             'nombre' => $dto->nombre,
             'codigo' => $dto->codigo,
-            'precio_actual' => $dto->precio_actual,
         ]);
     }
 

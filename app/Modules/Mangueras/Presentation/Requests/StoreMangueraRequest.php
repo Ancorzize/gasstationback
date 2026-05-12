@@ -18,7 +18,6 @@ class StoreMangueraRequest extends FormRequest
             'producto_id' => ['required', 'integer', 'exists:productos,id'],
             'nombre' => ['required', 'string', 'max:150'],
             'codigo' => ['required', 'string', 'max:50', 'unique:mangueras,codigo'],
-            'precio_actual' => ['required', 'numeric', 'gte:0'],
         ];
     }
 
@@ -32,8 +31,6 @@ class StoreMangueraRequest extends FormRequest
             'nombre.required' => 'El nombre de la manguera es obligatorio.',
             'codigo.required' => 'El código de la manguera es obligatorio.',
             'codigo.unique' => 'Ya existe una manguera con ese código.',
-            'precio_actual.required' => 'El precio actual es obligatorio.',
-            'precio_actual.numeric' => 'El precio actual debe ser numérico.',
         ];
     }
 }

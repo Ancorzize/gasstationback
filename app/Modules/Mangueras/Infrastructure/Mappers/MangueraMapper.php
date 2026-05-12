@@ -14,7 +14,6 @@ class MangueraMapper
             producto_id: (int) $data['producto_id'],
             nombre: $data['nombre'],
             codigo: $data['codigo'],
-            precio_actual: (float) $data['precio_actual'],
         );
     }
 
@@ -25,7 +24,6 @@ class MangueraMapper
             producto_id: (int) $data['producto_id'],
             nombre: $data['nombre'],
             codigo: $data['codigo'],
-            precio_actual: (float) $data['precio_actual'],
         );
     }
 }

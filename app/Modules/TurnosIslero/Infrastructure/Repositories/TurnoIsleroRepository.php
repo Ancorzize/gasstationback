@@ -10,6 +10,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterface;
 use App\Models\Venta;
 use App\Models\AbonoCartera;
+use App\Models\PrecioCombustible;
 class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
@@ -160,5 +161,21 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             ->where('turno_islero_id', $turnoId)
             ->where('estado', 'registrado')
             ->sum('valor');
+    }
+
+    public function getPrecioVigenteProducto(int $productoId): ?float
+    {
+        $precio = PrecioCombustible::query()
+            ->where('producto_id', $productoId)
+            ->where('is_active', true)
+            ->where('fecha_inicio', '<=', now())
+            ->where(function ($q) {
+                $q->whereNull('fecha_fin')
+                ->orWhere('fecha_fin', '>=', now());
+            })
+            ->orderByDesc('fecha_inicio')
+            ->first();
+
+        return $precio ? (float) $precio->precio : null;
     }
 }

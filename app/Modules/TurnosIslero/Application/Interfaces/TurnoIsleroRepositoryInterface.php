@@ -38,4 +38,6 @@ interface TurnoIsleroRepositoryInterface
 
     public function sumAbonosByTurno(int $turnoId): float;
 
+    public function getPrecioVigenteProducto(int $productoId): ?float;
+
 }

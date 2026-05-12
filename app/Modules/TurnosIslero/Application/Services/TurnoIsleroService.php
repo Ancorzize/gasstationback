@@ -8,7 +8,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\TurnosIslero\Application\DTOs\AbrirTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\DTOs\CerrarTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterface;
-
+use Illuminate\Validation\ValidationException;
 class TurnoIsleroService
 {
     public function __construct(
@@ -49,6 +49,17 @@ class TurnoIsleroService
                 throw new HttpException(422, 'La estación no tiene mangueras activas.');
             }
 
+            $lecturasFaltantes = $this->getLecturasInicialesFaltantes(
+                $mangueras,
+                $dto->lecturas_iniciales
+            );
+
+            if (count($lecturasFaltantes) > 0) {
+                throw ValidationException::withMessages([
+                    'lecturas_iniciales_faltantes' => $lecturasFaltantes,
+                ]);
+            }
+
             $turno = $this->turnoRepository->createTurno([
                 'estacion_id' => $dto->estacion_id,
                 'user_id' => $dto->user_id,
@@ -64,19 +75,64 @@ class TurnoIsleroService
                     $dto->lecturas_iniciales
                 );
 
+                $precioVigente = $this->turnoRepository->getPrecioVigenteProducto(
+                    $manguera->producto_id
+                );
+
+                if ($precioVigente === null) {
+                    throw new HttpException(
+                        422,
+                        "El producto {$manguera->producto?->nombre} no tiene precio de combustible vigente."
+                    );
+                }
+
                 $this->turnoRepository->createLectura([
                     'turno_islero_id' => $turno->id,
                     'manguera_id' => $manguera->id,
                     'lectura_inicial' => $lecturaInicial,
                     'lectura_final' => null,
                     'galones_vendidos' => 0,
-                    'precio_galon' => $manguera->precio_actual,
+                    'precio_galon' => $precioVigente,
                     'total_venta' => 0,
                 ]);
             }
 
             return $this->findById($turno->id);
         });
+    }
+
+    private function getLecturasInicialesFaltantes($mangueras, array $lecturasIniciales): array
+    {
+        $faltantes = [];
+
+        foreach ($mangueras as $manguera) {
+            $tieneLecturaEnRequest = collect($lecturasIniciales)
+                ->contains(fn ($item) => (int) $item['manguera_id'] === (int) $manguera->id);
+
+            $ultimaLectura = $this->turnoRepository->getUltimaLecturaCerradaByManguera($manguera->id);
+
+            $tieneLecturaAnterior = $ultimaLectura && $ultimaLectura->lectura_final !== null;
+
+            if (!$tieneLecturaEnRequest && !$tieneLecturaAnterior) {
+                $faltantes[] = [
+                    'manguera_id' => $manguera->id,
+                    'codigo' => $manguera->codigo,
+                    'nombre' => $manguera->nombre,
+                    'producto' => $manguera->producto ? [
+                        'id' => $manguera->producto->id,
+                        'codigo' => $manguera->producto->codigo,
+                        'nombre' => $manguera->producto->nombre,
+                    ] : null,
+                    'bomba' => $manguera->bomba ? [
+                        'id' => $manguera->bomba->id,
+                        'codigo' => $manguera->bomba->codigo,
+                        'nombre' => $manguera->bomba->nombre,
+                    ] : null,
+                ];
+            }
+        }
+
+        return $faltantes;
     }
 
     private function resolverLecturaInicial(int $mangueraId, array $lecturasIniciales): float

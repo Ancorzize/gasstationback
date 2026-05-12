@@ -9,6 +9,5 @@ class CreateMangueraDTO
         public int $producto_id,
         public string $nombre,
         public string $codigo,
-        public float $precio_actual,
     ) {}
 }

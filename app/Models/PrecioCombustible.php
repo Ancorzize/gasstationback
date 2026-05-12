@@ -4,36 +4,28 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Manguera extends Model
+class PrecioCombustible extends Model
 {
-    protected $table = 'mangueras';
+    protected $table = 'precios_combustible';
 
     protected $fillable = [
-        'bomba_id',
         'producto_id',
-        'nombre',
-        'codigo',
+        'precio',
+        'fecha_inicio',
+        'fecha_fin',
         'is_active',
     ];
 
     protected $casts = [
+        'precio' => 'decimal:2',
+        'fecha_inicio' => 'datetime',
+        'fecha_fin' => 'datetime',
         'is_active' => 'boolean',
     ];
-
-    public function bomba(): BelongsTo
-    {
-        return $this->belongsTo(Bomba::class);
-    }
 
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class);
-    }
-
-    public function lecturas(): HasMany
-    {
-        return $this->hasMany(LecturaManguera::class);
     }
 }
