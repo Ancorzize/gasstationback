@@ -13,6 +13,7 @@ use App\Modules\Ventas\Presentation\Resources\VentaResource;
 use App\Modules\Ventas\Presentation\Requests\AnularVentaRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ConfiguracionEmpresa;
+use App\Modules\Ventas\Presentation\Requests\StoreVentaCombustibleRequest;
 
 class VentaController extends Controller
 {
@@ -171,6 +172,32 @@ class VentaController extends Controller
                 'empresa' => $empresa,
             ])->stream("venta_{$venta->numero_factura}.pdf");
 
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function storeCombustible(StoreVentaCombustibleRequest $request)
+    {
+        try {
+            if (!$request->user()->can('crear_ventas')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $dto = VentaMapper::fromArrayToCreateCombustibleDTO(
+                $request->validated(),
+                $request->user()->id
+            );
+
+            $venta = $this->ventaService->createCombustible($dto);
+
+            return ApiResponse::success(
+                new VentaResource($venta),
+                'Venta de combustible registrada correctamente.',
+                201
+            );
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {

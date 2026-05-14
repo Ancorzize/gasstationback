@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Manguera extends Model
 {
@@ -35,5 +36,15 @@ class Manguera extends Model
     public function lecturas(): HasMany
     {
         return $this->hasMany(LecturaManguera::class);
+    }
+
+    public function turnosIslero(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            TurnoIslero::class,
+            'turno_islero_mangueras',
+            'manguera_id',
+            'turno_islero_id'
+        )->withTimestamps();
     }
 }

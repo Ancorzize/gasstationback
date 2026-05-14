@@ -5,6 +5,7 @@ namespace App\Modules\Ventas\Infrastructure\Mappers;
 use App\Modules\Ventas\Application\DTOs\CreateVentaDTO;
 use App\Modules\Ventas\Application\DTOs\DetalleVentaDTO;
 use App\Modules\Ventas\Application\DTOs\PagoVentaDTO;
+use App\Modules\Ventas\Application\DTOs\CreateVentaCombustibleDTO;
 
 class VentaMapper
 {
@@ -39,6 +40,19 @@ class VentaMapper
             observacion: $data['observacion'] ?? null,
             detalles: $detalles,
             pagos: $pagos,
+        );
+    }
+
+    public static function fromArrayToCreateCombustibleDTO(array $data, int $userId): CreateVentaCombustibleDTO
+    {
+        return new CreateVentaCombustibleDTO(
+            manguera_id: (int) $data['manguera_id'],
+            tipo_venta: $data['tipo_venta'],
+            cliente_id: isset($data['cliente_id']) ? (int) $data['cliente_id'] : null,
+            metodo_pago: $data['metodo_pago'],
+            monto: (float) $data['monto'],
+            observacion: $data['observacion'] ?? null,
+            user_id: $userId,
         );
     }
 }

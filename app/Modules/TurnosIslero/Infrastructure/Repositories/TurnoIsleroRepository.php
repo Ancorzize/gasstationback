@@ -178,4 +178,44 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 
         return $precio ? (float) $precio->precio : null;
     }
+
+    public function getManguerasOcupadasEnTurnosAbiertos(int $estacionId): Collection
+    {
+        return Manguera::query()
+            ->whereHas('bomba', function ($q) use ($estacionId) {
+                $q->where('estacion_id', $estacionId);
+            })
+            ->whereHas('turnosIslero', function ($q) {
+                $q->where('estado', 'abierto');
+            })
+            ->pluck('id');
+    }
+
+    public function getManguerasDisponiblesByEstacion(int $estacionId): Collection
+    {
+        $ocupadas = $this->getManguerasOcupadasEnTurnosAbiertos($estacionId);
+
+        return Manguera::query()
+            ->with(['bomba.estacion', 'producto.marca', 'producto.categoriaProducto', 'producto.unidadMedida'])
+            ->where('is_active', true)
+            ->whereHas('bomba', function ($q) use ($estacionId) {
+                $q->where('estacion_id', $estacionId);
+            })
+            ->whereNotIn('id', $ocupadas)
+            ->orderBy('codigo')
+            ->get();
+    }
+
+    public function getManguerasByIds(array $ids): Collection
+    {
+        return Manguera::query()
+            ->with(['bomba.estacion', 'producto.marca', 'producto.categoriaProducto', 'producto.unidadMedida'])
+            ->whereIn('id', $ids)
+            ->get();
+    }
+
+    public function asignarMangueras(TurnoIslero $turno, array $mangueraIds): void
+    {
+        $turno->mangueras()->sync($mangueraIds);
+    }
 }

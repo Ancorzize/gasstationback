@@ -43,14 +43,34 @@ class TurnoIsleroService
                 throw new HttpException(422, 'Ya tienes un turno abierto.');
             }
 
-            $mangueras = $this->turnoRepository->getManguerasActivasByEstacion($dto->estacion_id);
+            $manguerasSeleccionadas = $this->turnoRepository->getManguerasByIds($dto->mangueras);
 
-            if ($mangueras->isEmpty()) {
-                throw new HttpException(422, 'La estación no tiene mangueras activas.');
+            if ($manguerasSeleccionadas->count() !== count(array_unique($dto->mangueras))) {
+                throw new HttpException(422, 'Una o más mangueras seleccionadas no existen.');
+            }
+
+            foreach ($manguerasSeleccionadas as $manguera) {
+                if (!(bool) $manguera->is_active) {
+                    throw new HttpException(422, "La manguera {$manguera->nombre} está inactiva.");
+                }
+
+                if ((int) $manguera->bomba?->estacion_id !== (int) $dto->estacion_id) {
+                    throw new HttpException(422, "La manguera {$manguera->nombre} no pertenece a la estación seleccionada.");
+                }
+            }
+
+            $ocupadas = $this->turnoRepository
+                ->getManguerasOcupadasEnTurnosAbiertos($dto->estacion_id)
+                ->toArray();
+
+            $manguerasOcupadasSeleccionadas = array_values(array_intersect($dto->mangueras, $ocupadas));
+
+            if (count($manguerasOcupadasSeleccionadas) > 0) {
+                throw new HttpException(422, 'Una o más mangueras seleccionadas ya están asignadas a un turno abierto.');
             }
 
             $lecturasFaltantes = $this->getLecturasInicialesFaltantes(
-                $mangueras,
+                $manguerasSeleccionadas,
                 $dto->lecturas_iniciales
             );
 
@@ -69,7 +89,9 @@ class TurnoIsleroService
                 'observacion_apertura' => $dto->observacion_apertura,
             ]);
 
-            foreach ($mangueras as $manguera) {
+            $this->turnoRepository->asignarMangueras($turno, $dto->mangueras);
+
+            foreach ($manguerasSeleccionadas as $manguera) {
                 $lecturaInicial = $this->resolverLecturaInicial(
                     $manguera->id,
                     $dto->lecturas_iniciales
@@ -169,6 +191,27 @@ class TurnoIsleroService
             }
 
             $totalCombustible = 0;
+
+            $manguerasAsignadas = $turno->lecturas->pluck('manguera_id')->map(fn ($id) => (int) $id)->toArray();
+
+            $manguerasEnviadas = collect($dto->lecturas_finales)
+                ->pluck('manguera_id')
+                ->map(fn ($id) => (int) $id)
+                ->toArray();
+
+            $faltantes = array_values(array_diff($manguerasAsignadas, $manguerasEnviadas));
+
+            if (count($faltantes) > 0) {
+                throw ValidationException::withMessages([
+                    'lecturas_finales_faltantes' => $faltantes,
+                ]);
+            }
+
+            $noAsignadas = array_values(array_diff($manguerasEnviadas, $manguerasAsignadas));
+
+            if (count($noAsignadas) > 0) {
+                throw new HttpException(422, 'Una o más mangueras enviadas no pertenecen a este turno.');
+            }
 
             foreach ($dto->lecturas_finales as $item) {
                 $mangueraId = (int) $item['manguera_id'];
@@ -318,5 +361,32 @@ class TurnoIsleroService
 
             'nota' => 'Las ventas de combustible se calculan definitivamente al enviar las lecturas finales en el cierre.',
         ];
+    }
+
+    public function manguerasDisponibles(int $estacionId): array
+    {
+        $mangueras = $this->turnoRepository->getManguerasDisponiblesByEstacion($estacionId);
+
+        return $mangueras->map(function ($manguera) {
+            $ultimaLectura = $this->turnoRepository->getUltimaLecturaCerradaByManguera($manguera->id);
+
+            return [
+                'id' => $manguera->id,
+                'codigo' => $manguera->codigo,
+                'nombre' => $manguera->nombre,
+                'bomba' => $manguera->bomba ? [
+                    'id' => $manguera->bomba->id,
+                    'codigo' => $manguera->bomba->codigo,
+                    'nombre' => $manguera->bomba->nombre,
+                ] : null,
+                'producto' => $manguera->producto ? [
+                    'id' => $manguera->producto->id,
+                    'codigo' => $manguera->producto->codigo,
+                    'nombre' => $manguera->producto->nombre,
+                ] : null,
+                'ultima_lectura_final' => $ultimaLectura ? (float) $ultimaLectura->lectura_final : null,
+                'requiere_lectura_inicial' => !$ultimaLectura || $ultimaLectura->lectura_final === null,
+            ];
+        })->values()->toArray();
     }
 }

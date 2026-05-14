@@ -15,6 +15,8 @@ use App\Models\MovimientoInventario;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
 use App\Models\TurnoIslero;
+use App\Models\Manguera;
+use App\Models\LecturaManguera;
 class VentaRepository implements VentaRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
@@ -175,6 +177,25 @@ class VentaRepository implements VentaRepositoryInterface
         return TurnoIslero::query()
             ->where('user_id', $userId)
             ->where('estado', 'abierto')
+            ->first();
+    }
+
+    public function findMangueraById(int $id): ?Manguera
+    {
+        return Manguera::with([
+            'bomba.estacion',
+            'producto.marca',
+            'producto.categoriaProducto',
+            'producto.unidadMedida',
+        ])->find($id);
+    }
+
+    public function getLecturaAbiertaByTurnoAndManguera(int $turnoId, int $mangueraId): ?LecturaManguera
+    {
+        return LecturaManguera::query()
+            ->where('turno_islero_id', $turnoId)
+            ->where('manguera_id', $mangueraId)
+            ->whereNull('lectura_final')
             ->first();
     }
 }

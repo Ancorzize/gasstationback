@@ -140,6 +140,12 @@ class TurnoIsleroController extends Controller
                 new TurnoIsleroResource($turno),
                 'Turno cerrado correctamente.'
             );
+        } catch (ValidationException $e) {
+            return ApiResponse::error(
+                'Debe enviar lectura final para todas las mangueras del turno.',
+                422,
+                $e->errors()
+            );
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
@@ -163,5 +169,27 @@ class TurnoIsleroController extends Controller
         } catch (\Throwable $e) {
             return ApiResponse::error('Error interno del servidor.', 500);
         } 
+    }
+
+    public function manguerasDisponibles(Request $request)
+    {
+        try {
+            if (!$request->user()->can('abrir_turnos_islero')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $request->validate([
+                'estacion_id' => ['required', 'integer', 'exists:estaciones,id'],
+            ]);
+
+            return ApiResponse::success(
+                $this->turnoService->manguerasDisponibles((int) $request->get('estacion_id')),
+                'Mangueras disponibles.'
+            );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return ApiResponse::error('Datos inválidos.', 422, $e->errors());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
     }
 }

@@ -223,8 +223,11 @@ Route::middleware(['auth:sanctum'])->prefix('cartera')->group(function () {
 
 Route::middleware(['auth:sanctum'])->prefix('ventas')->group(function () {
     Route::get('/', [VentaController::class, 'index']);
-    Route::get('/{id}', [VentaController::class, 'show']);
     Route::post('/', [VentaController::class, 'store']);
+
+    Route::post('/combustible', [VentaController::class, 'storeCombustible']);
+
+    Route::get('/{id}', [VentaController::class, 'show']);
     Route::post('/{id}/anular', [VentaController::class, 'anular']);
     Route::get('/{id}/pdf', [VentaController::class, 'pdf']);
 });
@@ -256,9 +259,8 @@ Route::middleware(['auth:sanctum'])->prefix('mangueras')->group(function () {
 Route::middleware(['auth:sanctum'])->prefix('turnos-islero')->group(function () {
     Route::get('/', [TurnoIsleroController::class, 'index']);
     Route::get('/actual', [TurnoIsleroController::class, 'actual']);
-
+    Route::get('/mangueras-disponibles', [TurnoIsleroController::class, 'manguerasDisponibles']);
     Route::get('/{id}/resumen-cierre', [TurnoIsleroController::class, 'resumenCierre']);
-
     Route::get('/{id}', [TurnoIsleroController::class, 'show']);
     Route::post('/abrir', [TurnoIsleroController::class, 'abrir']);
     Route::post('/{id}/cerrar', [TurnoIsleroController::class, 'cerrar']);

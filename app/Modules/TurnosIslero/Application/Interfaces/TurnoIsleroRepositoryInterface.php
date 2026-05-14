@@ -40,4 +40,12 @@ interface TurnoIsleroRepositoryInterface
 
     public function getPrecioVigenteProducto(int $productoId): ?float;
 
+    public function getManguerasDisponiblesByEstacion(int $estacionId): Collection;
+
+    public function getManguerasByIds(array $ids): Collection;
+
+    public function asignarMangueras(TurnoIslero $turno, array $mangueraIds): void;
+
+    public function getManguerasOcupadasEnTurnosAbiertos(int $estacionId): Collection;
+
 }

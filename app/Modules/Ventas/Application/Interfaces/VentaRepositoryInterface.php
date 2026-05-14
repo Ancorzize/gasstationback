@@ -13,6 +13,8 @@ use App\Models\MovimientoCartera;
 use App\Models\MovimientoInventario;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Models\TurnoIslero;
+use App\Models\Manguera;
+use App\Models\LecturaManguera;
 
 interface VentaRepositoryInterface
 {
@@ -51,4 +53,8 @@ interface VentaRepositoryInterface
     public function incrementInventario(int $productoId, int $bodegaId, float $cantidad): void;
 
     public function getTurnoAbiertoByUser(int $userId): ?TurnoIslero;
+
+    public function findMangueraById(int $id): ?Manguera;
+
+    public function getLecturaAbiertaByTurnoAndManguera(int $turnoId, int $mangueraId): ?LecturaManguera;
 }

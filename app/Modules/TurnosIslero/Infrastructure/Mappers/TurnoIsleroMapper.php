@@ -12,6 +12,7 @@ class TurnoIsleroMapper
         return new AbrirTurnoIsleroDTO(
             estacion_id: (int) $data['estacion_id'],
             user_id: $userId,
+            mangueras: $data['mangueras'],
             observacion_apertura: $data['observacion_apertura'] ?? null,
             lecturas_iniciales: $data['lecturas_iniciales'] ?? [],
         );
