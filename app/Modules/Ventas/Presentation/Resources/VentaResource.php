@@ -58,7 +58,7 @@ class VentaResource extends JsonResource
             'pagos' => PagoVentaResource::collection(
                 $this->whenLoaded('pagos')
             ),
-
+            'tipo_origen' => $this->tipo_origen,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'motivo_anulacion' => $this->motivo_anulacion,

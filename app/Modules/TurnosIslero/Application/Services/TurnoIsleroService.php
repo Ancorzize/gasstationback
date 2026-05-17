@@ -245,7 +245,8 @@ class TurnoIsleroService
                 $totalCombustible += $totalVenta;
             }
 
-            $totalVentasLubricantes = $this->turnoRepository->sumVentasPagadasByTurno($turno->id);
+            $totalVentasCombustible = $this->turnoRepository->sumVentasCombustiblePagadasByTurno($turno->id);
+            $totalVentasLubricantes = $this->turnoRepository->sumVentasLubricantesPagadasByTurno($turno->id);
             $totalCreditos = $this->turnoRepository->sumVentasCreditoByTurno($turno->id);
             $totalAbonos = $this->turnoRepository->sumAbonosByTurno($turno->id);
 
@@ -259,7 +260,7 @@ class TurnoIsleroService
                 $dto->otros_movimientos;
 
             $totalSistema =
-                $totalCombustible +
+                $totalVentasCombustible +
                 $totalVentasLubricantes +
                 $totalAbonos;
 
@@ -269,7 +270,7 @@ class TurnoIsleroService
                 'fecha_cierre' => now(),
                 'estado' => 'cerrado',
 
-                'total_ventas_combustible' => $totalCombustible,
+                'total_ventas_combustible' => $totalVentasCombustible,
                 'total_ventas_lubricantes' => $totalVentasLubricantes,
                 'total_creditos' => $totalCreditos,
                 'total_abonos' => $totalAbonos,
@@ -328,7 +329,8 @@ class TurnoIsleroService
             ];
         });
 
-        $totalVentasLubricantes = $this->turnoRepository->sumVentasPagadasByTurno($turno->id);
+        $totalVentasCombustible = $this->turnoRepository->sumVentasCombustiblePagadasByTurno($turno->id);
+        $totalVentasLubricantes = $this->turnoRepository->sumVentasLubricantesPagadasByTurno($turno->id);
         $totalCreditos = $this->turnoRepository->sumVentasCreditoByTurno($turno->id);
         $totalAbonos = $this->turnoRepository->sumAbonosByTurno($turno->id);
 
@@ -352,11 +354,11 @@ class TurnoIsleroService
             'lecturas' => $lecturas,
 
             'totales_sistema' => [
-                'ventas_combustible' => 0,
+                'ventas_combustible' => $totalVentasCombustible,
                 'ventas_lubricantes' => $totalVentasLubricantes,
                 'creditos' => $totalCreditos,
                 'abonos' => $totalAbonos,
-                'total_sistema_sin_combustible' => $totalVentasLubricantes + $totalAbonos,
+                'total_sistema' => $totalVentasCombustible + $totalVentasLubricantes + $totalAbonos,
             ],
 
             'nota' => 'Las ventas de combustible se calculan definitivamente al enviar las lecturas finales en el cierre.',

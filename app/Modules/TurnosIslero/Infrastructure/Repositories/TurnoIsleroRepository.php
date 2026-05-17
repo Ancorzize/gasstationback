@@ -139,20 +139,22 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
         return $lectura->fresh()->load(['manguera.producto', 'manguera.bomba']);
     }
 
-    public function sumVentasPagadasByTurno(int $turnoId): float
+    public function sumVentasCombustiblePagadasByTurno(int $turnoId): float
     {
         return (float) Venta::query()
             ->where('turno_islero_id', $turnoId)
             ->where('estado', 'confirmada')
+            ->where('tipo_origen', 'combustible')
             ->sum('total_pagado');
     }
 
-    public function sumVentasCreditoByTurno(int $turnoId): float
+    public function sumVentasLubricantesPagadasByTurno(int $turnoId): float
     {
         return (float) Venta::query()
             ->where('turno_islero_id', $turnoId)
             ->where('estado', 'confirmada')
-            ->sum('saldo_pendiente');
+            ->where('tipo_origen', 'pos')
+            ->sum('total_pagado');
     }
 
     public function sumAbonosByTurno(int $turnoId): float
@@ -218,4 +220,13 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
     {
         $turno->mangueras()->sync($mangueraIds);
     }
+
+    public function sumVentasCreditoByTurno(int $turnoId): float
+    {
+        return (float) Venta::query()
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'confirmada')
+            ->sum('saldo_pendiente');
+    }
+
 }

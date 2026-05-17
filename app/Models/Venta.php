@@ -32,6 +32,7 @@ class Venta extends Model
         'user_anulacion_id',
         'fecha_anulacion',
         'turno_islero_id',
+        'tipo_origen',
     ];
 
     protected $casts = [

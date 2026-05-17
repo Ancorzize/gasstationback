@@ -484,6 +484,7 @@ class VentaService
                 'saldo_pendiente' => $saldoPendiente,
                 'fecha_venta' => now(),
                 'observacion' => $dto->observacion,
+                'tipo_origen' => 'combustible',
             ]);
 
             $this->ventaRepository->createDetalle([
