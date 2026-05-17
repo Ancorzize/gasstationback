@@ -21,6 +21,7 @@ class DetalleVenta extends Model
         'sobre_tasa',
         'subtotal',
         'total',
+        'manguera_id'
     ];
 
     protected $casts = [
@@ -43,5 +44,10 @@ class DetalleVenta extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class);
+    }
+
+    public function manguera(): BelongsTo
+    {
+        return $this->belongsTo(Manguera::class);
     }
 }

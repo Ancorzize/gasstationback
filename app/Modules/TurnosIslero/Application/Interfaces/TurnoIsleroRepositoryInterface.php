@@ -32,7 +32,6 @@ interface TurnoIsleroRepositoryInterface
 
     public function updateLectura(LecturaManguera $lectura, array $data): LecturaManguera;
 
-
     public function sumVentasCreditoByTurno(int $turnoId): float;
 
     public function sumAbonosByTurno(int $turnoId): float;
@@ -50,5 +49,13 @@ interface TurnoIsleroRepositoryInterface
     public function sumVentasCombustiblePagadasByTurno(int $turnoId): float;
 
     public function sumVentasLubricantesPagadasByTurno(int $turnoId): float;
+
+    public function sumPagosVentasByTurnoAndMetodo(int $turnoId, string $metodoPago): float;
+
+    public function sumAbonosByTurnoAndMetodo(int $turnoId, string $metodoPago): float;
+
+    public function sumGalonesCombustibleByTurnoAndManguera(int $turnoId, int $mangueraId): float;
+
+    public function sumTotalCombustibleByTurnoAndManguera(int $turnoId, int $mangueraId): float;
 
 }

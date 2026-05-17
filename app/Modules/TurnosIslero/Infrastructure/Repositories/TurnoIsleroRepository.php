@@ -11,6 +11,8 @@ use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterfa
 use App\Models\Venta;
 use App\Models\AbonoCartera;
 use App\Models\PrecioCombustible;
+use App\Models\PagoVenta;
+use App\Models\DetalleVenta;
 class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
@@ -227,6 +229,50 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             ->where('turno_islero_id', $turnoId)
             ->where('estado', 'confirmada')
             ->sum('saldo_pendiente');
+    }
+
+    public function sumPagosVentasByTurnoAndMetodo(int $turnoId, string $metodoPago): float
+    {
+        return (float) PagoVenta::query()
+            ->whereHas('venta', function ($q) use ($turnoId) {
+                $q->where('turno_islero_id', $turnoId)
+                    ->where('estado', 'confirmada');
+            })
+            ->where('metodo_pago', $metodoPago)
+            ->sum('monto');
+    }
+
+    public function sumAbonosByTurnoAndMetodo(int $turnoId, string $metodoPago): float
+    {
+        return (float) AbonoCartera::query()
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'registrado')
+            ->where('medio_pago', $metodoPago)
+            ->sum('valor');
+    }
+
+    public function sumGalonesCombustibleByTurnoAndManguera(int $turnoId, int $mangueraId): float
+    {
+        return (float) DetalleVenta::query()
+            ->where('manguera_id', $mangueraId)
+            ->whereHas('venta', function ($q) use ($turnoId) {
+                $q->where('turno_islero_id', $turnoId)
+                    ->where('tipo_origen', 'combustible')
+                    ->where('estado', 'confirmada');
+            })
+            ->sum('cantidad');
+    }
+
+    public function sumTotalCombustibleByTurnoAndManguera(int $turnoId, int $mangueraId): float
+    {
+        return (float) DetalleVenta::query()
+            ->where('manguera_id', $mangueraId)
+            ->whereHas('venta', function ($q) use ($turnoId) {
+                $q->where('turno_islero_id', $turnoId)
+                    ->where('tipo_origen', 'combustible')
+                    ->where('estado', 'confirmada');
+            })
+            ->sum('total');
     }
 
 }

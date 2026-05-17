@@ -171,6 +171,7 @@ class VentaService
                 $this->ventaRepository->createDetalle([
                     'venta_id' => $venta->id,
                     'producto_id' => $detalle->producto_id,
+                    'manguera_id' => null,
                     'cantidad' => $detalle->cantidad,
                     'precio_unitario' => $detalle->precio_unitario,
                     'descuento' => $detalle->descuento,
@@ -499,6 +500,7 @@ class VentaService
                 'sobre_tasa' => 0,
                 'subtotal' => $subtotal,
                 'total' => $total,
+                'manguera_id' => $manguera->id,
             ]);
 
             if ($dto->tipo_venta !== 'credito') {

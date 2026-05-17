@@ -37,6 +37,17 @@ class DetalleVentaResource extends JsonResource
 
             'subtotal' => $this->subtotal,
             'total' => $this->total,
+            'manguera_id' => $this->manguera_id,
+            'manguera' => $this->manguera ? [
+                'id' => $this->manguera->id,
+                'codigo' => $this->manguera->codigo,
+                'nombre' => $this->manguera->nombre,
+                'bomba' => $this->manguera->bomba ? [
+                    'id' => $this->manguera->bomba->id,
+                    'codigo' => $this->manguera->bomba->codigo,
+                    'nombre' => $this->manguera->bomba->nombre,
+                ] : null,
+            ] : null,
         ];
     }
 }

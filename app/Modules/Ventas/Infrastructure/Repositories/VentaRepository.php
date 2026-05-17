@@ -76,6 +76,7 @@ class VentaRepository implements VentaRepositoryInterface
             'detalles.producto.unidadMedida',
             'pagos.caja',
             'pagos.usuario',
+            'detalles.manguera.bomba.estacion',
         ])->find($id);
     }
 

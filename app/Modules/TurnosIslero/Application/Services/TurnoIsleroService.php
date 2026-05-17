@@ -4,11 +4,12 @@ namespace App\Modules\TurnosIslero\Application\Services;
 
 use App\Models\TurnoIslero;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\TurnosIslero\Application\DTOs\AbrirTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\DTOs\CerrarTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterface;
-use Illuminate\Validation\ValidationException;
+
 class TurnoIsleroService
 {
     public function __construct(
@@ -132,7 +133,6 @@ class TurnoIsleroService
                 ->contains(fn ($item) => (int) $item['manguera_id'] === (int) $manguera->id);
 
             $ultimaLectura = $this->turnoRepository->getUltimaLecturaCerradaByManguera($manguera->id);
-
             $tieneLecturaAnterior = $ultimaLectura && $ultimaLectura->lectura_final !== null;
 
             if (!$tieneLecturaEnRequest && !$tieneLecturaAnterior) {
@@ -190,9 +190,10 @@ class TurnoIsleroService
                 throw new HttpException(403, 'No puedes cerrar un turno de otro usuario.');
             }
 
-            $totalCombustible = 0;
-
-            $manguerasAsignadas = $turno->lecturas->pluck('manguera_id')->map(fn ($id) => (int) $id)->toArray();
+            $manguerasAsignadas = $turno->lecturas
+                ->pluck('manguera_id')
+                ->map(fn ($id) => (int) $id)
+                ->toArray();
 
             $manguerasEnviadas = collect($dto->lecturas_finales)
                 ->pluck('manguera_id')
@@ -234,15 +235,13 @@ class TurnoIsleroService
                 }
 
                 $galonesVendidos = $lecturaFinal - (float) $lectura->lectura_inicial;
-                $totalVenta = $galonesVendidos * (float) $lectura->precio_galon;
+                $totalVentaFisica = $galonesVendidos * (float) $lectura->precio_galon;
 
                 $this->turnoRepository->updateLectura($lectura, [
                     'lectura_final' => $lecturaFinal,
                     'galones_vendidos' => $galonesVendidos,
-                    'total_venta' => $totalVenta,
+                    'total_venta' => $totalVentaFisica,
                 ]);
-
-                $totalCombustible += $totalVenta;
             }
 
             $totalVentasCombustible = $this->turnoRepository->sumVentasCombustiblePagadasByTurno($turno->id);
@@ -302,10 +301,60 @@ class TurnoIsleroService
             throw new HttpException(422, 'Solo se puede consultar resumen de cierre para turnos abiertos.');
         }
 
-        $lecturas = $turno->lecturas->map(function ($lectura) {
+        $totalVentasCombustible = $this->turnoRepository->sumVentasCombustiblePagadasByTurno($turno->id);
+        $totalVentasLubricantes = $this->turnoRepository->sumVentasLubricantesPagadasByTurno($turno->id);
+        $totalCreditos = $this->turnoRepository->sumVentasCreditoByTurno($turno->id);
+        $totalAbonos = $this->turnoRepository->sumAbonosByTurno($turno->id);
+
+        $pagosEfectivo = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'efectivo')
+            + $this->turnoRepository->sumAbonosByTurnoAndMetodo($turno->id, 'efectivo');
+
+        $pagosDatafono = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'datafono')
+            + $this->turnoRepository->sumAbonosByTurnoAndMetodo($turno->id, 'datafono');
+
+        $pagosQr = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'qr')
+            + $this->turnoRepository->sumAbonosByTurnoAndMetodo($turno->id, 'qr');
+
+        $pagosTransferencia = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'transferencia')
+            + $this->turnoRepository->sumAbonosByTurnoAndMetodo($turno->id, 'transferencia');
+
+        $pagosConsignacion = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'consignacion')
+            + $this->turnoRepository->sumAbonosByTurnoAndMetodo($turno->id, 'consignacion');
+
+        $totalPagosReportadosSugeridos =
+            $pagosEfectivo +
+            $pagosDatafono +
+            $pagosQr +
+            $pagosTransferencia +
+            $pagosConsignacion +
+            $totalCreditos;
+
+        $totalSistema =
+            $totalVentasCombustible +
+            $totalVentasLubricantes +
+            $totalAbonos;
+
+        $lecturas = $turno->lecturas->map(function ($lectura) use ($turno) {
+            $precioGalon = (float) $lectura->precio_galon;
+
+            $galonesVendidosSistema = $this->turnoRepository
+                ->sumGalonesCombustibleByTurnoAndManguera(
+                    $turno->id,
+                    $lectura->manguera_id
+                );
+
+            $totalVentaSistema = $this->turnoRepository
+                ->sumTotalCombustibleByTurnoAndManguera(
+                    $turno->id,
+                    $lectura->manguera_id
+                );
+
+            $lecturaSugerida = (float) $lectura->lectura_inicial + $galonesVendidosSistema;
+
             return [
                 'id' => $lectura->id,
                 'manguera_id' => $lectura->manguera_id,
+
                 'manguera' => $lectura->manguera ? [
                     'id' => $lectura->manguera->id,
                     'nombre' => $lectura->manguera->nombre,
@@ -321,18 +370,22 @@ class TurnoIsleroService
                         'nombre' => $lectura->manguera->producto->nombre,
                     ] : null,
                 ] : null,
-                'lectura_inicial' => $lectura->lectura_inicial,
-                'lectura_final' => $lectura->lectura_final,
-                'precio_galon' => $lectura->precio_galon,
-                'galones_vendidos' => $lectura->galones_vendidos,
-                'total_venta' => $lectura->total_venta,
-            ];
-        });
 
-        $totalVentasCombustible = $this->turnoRepository->sumVentasCombustiblePagadasByTurno($turno->id);
-        $totalVentasLubricantes = $this->turnoRepository->sumVentasLubricantesPagadasByTurno($turno->id);
-        $totalCreditos = $this->turnoRepository->sumVentasCreditoByTurno($turno->id);
-        $totalAbonos = $this->turnoRepository->sumAbonosByTurno($turno->id);
+                'lectura_inicial' => (float) $lectura->lectura_inicial,
+                'lectura_final' => $lectura->lectura_final !== null
+                    ? (float) $lectura->lectura_final
+                    : null,
+
+                'precio_galon' => $precioGalon,
+
+                'galones_vendidos_sistema' => round($galonesVendidosSistema, 3),
+                'total_venta_sistema' => round($totalVentaSistema, 2),
+                'lectura_sugerida' => round($lecturaSugerida, 3),
+
+                'galones_vendidos' => (float) $lectura->galones_vendidos,
+                'total_venta' => (float) $lectura->total_venta,
+            ];
+        })->values();
 
         return [
             'turno' => [
@@ -353,15 +406,27 @@ class TurnoIsleroService
 
             'lecturas' => $lecturas,
 
+            'totales_pago_sugeridos' => [
+                'efectivo' => $pagosEfectivo,
+                'datafono' => $pagosDatafono,
+                'qr' => $pagosQr,
+                'transferencia' => $pagosTransferencia,
+                'consignacion' => $pagosConsignacion,
+                'creditos' => $totalCreditos,
+                'total_reportado_sugerido' => $totalPagosReportadosSugeridos,
+            ],
+
             'totales_sistema' => [
                 'ventas_combustible' => $totalVentasCombustible,
                 'ventas_lubricantes' => $totalVentasLubricantes,
                 'creditos' => $totalCreditos,
                 'abonos' => $totalAbonos,
-                'total_sistema' => $totalVentasCombustible + $totalVentasLubricantes + $totalAbonos,
+                'total_sistema' => $totalSistema,
             ],
 
-            'nota' => 'Las ventas de combustible se calculan definitivamente al enviar las lecturas finales en el cierre.',
+            'balance_preliminar' => $totalSistema - $totalPagosReportadosSugeridos,
+
+            'nota' => 'La lectura sugerida se calcula con las ventas de combustible registradas por manguera. El islero debe confirmarla o corregirla con la lectura física real.',
         ];
     }
 
