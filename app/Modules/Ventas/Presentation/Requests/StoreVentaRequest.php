@@ -92,20 +92,13 @@ class StoreVentaRequest extends FormRequest
                 'gt:0'
             ],
 
-
-            'pagos' => [
-                'required',
-                'array',
-                'min:1'
-            ],
-
             'pagos.*.metodo_pago' => [
-                'required',
-                'in:efectivo,transferencia,consignacion,datafono,qr'
+                'nullable',
+                'required_unless:efectivo,transferencia,consignacion,datafono,qr'
             ],
 
             'pagos.*.monto' => [
-                'required',
+                'nullable',
                 'numeric',
                 'gt:0'
             ],

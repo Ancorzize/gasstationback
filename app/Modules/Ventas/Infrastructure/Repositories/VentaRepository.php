@@ -17,6 +17,7 @@ use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
 use App\Models\TurnoIslero;
 use App\Models\Manguera;
 use App\Models\LecturaManguera;
+use App\Models\User;
 class VentaRepository implements VentaRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
@@ -198,5 +199,10 @@ class VentaRepository implements VentaRepositoryInterface
             ->where('manguera_id', $mangueraId)
             ->whereNull('lectura_final')
             ->first();
+    }
+
+    public function findUserById(int $id): ?User
+    {
+        return User::with('bodega')->find($id);
     }
 }

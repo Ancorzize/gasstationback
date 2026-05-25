@@ -14,6 +14,7 @@ class UserMapper
             email: $data['email'],
             password: $data['password'],
             role: $data['role'],
+            bodega_id: isset($data['bodega_id']) ? (int) $data['bodega_id'] : null,
         );
     }
 
@@ -24,6 +25,7 @@ class UserMapper
             email: $data['email'],
             password: $data['password'] ?? null,
             role: $data['role'],
+            bodega_id: isset($data['bodega_id']) ? (int) $data['bodega_id'] : null,
         );
     }
 }

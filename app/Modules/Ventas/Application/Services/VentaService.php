@@ -39,6 +39,18 @@ class VentaService
                 throw new HttpException(422, 'La venta no tiene productos.');
             }
 
+            $user = $this->ventaRepository->findUserById($dto->user_id);
+
+            if (!$user) {
+                throw new HttpException(422, 'Usuario no encontrado.');
+            }
+
+            if (!$user->bodega_id) {
+                throw new HttpException(422, 'El usuario no tiene una bodega asignada.');
+            }
+
+            $bodegaId = (int) $user->bodega_id;
+
             $subtotal = 0;
             $impuesto = 0;
             $soldicom = 0;
@@ -58,20 +70,6 @@ class VentaService
                         "Producto {$detalle->producto_id} no existe."
                     );
                 }
-
-                /*
-                |--------------------------------------------------------------------------
-                | IMPORTANTE
-                |--------------------------------------------------------------------------
-                | se puede cambiar la bodega según:
-                | - usuario
-                | - islero
-                | - estación
-                | - POS
-                |--------------------------------------------------------------------------
-                */
-
-                $bodegaId = 1;
 
                 $inventario = $this->ventaRepository->findInventario(
                     $detalle->producto_id,
@@ -132,12 +130,12 @@ class VentaService
                     );
                 }
 
-                if ((float) $cliente->cupo_disponible < (float) $saldoPendiente) {
-                    throw new HttpException(
-                        422,
-                        'El cliente no tiene cupo suficiente.'
-                    );
+                $cupoDisponible = (float) $cliente->cupo_credito - (float) $cliente->saldo_credito;
+
+                if ($cupoDisponible < $saldoPendiente) {
+                    throw new HttpException(422, 'El cliente no tiene cupo suficiente.');
                 }
+
             }
 
             $turnoAbierto = $this->ventaRepository->getTurnoAbiertoByUser($dto->user_id);
@@ -147,6 +145,7 @@ class VentaService
                 'numero_factura' => $this->ventaRepository->nextNumeroFactura(),
                 'cliente_id' => $dto->cliente_id,
                 'user_id' => $dto->user_id,
+                'bodega_id' => $bodegaId,
                 'tipo_venta' => $dto->tipo_venta,
                 'estado' => 'confirmada',
                 'estado_pago' => $saldoPendiente <= 0

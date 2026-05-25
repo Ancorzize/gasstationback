@@ -16,6 +16,12 @@ class UserResource extends JsonResource
             'is_active' => $this->is_active,
             'roles' => $this->roles->pluck('name')->values(),
             'created_at' => $this->created_at,
+            'bodega_id' => $this->bodega_id,
+            'bodega' => $this->bodega ? [
+                'id' => $this->bodega->id,
+                'nombre' => $this->bodega->nombre,
+                'codigo' => $this->bodega->codigo,
+            ] : null,
         ];
     }
 }

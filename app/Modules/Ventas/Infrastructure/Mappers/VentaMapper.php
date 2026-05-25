@@ -25,13 +25,17 @@ class VentaMapper
             );
         }, $data['detalles']);
 
-        $pagos = array_map(function ($pago) {
-            return new PagoVentaDTO(
-                metodo_pago: $pago['metodo_pago'],
-                monto: (float) $pago['monto'],
-                observacion: $pago['observacion'] ?? null,
-            );
-        }, $data['pagos']);
+        $pagos = [];
+        if(isset($data['pagos'])){
+            $pagos = array_map(function ($pago) {
+                return new PagoVentaDTO(
+                    metodo_pago: $pago['metodo_pago'],
+                    monto: (float) $pago['monto'],
+                    observacion: $pago['observacion'] ?? null,
+                );
+            }, $data['pagos']);   
+        }
+        
 
         return new CreateVentaDTO(
             cliente_id: isset($data['cliente_id']) ? (int) $data['cliente_id'] : null,

@@ -9,12 +9,14 @@ class UserRepository implements UserRepositoryInterface
 {
     public function paginate(int $perPage = 10)
     {
-        return User::with('roles')->paginate($perPage);
+        return User::query()
+            ->with(['roles', 'bodega'])
+            ->paginate($perPage);
     }
 
     public function findById(int $id): ?User
     {
-        return User::with('roles')->find($id);
+        return User::with(['roles', 'bodega'])->find($id);
     }
 
     public function create(array $data): User

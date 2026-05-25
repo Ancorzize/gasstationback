@@ -15,6 +15,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Models\TurnoIslero;
 use App\Models\Manguera;
 use App\Models\LecturaManguera;
+use App\Models\User;
 
 interface VentaRepositoryInterface
 {
@@ -57,4 +58,6 @@ interface VentaRepositoryInterface
     public function findMangueraById(int $id): ?Manguera;
 
     public function getLecturaAbiertaByTurnoAndManguera(int $turnoId, int $mangueraId): ?LecturaManguera;
+
+    public function findUserById(int $id): ?User;
 }

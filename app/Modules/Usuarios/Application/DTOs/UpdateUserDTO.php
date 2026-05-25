@@ -9,5 +9,6 @@ class UpdateUserDTO
         public string $email,
         public ?string $password,
         public string $role,
+        public ?int $bodega_id = null,
     ) {}
 }

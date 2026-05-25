@@ -18,6 +18,7 @@ class StoreUserRequest extends FormRequest
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
             'role' => ['required', 'string', 'exists:roles,name'],
+            'bodega_id' => ['nullable', 'integer', 'exists:bodegas,id'],
         ];
     }
 

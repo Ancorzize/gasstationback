@@ -38,6 +38,7 @@ class UserService
                 'name' => $dto->name,
                 'email' => $dto->email,
                 'password' => $dto->password,
+                'bodega_id' => $dto->bodega_id,
                 'is_active' => true,
             ]);
 
@@ -55,6 +56,7 @@ class UserService
             $data = [
                 'name' => $dto->name,
                 'email' => $dto->email,
+                'bodega_id' => $dto->bodega_id,
             ];
 
             if (!empty($dto->password)) {

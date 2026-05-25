@@ -26,6 +26,7 @@ class UpdateUserRequest extends FormRequest
             ],
             'password' => ['nullable', 'string', 'min:6'],
             'role' => ['required', 'string', 'exists:roles,name'],
+            'bodega_id' => ['nullable', 'integer', 'exists:bodegas,id'],
         ];
     }
 }
