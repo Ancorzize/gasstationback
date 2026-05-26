@@ -301,8 +301,8 @@ class TurnoIsleroService
             throw new HttpException(422, 'Solo se puede consultar resumen de cierre para turnos abiertos.');
         }
 
-        $totalVentasCombustible = $this->turnoRepository->sumVentasCombustiblePagadasByTurno($turno->id);
-        $totalVentasLubricantes = $this->turnoRepository->sumVentasLubricantesPagadasByTurno($turno->id);
+        $totalVentasCombustible = $this->turnoRepository->sumVentasCombustibleByTurno($turno->id);
+        $totalVentasLubricantes = $this->turnoRepository->sumVentasLubricantesByTurno($turno->id);
         $totalCreditos = $this->turnoRepository->sumVentasCreditoByTurno($turno->id);
         $totalAbonos = $this->turnoRepository->sumAbonosByTurno($turno->id);
 
