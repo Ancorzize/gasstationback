@@ -46,9 +46,9 @@ interface TurnoIsleroRepositoryInterface
 
     public function getManguerasOcupadasEnTurnosAbiertos(int $estacionId): Collection;
 
-    public function sumVentasCombustiblePagadasByTurno(int $turnoId): float;
+    public function sumVentasCombustibleByTurno(int $turnoId): float;
 
-    public function sumVentasLubricantesPagadasByTurno(int $turnoId): float;
+    public function sumVentasLubricantesByTurno(int $turnoId): float;
 
     public function sumPagosVentasByTurnoAndMetodo(int $turnoId, string $metodoPago): float;
 

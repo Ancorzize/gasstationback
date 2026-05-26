@@ -147,6 +147,7 @@ class VentaService
                 'user_id' => $dto->user_id,
                 'bodega_id' => $bodegaId,
                 'tipo_venta' => $dto->tipo_venta,
+                'tipo_origen' => 'pos',
                 'estado' => 'confirmada',
                 'estado_pago' => $saldoPendiente <= 0
                     ? 'pagado'
@@ -182,7 +183,7 @@ class VentaService
                     'total' => $detalle->total,
                 ]);
 
-                $bodegaId = 1;
+               
 
                 $this->ventaRepository->decrementInventario(
                     $detalle->producto_id,
@@ -286,8 +287,17 @@ class VentaService
                 throw new HttpException(422, 'La venta ya se encuentra anulada.');
             }
 
+            $bodegaId = (int) $venta->bodega_id;
+
+            if (!$bodegaId) {
+                throw new HttpException(422, 'La venta no tiene bodega asociada.');
+            }
+
             foreach ($venta->detalles as $detalle) {
-                $bodegaId = 1;
+ 
+                if ($venta->tipo_origen === 'combustible') {
+                    continue;
+                }
 
                 $this->ventaRepository->incrementInventario(
                     $detalle->producto_id,
@@ -383,6 +393,18 @@ class VentaService
                 throw new HttpException(422, 'No tienes un turno de islero abierto.');
             }
 
+            $user = $this->ventaRepository->findUserById($dto->user_id);
+
+            if (!$user) {
+                throw new HttpException(422, 'Usuario no encontrado.');
+            }
+
+            if (!$user->bodega_id) {
+                throw new HttpException(422, 'El usuario no tiene una bodega asignada.');
+            }
+
+            $bodegaId = (int) $user->bodega_id;
+
             $manguera = $this->ventaRepository->findMangueraById($dto->manguera_id);
 
             if (!$manguera) {
@@ -470,6 +492,7 @@ class VentaService
                 'numero_factura' => $this->ventaRepository->nextNumeroFactura(),
                 'cliente_id' => $dto->cliente_id,
                 'user_id' => $dto->user_id,
+                'bodega_id' => $bodegaId,
                 'turno_islero_id' => $turnoAbierto->id,
                 'tipo_venta' => $dto->tipo_venta,
                 'estado' => 'confirmada',

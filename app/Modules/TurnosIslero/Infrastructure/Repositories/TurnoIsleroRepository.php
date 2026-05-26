@@ -141,22 +141,22 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
         return $lectura->fresh()->load(['manguera.producto', 'manguera.bomba']);
     }
 
-    public function sumVentasCombustiblePagadasByTurno(int $turnoId): float
+    public function sumVentasCombustibleByTurno(int $turnoId): float
     {
         return (float) Venta::query()
             ->where('turno_islero_id', $turnoId)
             ->where('estado', 'confirmada')
             ->where('tipo_origen', 'combustible')
-            ->sum('total_pagado');
+            ->sum('total');
     }
 
-    public function sumVentasLubricantesPagadasByTurno(int $turnoId): float
+    public function sumVentasLubricantesByTurno(int $turnoId): float
     {
         return (float) Venta::query()
             ->where('turno_islero_id', $turnoId)
             ->where('estado', 'confirmada')
             ->where('tipo_origen', 'pos')
-            ->sum('total_pagado');
+            ->sum('total');
     }
 
     public function sumAbonosByTurno(int $turnoId): float
