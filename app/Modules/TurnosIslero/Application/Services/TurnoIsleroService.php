@@ -297,6 +297,12 @@ class TurnoIsleroService
     {
         $turno = $this->findById($id);
 
+        $ventasProductos = $this->turnoRepository
+            ->getVentasLubricantesDetalleByTurno($turno->id);
+
+        $abonosRecibidos = $this->turnoRepository
+            ->getAbonosDetalleByTurno($turno->id);
+
         if ($turno->estado !== 'abierto') {
             throw new HttpException(422, 'Solo se puede consultar resumen de cierre para turnos abiertos.');
         }
@@ -306,20 +312,46 @@ class TurnoIsleroService
         $totalCreditos = $this->turnoRepository->sumVentasCreditoByTurno($turno->id);
         $totalAbonos = $this->turnoRepository->sumAbonosByTurno($turno->id);
 
-        $pagosEfectivo = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'efectivo')
-            + $this->turnoRepository->sumAbonosByTurnoAndMetodo($turno->id, 'efectivo');
+        $ventasLubricantesDetalle = $this->turnoRepository
+            ->getVentasLubricantesDetalleByTurno($turno->id);
 
-        $pagosDatafono = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'datafono')
-            + $this->turnoRepository->sumAbonosByTurnoAndMetodo($turno->id, 'datafono');
+        $abonosDetalle = $this->turnoRepository
+            ->getAbonosDetalleByTurno($turno->id);
 
-        $pagosQr = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'qr')
-            + $this->turnoRepository->sumAbonosByTurnoAndMetodo($turno->id, 'qr');
+        $ventasProductos = $ventasLubricantesDetalle
+        ->map(function ($detalle) {
 
-        $pagosTransferencia = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'transferencia')
-            + $this->turnoRepository->sumAbonosByTurnoAndMetodo($turno->id, 'transferencia');
+            return [
+                'id' => $detalle['id'],
+                'nombre' => $detalle['nombre'],
+                'cantidad' => (float) $detalle['cantidad'],
+                'precio_unitario' => (float) $detalle['precio_unitario'],
+                'total' => (float) $detalle['total'],
+            ];
+        })
+        ->values();
 
-        $pagosConsignacion = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'consignacion')
-            + $this->turnoRepository->sumAbonosByTurnoAndMetodo($turno->id, 'consignacion');
+        $abonosRecibidos = $abonosDetalle
+        ->map(function ($abono) {
+
+            return [
+                'id' => $abono['id'],
+                'cliente' => $abono['cliente'],
+                'monto' => (float) $abono['monto'],
+                'fecha' => $abono['fecha']->toDateString()
+            ];
+        })
+        ->values();
+
+        $pagosEfectivo = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'efectivo');
+
+        $pagosDatafono = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'datafono');
+
+        $pagosQr = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'qr');
+
+        $pagosTransferencia = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'transferencia');
+
+        $pagosConsignacion = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'consignacion');
 
         $totalPagosReportadosSugeridos =
             $pagosEfectivo +
@@ -332,7 +364,8 @@ class TurnoIsleroService
         $totalSistema =
             $totalVentasCombustible +
             $totalVentasLubricantes +
-            $totalAbonos;
+            $totalAbonos +
+            $totalCreditos;
 
         $lecturas = $turno->lecturas->map(function ($lectura) use ($turno) {
             $precioGalon = (float) $lectura->precio_galon;
@@ -405,6 +438,8 @@ class TurnoIsleroService
             ],
 
             'lecturas' => $lecturas,
+            'ventas_productos' => $ventasProductos,
+            'abonos_recibidos' => $abonosRecibidos,
 
             'totales_pago_sugeridos' => [
                 'efectivo' => $pagosEfectivo,

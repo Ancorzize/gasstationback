@@ -275,4 +275,42 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             ->sum('total');
     }
 
+    public function getVentasLubricantesDetalleByTurno(int $turnoId): Collection
+    {
+        return DetalleVenta::query()
+            ->with('producto')
+            ->whereHas('venta', function ($q) use ($turnoId) {
+                $q->where('turno_islero_id', $turnoId)
+                    ->where('estado', 'confirmada')
+                    ->where('tipo_origen', 'pos');
+            })
+            ->get()
+            ->map(function ($detalle) {
+                return [
+                    'id' => $detalle->producto_id,
+                    'nombre' => $detalle->producto?->nombre,
+                    'cantidad' => (float) $detalle->cantidad,
+                    'precio_unitario' => (float) $detalle->precio_unitario,
+                    'total' => (float) $detalle->total,
+                ];
+            });
+    }
+
+    public function getAbonosDetalleByTurno(int $turnoId): Collection
+    {
+        return AbonoCartera::query()
+            ->with('cliente')
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'registrado')
+            ->get()
+            ->map(function ($abono) {
+                return [
+                    'id' => $abono->id,
+                    'cliente' => $abono->cliente?->nombre,
+                    'monto' => (float) $abono->valor,
+                    'fecha' => $abono->created_at,
+                ];
+            });
+    }
+
 }

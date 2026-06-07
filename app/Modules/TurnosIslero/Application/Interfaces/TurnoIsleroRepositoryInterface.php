@@ -58,4 +58,9 @@ interface TurnoIsleroRepositoryInterface
 
     public function sumTotalCombustibleByTurnoAndManguera(int $turnoId, int $mangueraId): float;
 
+    public function getVentasLubricantesDetalleByTurno(int $turnoId): Collection;
+
+    public function getAbonosDetalleByTurno(int $turnoId): Collection;
+    
+
 }
