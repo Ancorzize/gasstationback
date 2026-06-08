@@ -358,13 +358,13 @@ class TurnoIsleroService
             $pagosDatafono +
             $pagosQr +
             $pagosTransferencia +
-            $pagosConsignacion +
+            $pagosConsignacion -
             $totalCreditos;
 
         $totalSistema =
             $totalVentasCombustible +
             $totalVentasLubricantes +
-            $totalAbonos +
+            $totalAbonos -
             $totalCreditos;
 
         $lecturas = $turno->lecturas->map(function ($lectura) use ($turno) {
