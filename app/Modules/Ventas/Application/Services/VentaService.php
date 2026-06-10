@@ -229,19 +229,23 @@ class VentaService
                     'observacion' => $pago->observacion,
                 ]);
 
+                $isIslero = $turnoAbierto->usuario->hasRole('islero');
+                if(!$isIslero)
+                {
 
-                $this->ventaRepository->createMovimientoCaja([
-                    'caja_id' => $caja->id,
-                    'tipo_movimiento' => 'ingreso',
-                    'categoria_movimiento' => 'venta',
-                    'origen_modulo' => 'ventas',
-                    'origen_id' => $venta->id,
-                    'medio_pago' => $pago->metodo_pago,
-                    'monto' => $pago->monto,
-                    'descripcion' => "Ingreso por Venta #{$venta->id}",
-                    'user_id' => $dto->user_id,
-                    'fecha_movimiento' => now(),
-                ]);
+                    $this->ventaRepository->createMovimientoCaja([
+                        'caja_id' => $caja->id,
+                        'tipo_movimiento' => 'ingreso',
+                        'categoria_movimiento' => 'venta',
+                        'origen_modulo' => 'ventas',
+                        'origen_id' => $venta->id,
+                        'medio_pago' => $pago->metodo_pago,
+                        'monto' => $pago->monto,
+                        'descripcion' => "Ingreso por Venta #{$venta->id}",
+                        'user_id' => $dto->user_id,
+                        'fecha_movimiento' => now(),
+                    ]);
+                }
             }
 
 
@@ -536,18 +540,23 @@ class VentaService
                     'observacion' => $dto->observacion,
                 ]);
 
-                $this->ventaRepository->createMovimientoCaja([
-                    'caja_id' => $caja->id,
-                    'tipo_movimiento' => 'ingreso',
-                    'categoria_movimiento' => 'venta_combustible',
-                    'origen_modulo' => 'ventas',
-                    'origen_id' => $venta->id,
-                    'medio_pago' => $dto->metodo_pago,
-                    'monto' => $dto->monto,
-                    'descripcion' => "Ingreso por venta combustible #{$venta->id}",
-                    'user_id' => $dto->user_id,
-                    'fecha_movimiento' => now(),
-                ]);
+                $isIslero = $turnoAbierto->usuario->hasRole('islero');
+                if(!$isIslero)
+                {
+                    $this->ventaRepository->createMovimientoCaja([
+                        'caja_id' => $caja->id,
+                        'tipo_movimiento' => 'ingreso',
+                        'categoria_movimiento' => 'venta_combustible',
+                        'origen_modulo' => 'ventas',
+                        'origen_id' => $venta->id,
+                        'medio_pago' => $dto->metodo_pago,
+                        'monto' => $dto->monto,
+                        'descripcion' => "Ingreso por venta combustible #{$venta->id}",
+                        'user_id' => $dto->user_id,
+                        'fecha_movimiento' => now(),
+                    ]);
+                }
+                
             }
 
             if ($dto->tipo_venta === 'credito') {

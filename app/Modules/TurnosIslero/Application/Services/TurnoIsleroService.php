@@ -9,11 +9,13 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\TurnosIslero\Application\DTOs\AbrirTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\DTOs\CerrarTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterface;
+use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
 
 class TurnoIsleroService
 {
     public function __construct(
-        protected TurnoIsleroRepositoryInterface $turnoRepository
+        protected TurnoIsleroRepositoryInterface $turnoRepository,
+        protected VentaRepositoryInterface $ventaRepository
     ) {}
 
     public function paginate(array $filters = [], int $perPage = 10)
@@ -265,6 +267,12 @@ class TurnoIsleroService
 
             $balanceFinal = $totalSistema - $totalReportado;
 
+            $isIslero = $turno->usuario->hasRole('islero');
+            if($isIslero)
+            {
+                $this->movimientosCaja($dto, $turno);    
+            }
+
             $this->turnoRepository->updateTurno($turno, [
                 'fecha_cierre' => now(),
                 'estado' => 'cerrado',
@@ -291,6 +299,99 @@ class TurnoIsleroService
 
             return $this->findById($turno->id);
         });
+    }
+
+    public function movimientosCaja($dto, $turno)
+    {
+        if($dto->pagos_qr>0 || $dto->pagos_datafono > 0 || $dto->pagos_transferencia > 0 || $dto->pagos_consignacion > 0){
+            $caja = $this->ventaRepository->getCajaAbiertaByTipo('digital');
+
+            if (!$caja) {
+                throw new HttpException(422, "No hay caja digital abierta.");
+            }
+        }
+        
+
+        if ($dto->pagos_qr > 0) {
+            $this->ventaRepository->createMovimientoCaja([
+                'caja_id' => $caja->id,
+                'tipo_movimiento' => 'ingreso',
+                'categoria_movimiento' => 'cierre_turno',
+                'origen_modulo' => 'turnos_islero',
+                'origen_id' => $turno->id,
+                'medio_pago' => 'digital',
+                'monto' => $dto->pagos_qr,
+                'descripcion' => "Cierre turno #{$turno->id}, pago QR",
+                'user_id' => $dto->user_id,
+                'fecha_movimiento' => now(),
+            ]);
+        }
+
+        if ($dto->pagos_datafono > 0) {
+            $this->ventaRepository->createMovimientoCaja([
+                'caja_id' => $caja->id,
+                'tipo_movimiento' => 'ingreso',
+                'categoria_movimiento' => 'cierre_turno',
+                'origen_modulo' => 'turnos_islero',
+                'origen_id' => $turno->id,
+                'medio_pago' => 'digital',
+                'monto' => $dto->pagos_datafono,
+                'descripcion' => "Cierre turno #{$turno->id}, pago datáfono",
+                'user_id' => $dto->user_id,
+                'fecha_movimiento' => now(),
+            ]);
+        }
+
+        if ($dto->pagos_transferencia > 0) {
+            $this->ventaRepository->createMovimientoCaja([
+                'caja_id' => $caja->id,
+                'tipo_movimiento' => 'ingreso',
+                'categoria_movimiento' => 'cierre_turno',
+                'origen_modulo' => 'turnos_islero',
+                'origen_id' => $turno->id,
+                'medio_pago' => 'digital',
+                'monto' => $dto->pagos_transferencia,
+                'descripcion' => "Cierre turno #{$turno->id}, pago transferencia",
+                'user_id' => $dto->user_id,
+                'fecha_movimiento' => now(),
+            ]);
+        }
+
+        if ($dto->pagos_consignacion > 0) {
+            $this->ventaRepository->createMovimientoCaja([
+                'caja_id' => $caja->id,
+                'tipo_movimiento' => 'ingreso',
+                'categoria_movimiento' => 'cierre_turno',
+                'origen_modulo' => 'turnos_islero',
+                'origen_id' => $turno->id,
+                'medio_pago' => 'digital',
+                'monto' => $dto->pagos_consignacion,
+                'descripcion' => "Cierre turno #{$turno->id}, pago consignación",
+                'user_id' => $dto->user_id,
+                'fecha_movimiento' => now(),
+            ]);
+        }
+
+        if ($dto->pagos_efectivo > 0) {
+            $caja = $this->ventaRepository->getCajaAbiertaByTipo('efectivo');
+
+            if (!$caja) {
+                throw new HttpException(422,"No hay caja efectivo abierta." );
+            }
+
+            $this->ventaRepository->createMovimientoCaja([
+                'caja_id' => $caja->id,
+                'tipo_movimiento' => 'ingreso',
+                'categoria_movimiento' => 'cierre_turno',
+                'origen_modulo' => 'turnos_islero',
+                'origen_id' => $turno->id,
+                'medio_pago' => 'efectivo',
+                'monto' => $dto->pagos_efectivo,
+                'descripcion' => "Cierre turno #{$turno->id}, pago efectivo",
+                'user_id' => $dto->user_id,
+                'fecha_movimiento' => now(),
+            ]);
+        }
     }
 
     public function resumenCierre(int $id): array
