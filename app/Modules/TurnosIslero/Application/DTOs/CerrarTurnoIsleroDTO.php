@@ -17,8 +17,6 @@ class CerrarTurnoIsleroDTO
         public float $pagos_efectivo,
         public float $otros_movimientos,
         public ?string $otros_movimientos_detalle,
-        public float $creditos,
-        public float $abonos,
 
         public ?string $observacion_cierre,
     ) {}
