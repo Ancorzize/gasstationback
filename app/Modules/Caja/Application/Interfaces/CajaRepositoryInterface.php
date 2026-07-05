@@ -11,10 +11,6 @@ interface CajaRepositoryInterface
 {
     public function getCajasAbiertas(): Collection;
 
-    public function getCajaAbiertaByTipo(string $tipoCaja): ?Caja;
-
-    public function existsCajaAbierta(): bool;
-
     public function findById(int $id): ?Caja;
 
     public function createCaja(array $data): Caja;
@@ -30,4 +26,8 @@ interface CajaRepositoryInterface
     public function sumMovimientosByTipo(int $cajaId, string $tipoMovimiento): float;
 
     public function paginateHistorico(array $filters = [], int $perPage = 10): LengthAwarePaginator;
+
+    public function getCajaAbiertaByTipoAndDestino(string $tipoCaja, int $destinoRecaudoId): ?Caja;
+
+    public function existsCajaAbiertaByTipoAndDestino(string $tipoCaja, int $destinoRecaudoId): bool;
 }

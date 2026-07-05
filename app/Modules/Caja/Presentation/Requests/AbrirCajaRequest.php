@@ -14,9 +14,28 @@ class AbrirCajaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'monto_apertura_efectivo' => ['required', 'numeric', 'min:0'],
-            'monto_apertura_digital' => ['required', 'numeric', 'min:0'],
-            'observacion_apertura' => ['nullable', 'string'],
+            'nombre' => ['required', 'string', 'max:150'],
+
+            'tipo_caja' => [
+                'required',
+                'in:efectivo,digital'
+            ],
+
+            'destino_recaudo_id' => [
+                'required',
+                'exists:destinos_recaudo,id'
+            ],
+
+            'monto_apertura' => [
+                'required',
+                'numeric',
+                'min:0'
+            ],
+
+            'observacion_apertura' => [
+                'nullable',
+                'string'
+            ],
         ];
     }
 

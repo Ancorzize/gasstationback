@@ -23,6 +23,8 @@ class Caja extends Model
         'user_cierre_id',
         'observacion_apertura',
         'observacion_cierre',
+        'nombre',
+        'destino_recaudo_id'
     ];
 
     protected $casts = [
@@ -47,5 +49,13 @@ class Caja extends Model
     public function movimientos(): HasMany
     {
         return $this->hasMany(MovimientoCaja::class);
+    }
+
+    public function destinoRecaudo(): BelongsTo
+    {
+        return $this->belongsTo(
+            DestinoRecaudo::class,
+            'destino_recaudo_id'
+        );
     }
 }

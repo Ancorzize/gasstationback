@@ -134,14 +134,6 @@ class VentaRepository implements VentaRepositoryInterface
         return MovimientoInventario::create($data);
     }
 
-    public function getCajaAbiertaByTipo(string $tipoCaja): ?Caja
-    {
-        return Caja::query()
-            ->where('estado', 'abierta')
-            ->where('tipo_caja', $tipoCaja)
-            ->first();
-    }
-
     public function createMovimientoCaja(array $data): MovimientoCaja
     {
         return MovimientoCaja::create($data)->load(['usuario', 'caja']);
@@ -204,5 +196,20 @@ class VentaRepository implements VentaRepositoryInterface
     public function findUserById(int $id): ?User
     {
         return User::with('bodega')->find($id);
+    }
+
+    public function getCajaAbiertaByTipoAndDestino(
+        string $tipoCaja,
+        int $destinoRecaudoId
+    ): ?Caja
+    {
+        return Caja::query()
+            ->where('estado', 'abierta')
+            ->where('tipo_caja', $tipoCaja)
+            ->where(
+                'destino_recaudo_id',
+                $destinoRecaudoId
+            )
+            ->first();
     }
 }

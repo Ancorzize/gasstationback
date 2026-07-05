@@ -14,7 +14,7 @@ class ChangeCategoriaProductoStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'is_active' => ['required', 'boolean'],
+            'is_active' => ['required', 'boolean']
         ];
     }
 
@@ -22,7 +22,7 @@ class ChangeCategoriaProductoStatusRequest extends FormRequest
     {
         return [
             'is_active.required' => 'El estado es obligatorio.',
-            'is_active.boolean' => 'El estado debe ser verdadero o falso.',
+            'is_active.boolean' => 'El estado debe ser verdadero o falso.'
         ];
     }
 }

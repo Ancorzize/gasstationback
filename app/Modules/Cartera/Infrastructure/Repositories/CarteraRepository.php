@@ -88,14 +88,6 @@ class CarteraRepository implements CarteraRepositoryInterface
             ->get();
     }
 
-    public function getCajaAbiertaByTipo(string $tipoCaja): ?Caja
-    {
-        return Caja::query()
-            ->where('estado', 'abierta')
-            ->where('tipo_caja', $tipoCaja)
-            ->first();
-    }
-
     public function createMovimientoCaja(array $data): MovimientoCaja
     {
         return MovimientoCaja::create($data)->load(['usuario', 'caja']);
@@ -134,6 +126,21 @@ class CarteraRepository implements CarteraRepositoryInterface
         return TurnoIslero::query()
             ->where('user_id', $userId)
             ->where('estado', 'abierto')
+            ->first();
+    }
+
+    public function getCajaAbiertaByTipoAndDestino(
+        string $tipoCaja,
+        int $destinoRecaudoId
+    ): ?Caja
+    {
+        return Caja::query()
+            ->where('estado', 'abierta')
+            ->where('tipo_caja', $tipoCaja)
+            ->where(
+                'destino_recaudo_id',
+                $destinoRecaudoId
+            )
             ->first();
     }
 }

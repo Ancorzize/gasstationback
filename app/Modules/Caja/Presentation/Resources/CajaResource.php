@@ -35,6 +35,11 @@ class CajaResource extends JsonResource
             'observacion_cierre' => $this->observacion_cierre,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-        ];
+            'nombre' => $this->nombre,
+            'destino_recaudo_id' => $this->destino_recaudo_id,
+            'destino_recaudo' => $this->destinoRecaudo ? [
+                'id' => $this->destinoRecaudo->id,
+                'nombre' => $this->destinoRecaudo->nombre,
+            ]: null];
     }
 }

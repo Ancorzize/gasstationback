@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CategoriaProducto extends Model
 {
@@ -12,6 +13,7 @@ class CategoriaProducto extends Model
         'nombre',
         'descripcion',
         'is_active',
+        'destino_recaudo_id',
     ];
 
     protected function casts(): array
@@ -19,5 +21,13 @@ class CategoriaProducto extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function destinoRecaudo(): BelongsTo
+    {
+        return $this->belongsTo(
+            DestinoRecaudo::class,
+            'destino_recaudo_id'
+        );
     }
 }

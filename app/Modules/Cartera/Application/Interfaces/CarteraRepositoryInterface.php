@@ -24,11 +24,11 @@ interface CarteraRepositoryInterface
 
     public function getMovimientosByCliente(int $clienteId): Collection;
 
-    public function getCajaAbiertaByTipo(string $tipoCaja): ?Caja;
-
     public function createMovimientoCaja(array $data): MovimientoCaja;
 
     public function resumen(): array;
 
     public function getTurnoAbiertoByUser(int $userId): ?TurnoIslero;
+
+    public function getCajaAbiertaByTipoAndDestino(string $tipoCaja, int $destinoRecaudoId): ?Caja;
 }

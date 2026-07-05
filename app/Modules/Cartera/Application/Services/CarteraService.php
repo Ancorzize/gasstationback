@@ -11,6 +11,8 @@ use App\Modules\Cartera\Application\Interfaces\CarteraRepositoryInterface;
 
 class CarteraService
 {
+    private const DESTINO_CARTERA = 3;
+
     public function __construct(
         protected CarteraRepositoryInterface $carteraRepository
     ) {}
@@ -93,7 +95,7 @@ class CarteraService
 
             $tipoCaja = $dto->medio_pago === 'efectivo' ? 'efectivo' : 'digital';
 
-            $caja = $this->carteraRepository->getCajaAbiertaByTipo($tipoCaja);
+            $caja = $this->carteraRepository->getCajaAbiertaByTipoAndDestino( $tipoCaja, self::DESTINO_CARTERA);
 
             if (!$caja) {
                 throw new HttpException(422, "No hay caja {$tipoCaja} abierta.");

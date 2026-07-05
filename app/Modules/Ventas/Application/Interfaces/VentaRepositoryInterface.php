@@ -41,8 +41,6 @@ interface VentaRepositoryInterface
 
     public function createMovimientoInventario(array $data): MovimientoInventario;
 
-    public function getCajaAbiertaByTipo(string $tipoCaja): ?Caja;
-
     public function createMovimientoCaja(array $data): MovimientoCaja;
 
     public function createMovimientoCartera(array $data): MovimientoCartera;
@@ -60,4 +58,6 @@ interface VentaRepositoryInterface
     public function getLecturaAbiertaByTurnoAndManguera(int $turnoId, int $mangueraId): ?LecturaManguera;
 
     public function findUserById(int $id): ?User;
+
+    public function getCajaAbiertaByTipoAndDestino( string $tipoCaja, int $destinoRecaudoId): ?Caja;
 }

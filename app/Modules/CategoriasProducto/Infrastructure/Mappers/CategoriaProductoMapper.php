@@ -12,6 +12,7 @@ class CategoriaProductoMapper
         return new CreateCategoriaProductoDTO(
             nombre: $data['nombre'],
             descripcion: $data['descripcion'] ?? null,
+            destino_recaudo_id: $data['destino_recaudo_id']
         );
     }
 
@@ -20,6 +21,7 @@ class CategoriaProductoMapper
         return new UpdateCategoriaProductoDTO(
             nombre: $data['nombre'],
             descripcion: $data['descripcion'] ?? null,
+            destino_recaudo_id: $data['destino_recaudo_id']
         );
     }
 }

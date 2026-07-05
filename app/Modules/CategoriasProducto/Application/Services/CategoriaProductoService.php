@@ -36,6 +36,7 @@ class CategoriaProductoService
             'nombre' => $dto->nombre,
             'descripcion' => $dto->descripcion,
             'is_active' => true,
+            'destino_recaudo_id' => $dto->destino_recaudo_id,
         ]);
     }
 
@@ -46,6 +47,7 @@ class CategoriaProductoService
         return $this->categoriaProductoRepository->update($categoria, [
             'nombre' => $dto->nombre,
             'descripcion' => $dto->descripcion,
+            'destino_recaudo_id' => $dto->destino_recaudo_id,
         ]);
     }
 

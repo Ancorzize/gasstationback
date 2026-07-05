@@ -24,6 +24,7 @@ class UpdateCategoriaProductoRequest extends FormRequest
                 Rule::unique('categorias_producto', 'nombre')->ignore($id),
             ],
             'descripcion' => ['nullable', 'string'],
+            'destino_recaudo_id' => ['required', 'integer'],
         ];
     }
 
@@ -32,6 +33,7 @@ class UpdateCategoriaProductoRequest extends FormRequest
         return [
             'nombre.required' => 'El nombre es obligatorio.',
             'nombre.unique' => 'La categoría ya está registrada.',
+            'destino_recaudo_id.required' => 'El destino de recaudo es obligatorio.',
         ];
     }
 }

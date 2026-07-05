@@ -19,133 +19,172 @@ class CajaService
         return $this->cajaRepository->getCajasAbiertas();
     }
 
-    public function abrirCaja(AperturaCajaDTO $dto)
+    public function abrirCaja(
+        AperturaCajaDTO $dto
+    )
     {
         return DB::transaction(function () use ($dto) {
-            if ($this->cajaRepository->existsCajaAbierta()) {
-                throw new HttpException(422, 'Ya existen cajas abiertas.');
+
+            if (
+                $this->cajaRepository
+                    ->existsCajaAbiertaByTipoAndDestino(
+                        $dto->tipo_caja,
+                        $dto->destino_recaudo_id
+                    )
+            ) {
+                throw new HttpException(
+                    422,
+                    'Ya existe una caja abierta para ese destino y tipo.'
+                );
             }
 
-            $cajaEfectivo = $this->crearCajaPorTipo(
-                tipoCaja: 'efectivo',
-                montoApertura: $dto->monto_apertura_efectivo,
-                medioPago: 'efectivo',
-                dto: $dto
-            );
+            $caja = $this->cajaRepository->createCaja([
+                'nombre' => $dto->nombre,
+                'tipo_caja' => $dto->tipo_caja,
+                'destino_recaudo_id' => $dto->destino_recaudo_id,
+                'fecha_apertura' => now(),
+                'monto_apertura' => $dto->monto_apertura,
+                'monto_cierre_sistema' => 0,
+                'monto_cierre_real' => null,
+                'diferencia_cierre' => 0,
+                'estado' => 'abierta',
+                'user_apertura_id' => $dto->user_id,
+                'observacion_apertura' => $dto->observacion_apertura,
+                'user_cierre_id' => null,
+                'observacion_cierre' => null,
+            ]);
 
-            $cajaDigital = $this->crearCajaPorTipo(
-                tipoCaja: 'digital',
-                montoApertura: $dto->monto_apertura_digital,
-                medioPago: 'digital',
-                dto: $dto
-            );
+            $this->cajaRepository->createMovimiento([
+                'caja_id' => $caja->id,
+                'tipo_movimiento' => 'ingreso',
+                'categoria_movimiento' => 'apertura',
+                'origen_modulo' => 'caja',
+                'origen_id' => $caja->id,
+                'medio_pago' => $dto->tipo_caja,
+                'monto' => $dto->monto_apertura,
+                'descripcion' => 'Apertura caja',
+                'user_id' => $dto->user_id,
+                'fecha_movimiento' => now(),
+            ]);
 
-            return [
-                'cajas' => [
-                    'efectivo' => $cajaEfectivo,
-                    'digital' => $cajaDigital,
-                ],
-                'resumen' => $this->getResumenCajaActual(),
-            ];
+            return $this->cajaRepository
+                ->findById($caja->id);
         });
     }
 
-    private function crearCajaPorTipo(string $tipoCaja, float $montoApertura, string $medioPago, AperturaCajaDTO $dto)
-    {
-        $caja = $this->cajaRepository->createCaja([
-            'tipo_caja' => $tipoCaja,
-            'fecha_apertura' => now(),
-            'monto_apertura' => $montoApertura,
-            'monto_cierre_sistema' => 0,
-            'monto_cierre_real' => null,
-            'diferencia_cierre' => 0,
-            'estado' => 'abierta',
-            'user_apertura_id' => $dto->user_id,
-            'user_cierre_id' => null,
-            'observacion_apertura' => $dto->observacion_apertura,
-            'observacion_cierre' => null,
-        ]);
 
-        $this->cajaRepository->createMovimiento([
-            'caja_id' => $caja->id,
-            'tipo_movimiento' => 'ingreso',
-            'categoria_movimiento' => 'apertura',
-            'origen_modulo' => 'caja',
-            'origen_id' => $caja->id,
-            'medio_pago' => $medioPago,
-            'monto' => $montoApertura,
-            'descripcion' => 'Apertura de caja ' . $tipoCaja,
-            'user_id' => $dto->user_id,
-            'fecha_movimiento' => now(),
-        ]);
-
-        return $this->cajaRepository->findById($caja->id);
-    }
-
-    public function cerrarCaja(CierreCajaDTO $dto)
+    public function cerrarCaja(
+        CierreCajaDTO $dto
+    )
     {
         return DB::transaction(function () use ($dto) {
-            $cajaEfectivo = $this->cajaRepository->getCajaAbiertaByTipo('efectivo');
-            $cajaDigital = $this->cajaRepository->getCajaAbiertaByTipo('digital');
 
-            if (!$cajaEfectivo || !$cajaDigital) {
-                throw new HttpException(422, 'No existen las dos cajas abiertas.');
+            $idsCajasAbiertas = $this->cajaRepository->getCajasAbiertas()->pluck('id')->toArray();
+
+            if (empty($idsCajasAbiertas)) { 
+                throw new HttpException( 422,'No existen cajas abiertas.');
             }
 
-            $this->cerrarCajaPorTipo(
-                caja: $cajaEfectivo,
-                montoCierreReal: $dto->monto_cierre_real_efectivo,
-                userId: $dto->user_id,
-                observacion: $dto->observacion_cierre
+            $idsEnviados = collect($dto->cierres)->pluck('caja_id')->toArray();
+
+            if (count($idsEnviados) !== count(array_unique($idsEnviados))) {
+                throw new HttpException(
+                    422,
+                    'Existen cajas repetidas en el cierre.'
+                );
+            }
+
+            $faltantes = array_diff(
+                $idsCajasAbiertas,
+                $idsEnviados
             );
 
-            $this->cerrarCajaPorTipo(
-                caja: $cajaDigital,
-                montoCierreReal: $dto->monto_cierre_real_digital,
-                userId: $dto->user_id,
-                observacion: $dto->observacion_cierre
-            );
+            if (!empty($faltantes)) {
 
-            return [
-                'cajas' => [
-                    'efectivo' => $this->cajaRepository->findById($cajaEfectivo->id),
-                    'digital' => $this->cajaRepository->findById($cajaDigital->id),
-                ],
-            ];
+                throw new HttpException(
+                    422,
+                    'Debe enviar el arqueo de todas las cajas abiertas.'
+                );
+            }
+
+            foreach ($dto->cierres as $cierre) {
+
+                $caja = $this->cajaRepository->findById($cierre->caja_id);
+
+                if (!$caja) {
+                    throw new HttpException(
+                        422,
+                        "Caja {$cierre->caja_id} no existe."
+                    );
+                }
+
+                if ($caja->estado !== 'abierta') {
+                    throw new HttpException(
+                        422,
+                        "Caja {$caja->id} ya está cerrada."
+                    );
+                }
+
+                $resumen =
+                    $this->getResumenCaja(
+                        $caja->id
+                    );
+
+                $saldoSistema =
+                    $resumen['saldo_sistema'];
+
+                $diferencia =
+                    $cierre->monto_real
+                    - $saldoSistema;
+
+                $this->cajaRepository
+                    ->updateCaja(
+                        $caja,
+                        [
+                            'fecha_cierre' => now(),
+                            'monto_cierre_sistema'
+                                => $saldoSistema,
+                            'monto_cierre_real'
+                                => $cierre->monto_real,
+                            'diferencia_cierre'
+                                => $diferencia,
+                            'estado' => 'cerrada',
+                            'user_cierre_id'
+                                => $dto->user_id,
+                            'observacion_cierre'
+                                => $dto->observacion_cierre,
+                        ]
+                    );
+            }
+
+            return true;
         });
-    }
-
-    private function cerrarCajaPorTipo($caja, float $montoCierreReal, int $userId, ?string $observacion): void
-    {
-        $resumen = $this->getResumenCaja($caja->id);
-
-        $montoCierreSistema = $resumen['saldo_sistema'];
-        $diferencia = $montoCierreReal - $montoCierreSistema;
-
-        $this->cajaRepository->updateCaja($caja, [
-            'fecha_cierre' => now(),
-            'monto_cierre_sistema' => $montoCierreSistema,
-            'monto_cierre_real' => $montoCierreReal,
-            'diferencia_cierre' => $diferencia,
-            'estado' => 'cerrada',
-            'user_cierre_id' => $userId,
-            'observacion_cierre' => $observacion,
-        ]);
     }
 
     public function getResumenCajaActual(): array
     {
-        $cajaEfectivo = $this->cajaRepository->getCajaAbiertaByTipo('efectivo');
-        $cajaDigital = $this->cajaRepository->getCajaAbiertaByTipo('digital');
+         $cajas = $this->cajaRepository->getCajasAbiertas();
 
-        if (!$cajaEfectivo || !$cajaDigital) {
-            throw new HttpException(422, 'No existen las dos cajas abiertas.');
-        }
+        return $cajas
+            ->map(function ($caja) {
 
-        return [
-            'efectivo' => $this->getResumenCaja($cajaEfectivo->id),
-            'digital' => $this->getResumenCaja($cajaDigital->id),
-        ];
+                $resumen = $this->getResumenCaja($caja->id);
+
+                return [
+                    'id' => $caja->id,
+                    'nombre' => $caja->nombre,
+                    'tipo_caja' => $caja->tipo_caja,
+                    'destino_recaudo_id' => $caja->destino_recaudo_id,
+                    'estado' => $caja->estado,
+                    'fecha_apertura' => $caja->fecha_apertura,
+
+                    'ingresos' => $resumen['ingresos'],
+                    'egresos' => $resumen['egresos'],
+                    'saldo_sistema' => $resumen['saldo_sistema'],
+                ];
+            })
+            ->values()
+            ->toArray();
     }
 
     private function getResumenCaja(int $cajaId): array

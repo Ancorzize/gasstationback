@@ -57,12 +57,59 @@ class VentaService
             $sobreTasa = 0;
             $descuento = 0;
             $total = 0;
+            $destinoRecaudoId = null;
 
             foreach ($dto->detalles as $detalle) {
 
                 $producto = $this->ventaRepository->findProductoById(
                     $detalle->producto_id
                 );
+
+                if (!$producto) {
+                    throw new HttpException(
+                        422,
+                        "Producto {$detalle->producto_id} no existe."
+                    );
+                }
+
+                if (
+                    !$producto->categoriaProducto
+                ) {
+                    throw new HttpException(
+                        422,
+                        "El producto {$producto->nombre} no tiene categoría."
+                    );
+                }
+
+                if (
+                    !$producto->categoriaProducto->destino_recaudo_id
+                ) {
+                    throw new HttpException(
+                        422,
+                        "La categoría del producto {$producto->nombre} no tiene destino de recaudo."
+                    );
+                }
+
+                if ($destinoRecaudoId === null) {
+
+                    $destinoRecaudoId =
+                        $producto
+                            ->categoriaProducto
+                            ->destino_recaudo_id;
+
+                } elseif (
+                    $destinoRecaudoId !==
+                    $producto
+                        ->categoriaProducto
+                        ->destino_recaudo_id
+                ) {
+
+                    throw new HttpException(
+                        422,
+                        'No se permiten productos de diferentes destinos de recaudo en una misma venta.'
+                    );
+                }
+
 
                 if (!$producto) {
                     throw new HttpException(
@@ -163,6 +210,7 @@ class VentaService
                 'fecha_venta' => now(),
                 'observacion' => $dto->observacion,
                 'turno_islero_id' => $turnoAbierto?->id,
+                'destino_recaudo_id' => $destinoRecaudoId,
             ]);
 
 
@@ -205,16 +253,22 @@ class VentaService
             foreach ($dto->pagos as $pago) {
 
 
-                $tipoCaja = $pago->metodo_pago === 'efectivo'
-                    ? 'efectivo'
-                    : 'digital';
+                $tipoCaja =
+                    $this->resolverTipoCaja(
+                        $pago->metodo_pago
+                    );
 
-                $caja = $this->ventaRepository->getCajaAbiertaByTipo($tipoCaja);
+                $caja =
+                    $this->ventaRepository
+                        ->getCajaAbiertaByTipoAndDestino(
+                            $tipoCaja,
+                            $destinoRecaudoId
+                        );
 
                 if (!$caja) {
                     throw new HttpException(
                         422,
-                        "No hay caja {$tipoCaja} abierta."
+                        "No existe caja abierta para el destino de recaudo configurado."
                     );
                 }
 
@@ -280,6 +334,27 @@ class VentaService
 
             return $this->findById($venta->id);
         });
+    }
+
+    private function resolverTipoCaja(
+        string $metodoPago
+    ): string
+    {
+        return match ($metodoPago) {
+
+            'efectivo' => 'efectivo',
+
+            'qr',
+            'transferencia',
+            'datafono',
+            'consignacion',
+            'digital' => 'digital',
+
+            default => throw new HttpException(
+                422,
+                "Método de pago {$metodoPago} inválido."
+            ),
+        };
     }
 
     public function anular(int $id, string $motivoAnulacion, int $userId): Venta
@@ -412,6 +487,33 @@ class VentaService
             $manguera = $this->ventaRepository->findMangueraById($dto->manguera_id);
 
             if (!$manguera) {
+                throw new HttpException(
+                    422,
+                    'Manguera no encontrada.'
+                );
+            }
+
+            if (!$manguera->producto->categoriaProducto) {
+                throw new HttpException(
+                    422,
+                    'El producto combustible no tiene categoría.'
+                );
+            }
+
+            $destinoRecaudoId =
+                $manguera->producto
+                    ->categoriaProducto
+                    ->destino_recaudo_id;
+
+            if (!$destinoRecaudoId) {
+
+                throw new HttpException(
+                    422,
+                    'La categoría del combustible no tiene destino de recaudo.'
+                );
+            }
+
+            if (!$manguera) {
                 throw new HttpException(422, 'Manguera no encontrada.');
             }
 
@@ -480,10 +582,11 @@ class VentaService
             }
 
             if ($dto->tipo_venta !== 'credito') {
-                $tipoCaja = $dto->metodo_pago === 'efectivo' ? 'efectivo' : 'digital';
+                $tipoCaja = $this->resolverTipoCaja(
+                    $dto->metodo_pago
+                );
 
-                $caja = $this->ventaRepository->getCajaAbiertaByTipo($tipoCaja);
-
+                $caja = $this->ventaRepository->getCajaAbiertaByTipoAndDestino($tipoCaja, $destinoRecaudoId );
                 if (!$caja) {
                     throw new HttpException(422, "No hay caja {$tipoCaja} abierta.");
                 }
@@ -512,6 +615,7 @@ class VentaService
                 'fecha_venta' => now(),
                 'observacion' => $dto->observacion,
                 'tipo_origen' => 'combustible',
+                'destino_recaudo_id' => $destinoRecaudoId,
             ]);
 
             $this->ventaRepository->createDetalle([

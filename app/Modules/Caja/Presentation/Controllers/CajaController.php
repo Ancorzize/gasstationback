@@ -51,13 +51,11 @@ class CajaController extends Controller
 
             $resultado = $this->cajaService->abrirCaja($dto);
 
-            return ApiResponse::success([
-                'cajas' => [
-                    'efectivo' => new CajaResource($resultado['cajas']['efectivo']),
-                    'digital' => new CajaResource($resultado['cajas']['digital']),
-                ],
-                'resumen' => $resultado['resumen'],
-            ], 'Cajas abiertas correctamente.', 201);
+            return ApiResponse::success(
+                new CajaResource($resultado),
+                'Caja abierta correctamente.',
+                201
+            );
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
@@ -79,12 +77,12 @@ class CajaController extends Controller
 
             $resultado = $this->cajaService->cerrarCaja($dto);
 
-            return ApiResponse::success([
-                'cajas' => [
-                    'efectivo' => new CajaResource($resultado['cajas']['efectivo']),
-                    'digital' => new CajaResource($resultado['cajas']['digital']),
+            return ApiResponse::success(
+                [
+                    'success' => true
                 ],
-            ], 'Cajas cerradas correctamente.');
+                'Cajas cerradas correctamente.'
+            );
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {

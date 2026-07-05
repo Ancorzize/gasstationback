@@ -162,6 +162,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'ver_precios_combustible',
             'crear_precios_combustible',
             'cambiar_estado_precios_combustible',
+
+            'ver_destinos_recaudo',
+            'crear_destino_recaudo',
+            'editar_destino_recaudo',
+            'eliminar_destino_recaudo'
         ];
 
         foreach ($permissions as $perm) {

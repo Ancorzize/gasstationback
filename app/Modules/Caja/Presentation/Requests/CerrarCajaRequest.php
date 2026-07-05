@@ -11,14 +11,32 @@ class CerrarCajaRequest extends FormRequest
         return true;
     }
 
-    public function rules(): array
+   public function rules(): array
     {
         return [
-            'monto_cierre_real_efectivo' => ['required', 'numeric', 'min:0'],
-            'monto_cierre_real_digital' => ['required', 'numeric', 'min:0'],
-            'observacion_cierre' => ['nullable', 'string'],
-        ];
 
+            'cierres' => [
+                'required',
+                'array',
+                'min:1'
+            ],
+
+            'cierres.*.caja_id' => [
+                'required',
+                'exists:cajas,id'
+            ],
+
+            'cierres.*.monto_real' => [
+                'required',
+                'numeric',
+                'min:0'
+            ],
+
+            'observacion_cierre' => [
+                'nullable',
+                'string'
+            ],
+        ];
     }
 
     public function messages(): array

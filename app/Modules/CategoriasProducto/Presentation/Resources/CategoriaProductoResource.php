@@ -15,6 +15,7 @@ class CategoriaProductoResource extends JsonResource
             'descripcion' => $this->descripcion,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at,
+            'destino_recaudo_id' => $this->destino_recaudo_id
         ];
     }
 }

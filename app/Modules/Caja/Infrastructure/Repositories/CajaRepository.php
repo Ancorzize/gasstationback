@@ -10,13 +10,6 @@ use App\Modules\Caja\Application\Interfaces\CajaRepositoryInterface;
 
 class CajaRepository implements CajaRepositoryInterface
 {
-    public function getCajaAbierta(): ?Caja
-    {
-        return Caja::query()
-            ->with(['usuarioApertura', 'usuarioCierre'])
-            ->where('estado', 'abierta')
-            ->first();
-    }
 
     public function findById(int $id): ?Caja
     {
@@ -114,19 +107,14 @@ class CajaRepository implements CajaRepositoryInterface
     public function getCajasAbiertas(): Collection
     {
         return Caja::query()
-            ->with(['usuarioApertura', 'usuarioCierre'])
+            ->with([
+                'usuarioApertura',
+                'usuarioCierre',
+                'destinoRecaudo'
+            ])
             ->where('estado', 'abierta')
             ->orderBy('tipo_caja')
             ->get();
-    }
-
-    public function getCajaAbiertaByTipo(string $tipoCaja): ?Caja
-    {
-        return Caja::query()
-            ->with(['usuarioApertura', 'usuarioCierre'])
-            ->where('estado', 'abierta')
-            ->where('tipo_caja', $tipoCaja)
-            ->first();
     }
 
     public function existsCajaAbierta(): bool
@@ -173,6 +161,13 @@ class CajaRepository implements CajaRepositoryInterface
             $query->where('user_cierre_id', $filters['user_cierre_id']);
         }
 
+        if (!empty($filters['destino_recaudo_id'])) {
+            $query->where(
+                'destino_recaudo_id',
+                $filters['destino_recaudo_id']
+            );
+        }
+
         if (!empty($filters['search'])) {
             $search = $filters['search'];
 
@@ -193,5 +188,40 @@ class CajaRepository implements CajaRepositoryInterface
         }
 
         return $query->orderByDesc('fecha_apertura')->paginate($perPage);
+    }
+
+    public function getCajaAbiertaByTipoAndDestino(
+        string $tipoCaja,
+        int $destinoRecaudoId
+    ): ?Caja
+    {
+        return Caja::query()
+            ->with([
+                'usuarioApertura',
+                'usuarioCierre',
+                'destinoRecaudo'
+            ])
+            ->where('estado', 'abierta')
+            ->where('tipo_caja', $tipoCaja)
+            ->where(
+                'destino_recaudo_id',
+                $destinoRecaudoId
+            )
+            ->first();
+    }
+
+    public function existsCajaAbiertaByTipoAndDestino(
+        string $tipoCaja,
+        int $destinoRecaudoId
+    ): bool
+    {
+        return Caja::query()
+            ->where('estado', 'abierta')
+            ->where('tipo_caja', $tipoCaja)
+            ->where(
+                'destino_recaudo_id',
+                $destinoRecaudoId
+            )
+            ->exists();
     }
 }

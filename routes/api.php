@@ -14,7 +14,7 @@ use App\Modules\Productos\Presentation\Controllers\ProductoController;
 use App\Modules\Servicios\Presentation\Controllers\ServicioController;
 use App\Modules\Ubicaciones\Presentation\Controllers\UbicacionController;
 use App\Modules\ConfiguracionEmpresa\Presentation\Controllers\ConfiguracionEmpresaController;
-use App\Modules\Uploads\Presentation\Controllers\UploadController;
+use App\Modules\DestinoRecaudo\Presentation\Controllers\DestinoRecaudoController;
 use App\Modules\Perfil\Presentation\Controllers\PerfilController;
 use App\Modules\Bodegas\Presentation\Controllers\BodegaController;
 use App\Modules\Inventarios\Presentation\Controllers\ImportInventarioController;
@@ -271,4 +271,13 @@ Route::middleware(['auth:sanctum'])->prefix('precios-combustible')->group(functi
     Route::get('/{id}', [PrecioCombustibleController::class, 'show']);
     Route::post('/', [PrecioCombustibleController::class, 'store']);
     Route::patch('/{id}/status', [PrecioCombustibleController::class, 'changeStatus']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('destinos-recaudo')->group(function () {
+    Route::get('/', [DestinoRecaudoController::class,'index']);
+    Route::get('{id}', [DestinoRecaudoController::class,'show']);
+    Route::post('/', [DestinoRecaudoController::class,'store']);
+    Route::put('{id}', [DestinoRecaudoController::class,'update']);
+    Route::patch('{id}/status', [DestinoRecaudoController::class,'changeStatus']);
+    Route::delete('{id}', [DestinoRecaudoController::class,'destroy']);
 });

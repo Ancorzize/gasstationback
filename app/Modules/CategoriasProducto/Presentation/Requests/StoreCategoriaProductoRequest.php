@@ -16,6 +16,7 @@ class StoreCategoriaProductoRequest extends FormRequest
         return [
             'nombre' => ['required', 'string', 'max:150', 'unique:categorias_producto,nombre'],
             'descripcion' => ['nullable', 'string'],
+            'destino_recaudo_id' => ['required', 'integer']
         ];
     }
 
@@ -24,6 +25,7 @@ class StoreCategoriaProductoRequest extends FormRequest
         return [
             'nombre.required' => 'El nombre es obligatorio.',
             'nombre.unique' => 'La categoría ya está registrada.',
+            'destino_recaudo_id.required' => 'el destino de recaudo es obligatorio'
         ];
     }
 }
