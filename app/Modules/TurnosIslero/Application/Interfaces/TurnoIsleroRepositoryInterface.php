@@ -2,8 +2,9 @@
 
 namespace App\Modules\TurnosIslero\Application\Interfaces;
 
-use App\Models\Manguera;
 use App\Models\TurnoIslero;
+use App\Models\Caja;
+use App\Models\MovimientoCaja;
 use App\Models\LecturaManguera;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -61,6 +62,16 @@ interface TurnoIsleroRepositoryInterface
     public function getVentasLubricantesDetalleByTurno(int $turnoId): Collection;
 
     public function getAbonosDetalleByTurno(int $turnoId): Collection;
-    
 
+    public function getResumenPagosPorDestino(int $turnoId): Collection;
+
+    public function getDestinosRecaudoConVentas(int $turnoId): Collection;
+        
+    public function getVentasDelTurnoConDestino(int $turnoId): Collection;
+
+    public function getCajaAbiertaByTipoAndDestino( string $tipoCaja, int $destinoRecaudoId): ?Caja;
+
+    public function createMovimientoCaja(array $data): MovimientoCaja;
+
+    public function getResumenDestinosTurno( int $turnoId): Collection;
 }

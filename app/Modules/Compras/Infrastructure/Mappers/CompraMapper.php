@@ -2,10 +2,10 @@
 
 namespace App\Modules\Compras\Infrastructure\Mappers;
 
-use App\Modules\Compras\Application\DTOs\CompraDTO;
 use App\Modules\Compras\Application\DTOs\CreateCompraDTO;
 use App\Modules\Compras\Application\DTOs\DetalleCompraDTO;
 use App\Modules\Compras\Application\DTOs\UpdateCompraDTO;
+use App\Modules\Compras\Application\DTOs\ConfirmarCompraDTO;
 
 class CompraMapper
 {
@@ -62,6 +62,17 @@ class CompraMapper
             observacion: $data['observacion'] ?? null,
             numero_comprobante: $data['numero_comprobante'] ?? null,
             detalles: self::mapDetalles($data['detalles']),
+        );
+    }
+
+    public static function fromArrayToConfirmarDTO(
+        array $data
+    ): ConfirmarCompraDTO
+    {
+        return new ConfirmarCompraDTO(
+
+            caja_id: (int) $data['caja_id']
+
         );
     }
 }

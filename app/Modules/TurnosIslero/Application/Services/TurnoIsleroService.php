@@ -10,7 +10,7 @@ use App\Modules\TurnosIslero\Application\DTOs\AbrirTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\DTOs\CerrarTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterface;
 use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
-
+use Illuminate\Support\Collection;
 class TurnoIsleroService
 {
     public function __construct(
@@ -182,15 +182,28 @@ class TurnoIsleroService
     public function cerrar(CerrarTurnoIsleroDTO $dto): TurnoIslero
     {
         return DB::transaction(function () use ($dto) {
+
             $turno = $this->findById($dto->turno_id);
 
             if ($turno->estado !== 'abierto') {
-                throw new HttpException(422, 'Solo se pueden cerrar turnos abiertos.');
+                throw new HttpException(
+                    422,
+                    'Solo se pueden cerrar turnos abiertos.'
+                );
             }
 
             if ((int) $turno->user_id !== (int) $dto->user_id) {
-                throw new HttpException(403, 'No puedes cerrar un turno de otro usuario.');
+                throw new HttpException(
+                    403,
+                    'No puedes cerrar un turno de otro usuario.'
+                );
             }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Validar lecturas enviadas
+            |--------------------------------------------------------------------------
+            */
 
             $manguerasAsignadas = $turno->lecturas
                 ->pluck('manguera_id')
@@ -202,197 +215,257 @@ class TurnoIsleroService
                 ->map(fn ($id) => (int) $id)
                 ->toArray();
 
-            $faltantes = array_values(array_diff($manguerasAsignadas, $manguerasEnviadas));
+            $faltantes = array_values(
+                array_diff(
+                    $manguerasAsignadas,
+                    $manguerasEnviadas
+                )
+            );
 
-            if (count($faltantes) > 0) {
+            if (!empty($faltantes)) {
+
                 throw ValidationException::withMessages([
                     'lecturas_finales_faltantes' => $faltantes,
                 ]);
+
             }
 
-            $noAsignadas = array_values(array_diff($manguerasEnviadas, $manguerasAsignadas));
+            $noAsignadas = array_values(
+                array_diff(
+                    $manguerasEnviadas,
+                    $manguerasAsignadas
+                )
+            );
 
-            if (count($noAsignadas) > 0) {
-                throw new HttpException(422, 'Una o más mangueras enviadas no pertenecen a este turno.');
-            }
+            if (!empty($noAsignadas)) {
 
-            foreach ($dto->lecturas_finales as $item) {
-                $mangueraId = (int) $item['manguera_id'];
-                $lecturaFinal = (float) $item['lectura_final'];
-
-                $lectura = $this->turnoRepository->findLecturaByTurnoAndManguera(
-                    $turno->id,
-                    $mangueraId
+                throw new HttpException(
+                    422,
+                    'Una o más mangueras enviadas no pertenecen a este turno.'
                 );
 
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Guardar lecturas finales
+            |--------------------------------------------------------------------------
+            */
+
+            foreach ($dto->lecturas_finales as $item) {
+
+                $mangueraId = (int) $item['manguera_id'];
+
+                $lecturaFinal = (float) $item['lectura_final'];
+
+                $lectura =
+                    $this->turnoRepository
+                        ->findLecturaByTurnoAndManguera(
+                            $turno->id,
+                            $mangueraId
+                        );
+
                 if (!$lectura) {
-                    throw new HttpException(422, "La manguera {$mangueraId} no pertenece a este turno.");
+
+                    throw new HttpException(
+                        422,
+                        "La manguera {$mangueraId} no pertenece al turno."
+                    );
+
                 }
 
                 if ($lecturaFinal < (float) $lectura->lectura_inicial) {
+
                     throw new HttpException(
                         422,
-                        "La lectura final no puede ser menor que la inicial en la manguera {$mangueraId}."
+                        "La lectura final no puede ser menor que la inicial."
                     );
+
                 }
 
-                $galonesVendidos = $lecturaFinal - (float) $lectura->lectura_inicial;
-                $totalVentaFisica = $galonesVendidos * (float) $lectura->precio_galon;
+                $galonesVendidos =
+                    $lecturaFinal -
+                    (float) $lectura->lectura_inicial;
 
-                $this->turnoRepository->updateLectura($lectura, [
-                    'lectura_final' => $lecturaFinal,
-                    'galones_vendidos' => $galonesVendidos,
-                    'total_venta' => $totalVentaFisica,
-                ]);
+                $totalVentaFisica =
+                    $galonesVendidos *
+                    (float) $lectura->precio_galon;
+
+                $this->turnoRepository
+                    ->updateLectura(
+                        $lectura,
+                        [
+                            'lectura_final' => $lecturaFinal,
+                            'galones_vendidos' => $galonesVendidos,
+                            'total_venta' => $totalVentaFisica,
+                        ]
+                    );
             }
 
-            $totalVentasCombustible = $this->turnoRepository->sumVentasCombustibleByTurno($turno->id);
-            $totalVentasLubricantes = $this->turnoRepository->sumVentasLubricantesByTurno($turno->id);
-            $totalCreditos = $this->turnoRepository->sumVentasCreditoByTurno($turno->id);
-            $totalAbonos = $this->turnoRepository->sumAbonosByTurno($turno->id);
+            /*
+            |--------------------------------------------------------------------------
+            | Totales sistema
+            |--------------------------------------------------------------------------
+            */
+
+            $totalVentasCombustible =
+                $this->turnoRepository
+                    ->sumVentasCombustibleByTurno(
+                        $turno->id
+                    );
+
+            $totalVentasLubricantes =
+                $this->turnoRepository
+                    ->sumVentasLubricantesByTurno(
+                        $turno->id
+                    );
+
+            $totalCreditos =
+                $this->turnoRepository
+                    ->sumVentasCreditoByTurno(
+                        $turno->id
+                    );
+
+            $totalAbonos =
+                $this->turnoRepository
+                    ->sumAbonosByTurno(
+                        $turno->id
+                    );
+
+            $this->validarRecaudoDestinos(
+                $turno,
+                $dto
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Totales reportados por el usuario
+            |--------------------------------------------------------------------------
+            */
+
+            $pagos = [
+
+                'efectivo' => 0,
+
+                'qr' => 0,
+
+                'datafono' => 0,
+
+                'transferencia' => 0,
+
+                'consignacion' => 0,
+
+            ];
+
+            foreach ($dto->destinos_recaudo as $destino) {
+
+                foreach ($destino['pagos'] as $medio => $valor) {
+
+                    $pagos[$medio] += (float) $valor;
+
+                }
+
+            }
 
             $totalReportado =
-                $dto->pagos_qr +
-                $dto->pagos_datafono +
-                $dto->pagos_transferencia +
-                $dto->pagos_consignacion +
-                $dto->pagos_efectivo +
-                $totalCreditos +
+                array_sum($pagos) +
                 $dto->otros_movimientos;
 
             $totalSistema =
                 $totalVentasCombustible +
                 $totalVentasLubricantes +
-                $totalAbonos;
+                $totalAbonos -
+                $totalCreditos;
 
-            $balanceFinal = $totalSistema - $totalReportado;
+            $balanceFinal =
+                $totalSistema -
+                $totalReportado;
 
-            $isIslero = $turno->usuario->hasRole('islero');
-            if($isIslero)
-            {
-                $this->movimientosCaja($dto, $turno);    
+            /*
+            |--------------------------------------------------------------------------
+            | Registrar ingresos en caja
+            |--------------------------------------------------------------------------
+            */
+
+            if ($turno->usuario->hasRole('islero')) {
+
+                $this->registrarMovimientosCaja(
+                    $dto,
+                    $turno
+                );
+
             }
 
-            $this->turnoRepository->updateTurno($turno, [
-                'fecha_cierre' => now(),
-                'estado' => 'cerrado',
+            /*
+            |--------------------------------------------------------------------------
+            | Cerrar turno
+            |--------------------------------------------------------------------------
+            */
 
-                'total_ventas_combustible' => $totalVentasCombustible,
-                'total_ventas_lubricantes' => $totalVentasLubricantes,
-                'total_creditos' => $totalCreditos,
-                'total_abonos' => $totalAbonos,
+            $this->turnoRepository
+                ->updateTurno(
+                    $turno,
+                    [
 
-                'pagos_qr' => $dto->pagos_qr,
-                'pagos_datafono' => $dto->pagos_datafono,
-                'pagos_transferencia' => $dto->pagos_transferencia,
-                'pagos_consignacion' => $dto->pagos_consignacion,
-                'pagos_efectivo' => $dto->pagos_efectivo,
-                'otros_movimientos' => $dto->otros_movimientos,
-                'otros_movimientos_detalle' => $dto->otros_movimientos_detalle,
+                        'fecha_cierre' => now(),
 
-                'total_reportado' => $totalReportado,
-                'total_sistema' => $totalSistema,
-                'balance_final' => $balanceFinal,
+                        'estado' => 'cerrado',
 
-                'observacion_cierre' => $dto->observacion_cierre,
-            ]);
+                        'total_ventas_combustible'
+                            => $totalVentasCombustible,
 
-            return $this->findById($turno->id);
+                        'total_ventas_lubricantes'
+                            => $totalVentasLubricantes,
+
+                        'total_creditos'
+                            => $totalCreditos,
+
+                        'total_abonos'
+                            => $totalAbonos,
+
+                        'pagos_efectivo'
+                            => $pagos['efectivo'],
+
+                        'pagos_qr'
+                            => $pagos['qr'],
+
+                        'pagos_datafono'
+                            => $pagos['datafono'],
+
+                        'pagos_transferencia'
+                            => $pagos['transferencia'],
+
+                        'pagos_consignacion'
+                            => $pagos['consignacion'],
+
+                        'otros_movimientos'
+                            => $dto->otros_movimientos,
+
+                        'otros_movimientos_detalle'
+                            => $dto->otros_movimientos_detalle,
+
+                        'total_reportado'
+                            => $totalReportado,
+
+                        'total_sistema'
+                            => $totalSistema,
+
+                        'balance_final'
+                            => $balanceFinal,
+
+                        'observacion_cierre'
+                            => $dto->observacion_cierre,
+
+                    ]
+                );
+
+            return $this->findById(
+                $turno->id
+            );
+
         });
     }
 
-    public function movimientosCaja($dto, $turno)
-    {
-        if($dto->pagos_qr>0 || $dto->pagos_datafono > 0 || $dto->pagos_transferencia > 0 || $dto->pagos_consignacion > 0){
-            $caja = $this->ventaRepository->getCajaAbiertaByTipo('digital');
-
-            if (!$caja) {
-                throw new HttpException(422, "No hay caja digital abierta.");
-            }
-        }
-        
-
-        if ($dto->pagos_qr > 0) {
-            $this->ventaRepository->createMovimientoCaja([
-                'caja_id' => $caja->id,
-                'tipo_movimiento' => 'ingreso',
-                'categoria_movimiento' => 'cierre_turno',
-                'origen_modulo' => 'turnos_islero',
-                'origen_id' => $turno->id,
-                'medio_pago' => 'digital',
-                'monto' => $dto->pagos_qr,
-                'descripcion' => "Cierre turno #{$turno->id}, pago QR",
-                'user_id' => $dto->user_id,
-                'fecha_movimiento' => now(),
-            ]);
-        }
-
-        if ($dto->pagos_datafono > 0) {
-            $this->ventaRepository->createMovimientoCaja([
-                'caja_id' => $caja->id,
-                'tipo_movimiento' => 'ingreso',
-                'categoria_movimiento' => 'cierre_turno',
-                'origen_modulo' => 'turnos_islero',
-                'origen_id' => $turno->id,
-                'medio_pago' => 'digital',
-                'monto' => $dto->pagos_datafono,
-                'descripcion' => "Cierre turno #{$turno->id}, pago datáfono",
-                'user_id' => $dto->user_id,
-                'fecha_movimiento' => now(),
-            ]);
-        }
-
-        if ($dto->pagos_transferencia > 0) {
-            $this->ventaRepository->createMovimientoCaja([
-                'caja_id' => $caja->id,
-                'tipo_movimiento' => 'ingreso',
-                'categoria_movimiento' => 'cierre_turno',
-                'origen_modulo' => 'turnos_islero',
-                'origen_id' => $turno->id,
-                'medio_pago' => 'digital',
-                'monto' => $dto->pagos_transferencia,
-                'descripcion' => "Cierre turno #{$turno->id}, pago transferencia",
-                'user_id' => $dto->user_id,
-                'fecha_movimiento' => now(),
-            ]);
-        }
-
-        if ($dto->pagos_consignacion > 0) {
-            $this->ventaRepository->createMovimientoCaja([
-                'caja_id' => $caja->id,
-                'tipo_movimiento' => 'ingreso',
-                'categoria_movimiento' => 'cierre_turno',
-                'origen_modulo' => 'turnos_islero',
-                'origen_id' => $turno->id,
-                'medio_pago' => 'digital',
-                'monto' => $dto->pagos_consignacion,
-                'descripcion' => "Cierre turno #{$turno->id}, pago consignación",
-                'user_id' => $dto->user_id,
-                'fecha_movimiento' => now(),
-            ]);
-        }
-
-        if ($dto->pagos_efectivo > 0) {
-            $caja = $this->ventaRepository->getCajaAbiertaByTipo('efectivo');
-
-            if (!$caja) {
-                throw new HttpException(422,"No hay caja efectivo abierta." );
-            }
-
-            $this->ventaRepository->createMovimientoCaja([
-                'caja_id' => $caja->id,
-                'tipo_movimiento' => 'ingreso',
-                'categoria_movimiento' => 'cierre_turno',
-                'origen_modulo' => 'turnos_islero',
-                'origen_id' => $turno->id,
-                'medio_pago' => 'efectivo',
-                'monto' => $dto->pagos_efectivo,
-                'descripcion' => "Cierre turno #{$turno->id}, pago efectivo",
-                'user_id' => $dto->user_id,
-                'fecha_movimiento' => now(),
-            ]);
-        }
-    }
 
     public function resumenCierre(int $id): array
     {
@@ -444,23 +517,52 @@ class TurnoIsleroService
         })
         ->values();
 
-        $pagosEfectivo = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'efectivo');
+        $resumen = $this->turnoRepository->getResumenDestinosTurno($turno->id);
 
-        $pagosDatafono = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'datafono');
+        $destinosRecaudo = [];
 
-        $pagosQr = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'qr');
+        foreach ($resumen as $item) {
 
-        $pagosTransferencia = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'transferencia');
+            if (!isset($destinosRecaudo[$item->destino_recaudo_id])) {
 
-        $pagosConsignacion = $this->turnoRepository->sumPagosVentasByTurnoAndMetodo($turno->id, 'consignacion');
+                $destinosRecaudo[$item->destino_recaudo_id] = [
 
-        $totalPagosReportadosSugeridos =
-            $pagosEfectivo +
-            $pagosDatafono +
-            $pagosQr +
-            $pagosTransferencia +
-            $pagosConsignacion -
-            $totalCreditos;
+                    'destino_recaudo_id' => $item->destino_recaudo_id,
+
+                    'codigo' => $item->codigo,
+
+                    'nombre' => $item->nombre,
+
+                    'pagos' => [
+
+                        'efectivo' => 0,
+
+                        'qr' => 0,
+
+                        'datafono' => 0,
+
+                        'transferencia' => 0,
+
+                        'consignacion' => 0,
+
+                    ],
+
+                    'total' => 0,
+
+                ];
+            }
+
+            $destinosRecaudo[$item->destino_recaudo_id]['pagos'][$item->metodo_pago] =
+                (float) $item->total;
+
+            $destinosRecaudo[$item->destino_recaudo_id]['total'] +=
+                (float) $item->total;
+        }
+
+        $destinosRecaudo = array_values($destinosRecaudo);
+
+        $totalReportadoSugerido = collect($destinosRecaudo)->sum('total');
+
 
         $totalSistema =
             $totalVentasCombustible +
@@ -521,6 +623,7 @@ class TurnoIsleroService
             ];
         })->values();
 
+
         return [
             'turno' => [
                 'id' => $turno->id,
@@ -541,17 +644,12 @@ class TurnoIsleroService
             'lecturas' => $lecturas,
             'ventas_productos' => $ventasProductos,
             'abonos_recibidos' => $abonosRecibidos,
-
+            'destinos_recaudo' => $destinosRecaudo,
             'totales_pago_sugeridos' => [
-                'efectivo' => $pagosEfectivo,
-                'datafono' => $pagosDatafono,
-                'qr' => $pagosQr,
-                'transferencia' => $pagosTransferencia,
-                'consignacion' => $pagosConsignacion,
                 'creditos' => $totalCreditos,
-                'total_reportado_sugerido' => $totalPagosReportadosSugeridos,
+                'total_reportado_sugerido' => $totalReportadoSugerido, 
             ],
-
+            'total_por_destinos' => collect($destinosRecaudo)->sum('total'),
             'totales_sistema' => [
                 'ventas_combustible' => $totalVentasCombustible,
                 'ventas_lubricantes' => $totalVentasLubricantes,
@@ -560,8 +658,7 @@ class TurnoIsleroService
                 'total_sistema' => $totalSistema,
             ],
 
-            'balance_preliminar' => $totalSistema - $totalPagosReportadosSugeridos,
-
+            'balance_preliminar' => $totalSistema - $totalReportadoSugerido,
             'nota' => 'La lectura sugerida se calcula con las ventas de combustible registradas por manguera. El islero debe confirmarla o corregirla con la lectura física real.',
         ];
     }
@@ -592,4 +689,133 @@ class TurnoIsleroService
             ];
         })->values()->toArray();
     }
+
+
+    private function registrarMovimientosCaja(
+        CerrarTurnoIsleroDTO $dto,
+        TurnoIslero $turno
+    ): void {
+
+        foreach ($dto->destinos_recaudo as $destino) {
+
+            $destinoRecaudoId = (int) $destino['destino_recaudo_id'];
+
+            foreach ($destino['pagos'] as $medioPago => $valor) {
+
+                $valor = (float) $valor;
+
+                if ($valor <= 0) {
+                    continue;
+                }
+
+                $caja = $this->turnoRepository
+                    ->getCajaAbiertaByTipoAndDestino(
+                        $medioPago,
+                        $destinoRecaudoId
+                    );
+
+                if (!$caja) {
+
+                    throw new HttpException(
+                        422,
+                        "No existe una caja abierta para el destino Combustibles en efectivo."
+                    );
+
+                }
+
+                $this->turnoRepository
+                    ->createMovimientoCaja([
+                        'caja_id' => $caja->id,
+                        'tipo_movimiento' => 'ingreso',
+                        'categoria_movimiento' => 'cierre_turno',
+                        'origen_modulo' => 'turnos_islero',
+                        'origen_id' => $turno->id,
+                        'medio_pago' => $medioPago,
+                        'monto' => $valor,
+                        'descripcion' => 'Cierre turno islero #' . $turno->id,
+                        'user_id' => $dto->user_id,
+                        'fecha_movimiento' => now(),
+                    ]);
+
+            }
+
+        }
+
+    }
+
+    private function validarRecaudoDestinos(
+        TurnoIslero $turno,
+        CerrarTurnoIsleroDTO $dto
+    ): void {
+
+        $resumenSistema = $this->turnoRepository
+            ->getResumenDestinosTurno($turno->id);
+
+        $esperado = [];
+
+        foreach ($resumenSistema as $item) {
+
+            $esperado[$item->destino_recaudo_id][$item->metodo_pago] =
+                (float) $item->total;
+
+            $esperado[$item->destino_recaudo_id]['nombre'] =
+                $item->destino;
+        }
+
+        $enviados = [];
+
+        foreach ($dto->destinos_recaudo as $destino) {
+
+            $destinoId = (int) $destino['destino_recaudo_id'];
+
+            $enviados[] = $destinoId;
+
+            if (!isset($esperado[$destinoId])) {
+
+                throw new HttpException(
+                    422,
+                    "El destino de recaudo {$destinoId} no existe en las ventas del turno."
+                );
+            }
+
+            foreach (
+                [
+                    'efectivo',
+                    'qr',
+                    'datafono',
+                    'transferencia',
+                    'consignacion'
+                ] as $medio
+            ) {
+
+                $valorSistema =
+                    (float) ($esperado[$destinoId][$medio] ?? 0);
+
+                $valorEnviado =
+                    (float) ($destino['pagos'][$medio] ?? 0);
+
+                if (round($valorSistema, 2) != round($valorEnviado, 2)) {
+
+                    throw new HttpException(
+                        422,
+                        "El valor de {$medio} para {$esperado[$destinoId]['nombre']} no coincide con el sistema."
+                    );
+                }
+            }
+        }
+
+        $faltantes = array_diff(
+            array_keys($esperado),
+            $enviados
+        );
+
+        if (!empty($faltantes)) {
+
+            throw new HttpException(
+                422,
+                'Faltan destinos de recaudo por reportar.'
+            );
+        }
+    }
+    
 }

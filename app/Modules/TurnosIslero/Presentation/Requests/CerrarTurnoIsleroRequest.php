@@ -14,20 +14,137 @@ class CerrarTurnoIsleroRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'lecturas_finales' => ['required', 'array', 'min:1'],
-            'lecturas_finales.*.manguera_id' => ['required', 'integer', 'exists:mangueras,id'],
-            'lecturas_finales.*.lectura_final' => ['required', 'numeric', 'gte:0'],
 
-            'pagos_qr' => ['nullable', 'numeric', 'gte:0'],
-            'pagos_datafono' => ['nullable', 'numeric', 'gte:0'],
-            'pagos_transferencia' => ['nullable', 'numeric', 'gte:0'],
-            'pagos_consignacion' => ['nullable', 'numeric', 'gte:0'],
-            'pagos_efectivo' => ['nullable', 'numeric', 'gte:0'],
-          
-            'otros_movimientos' => ['nullable', 'numeric', 'gte:0'],
-            'otros_movimientos_detalle' => ['nullable', 'string'],
+            'lecturas_finales' => ['required','array','min:1'],
 
-            'observacion_cierre' => ['nullable', 'string'],
+            'lecturas_finales.*.manguera_id' => [
+                'required',
+                'integer',
+                'exists:mangueras,id'
+            ],
+
+            'lecturas_finales.*.lectura_final' => [
+                'required',
+                'numeric',
+                'gte:0'
+            ],
+
+            /*
+             |--------------------------------------------------------------------------
+             | Destinos de recaudo
+             |--------------------------------------------------------------------------
+             */
+
+            'destinos' => [
+                'required',
+                'array',
+                'min:1'
+            ],
+
+            'destinos.*.destino_recaudo_id' => [
+                'required',
+                'integer',
+                'exists:destinos_recaudo,id'
+            ],
+
+            'destinos.*.pagos' => [
+                'required',
+                'array'
+            ],
+
+            'destinos.*.pagos.efectivo' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
+
+            'destinos.*.pagos.qr' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
+
+            'destinos.*.pagos.datafono' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
+
+            'destinos.*.pagos.transferencia' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
+
+            'destinos.*.pagos.consignacion' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
+
+            /*
+             |--------------------------------------------------------------------------
+             | Otros movimientos
+             |--------------------------------------------------------------------------
+             */
+
+            'otros_movimientos' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
+
+            'otros_movimientos_detalle' => [
+                'nullable',
+                'string'
+            ],
+
+            'observacion_cierre' => [
+                'nullable',
+                'string'
+            ],
+            'destinos_recaudo' => ['required','array','min:1'],
+
+            'destinos_recaudo.*.destino_recaudo_id' => [
+                'required',
+                'integer',
+                'exists:destinos_recaudo,id'
+            ],
+
+            'destinos_recaudo.*.pagos' => [
+                'required',
+                'array'
+            ],
+
+            'destinos_recaudo.*.pagos.efectivo' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
+
+            'destinos_recaudo.*.pagos.qr' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
+
+            'destinos_recaudo.*.pagos.datafono' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
+
+            'destinos_recaudo.*.pagos.transferencia' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
+
+            'destinos_recaudo.*.pagos.consignacion' => [
+                'nullable',
+                'numeric',
+                'gte:0'
+            ],
         ];
     }
 }

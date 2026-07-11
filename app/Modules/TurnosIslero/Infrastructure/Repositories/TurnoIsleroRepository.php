@@ -13,6 +13,9 @@ use App\Models\AbonoCartera;
 use App\Models\PrecioCombustible;
 use App\Models\PagoVenta;
 use App\Models\DetalleVenta;
+use App\Models\Caja;
+use App\Models\MovimientoCaja;
+use Illuminate\Support\Facades\DB;
 class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
@@ -313,4 +316,190 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             });
     }
 
+    public function getResumenPagosPorDestino(
+        int $turnoId
+    ): Collection {
+
+        return \App\Models\PagoVenta::query()
+
+            ->join(
+                'ventas',
+                'ventas.id',
+                '=',
+                'pagos_venta.venta_id'
+            )
+
+            ->join(
+                'detalle_ventas',
+                'detalle_ventas.venta_id',
+                '=',
+                'ventas.id'
+            )
+
+            ->join(
+                'productos',
+                'productos.id',
+                '=',
+                'detalle_ventas.producto_id'
+            )
+
+            ->join(
+                'categorias_producto',
+                'categorias_producto.id',
+                '=',
+                'productos.categoria_producto_id'
+            )
+
+            ->join(
+                'destinos_recaudo',
+                'destinos_recaudo.id',
+                '=',
+                'categorias_producto.destino_recaudo_id'
+            )
+
+            ->where(
+                'ventas.turno_islero_id',
+                $turnoId
+            )
+
+            ->selectRaw('
+
+                destinos_recaudo.id as destino_recaudo_id,
+
+                destinos_recaudo.codigo,
+
+                destinos_recaudo.nombre,
+
+                pagos_venta.metodo_pago,
+
+                SUM(detalle_ventas.total) total
+
+            ')
+
+            ->groupBy(
+
+                'destinos_recaudo.id',
+
+                'destinos_recaudo.codigo',
+
+                'destinos_recaudo.nombre',
+
+                'pagos_venta.metodo_pago'
+
+            )
+
+            ->get();
+    }
+
+    public function getDestinosRecaudoConVentas(
+        int $turnoId
+    ): Collection {
+
+        return \App\Models\DetalleVenta::query()
+
+            ->join(
+                'ventas',
+                'ventas.id',
+                '=',
+                'detalle_ventas.venta_id'
+            )
+
+            ->join(
+                'productos',
+                'productos.id',
+                '=',
+                'detalle_ventas.producto_id'
+            )
+
+            ->join(
+                'categorias_producto',
+                'categorias_producto.id',
+                '=',
+                'productos.categoria_producto_id'
+            )
+
+            ->join(
+                'destinos_recaudo',
+                'destinos_recaudo.id',
+                '=',
+                'categorias_producto.destino_recaudo_id'
+            )
+
+            ->where(
+                'ventas.turno_islero_id',
+                $turnoId
+            )
+
+            ->select(
+
+                'destinos_recaudo.id',
+
+                'destinos_recaudo.codigo',
+
+                'destinos_recaudo.nombre'
+
+            )
+
+            ->distinct()
+
+            ->get();
+    }
+
+    public function getVentasDelTurnoConDestino(int $turnoId): Collection
+    {
+        return Venta::query()
+            ->with([
+                'pagos',
+                'detalles.producto.categoriaProducto.destinoRecaudo',
+            ])
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'confirmada')
+            ->get();
+    }
+
+    
+    public function getCajaAbiertaByTipoAndDestino(
+        string $tipoCaja,
+        int $destinoRecaudoId
+    ): ?Caja
+    {
+        return Caja::query()
+            ->where('estado','abierta')
+            ->where('tipo_caja',$tipoCaja)
+            ->where('destino_recaudo_id',$destinoRecaudoId)
+            ->first();
+    }
+
+    public function createMovimientoCaja(
+        array $data
+    ): MovimientoCaja
+    {
+        return MovimientoCaja::create($data);
+    }
+
+    public function getResumenDestinosTurno(int $turnoId): Collection
+    {
+        return DetalleVenta::query()
+            ->selectRaw("
+                categorias_producto.destino_recaudo_id,
+                destinos_recaudo.codigo,
+                destinos_recaudo.nombre,
+                pagos_venta.metodo_pago,
+                SUM(detalle_ventas.total) as total
+            ")
+            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->join('productos', 'productos.id', '=', 'detalle_ventas.producto_id')
+            ->join('categorias_producto', 'categorias_producto.id', '=', 'productos.categoria_producto_id')
+            ->join('destinos_recaudo', 'destinos_recaudo.id', '=', 'categorias_producto.destino_recaudo_id')
+            ->join('pagos_venta', 'pagos_venta.venta_id', '=', 'ventas.id')
+            ->where('ventas.turno_islero_id', $turnoId)
+            ->where('ventas.estado', 'confirmada')
+            ->groupBy(
+                'categorias_producto.destino_recaudo_id',
+                'destinos_recaudo.codigo',
+                'destinos_recaudo.nombre',
+                'pagos_venta.metodo_pago'
+            )
+            ->get();
+    }
 }

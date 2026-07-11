@@ -186,7 +186,9 @@ class VentaService
             }
 
             $turnoAbierto = $this->ventaRepository->getTurnoAbiertoByUser($dto->user_id);
-
+            if (empty($turnoAbierto)) {
+                throw new HttpException(422, 'El usuario no tiene turno abierto.');
+            }
             $venta = $this->ventaRepository->createVenta([
                 'prefijo' => 'POS',
                 'numero_factura' => $this->ventaRepository->nextNumeroFactura(),

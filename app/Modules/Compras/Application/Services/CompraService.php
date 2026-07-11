@@ -4,13 +4,13 @@ namespace App\Modules\Compras\Application\Services;
 
 use Illuminate\Support\Facades\DB;
 use App\Models\Compra;
-use App\Models\PagoCompra;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\Compras\Application\DTOs\CreateCompraDTO;
 use App\Modules\Compras\Application\DTOs\UpdateCompraDTO;
 use App\Modules\Compras\Application\DTOs\CreatePagoCompraDTO;
 use App\Modules\Compras\Application\Interfaces\CompraRepositoryInterface;
 use App\Modules\Caja\Application\Interfaces\CajaRepositoryInterface;
+use App\Modules\Compras\Application\DTOs\ConfirmarCompraDTO;
 
 class CompraService
 {
@@ -38,7 +38,7 @@ class CompraService
     public function create(CreateCompraDTO $dto): Compra
     {
         return DB::transaction(function () use ($dto) {
-            $subtotal = collect($dto->detalles)->sum(fn ($item) => $item->subtotal());
+            $subtotal = collect($dto->detalles)->sum(fn($item) => $item->subtotal());
             $impuesto = $dto->impuesto;
             $soldicom = $dto->soldicom;
             $sobre_tasa = $dto->sobre_tasa;
@@ -93,7 +93,7 @@ class CompraService
                 throw new HttpException(422, 'Solo se pueden editar compras en borrador.');
             }
 
-            $subtotal = collect($dto->detalles)->sum(fn ($item) => $item->subtotal());
+            $subtotal = collect($dto->detalles)->sum(fn($item) => $item->subtotal());
             $impuesto = $dto->impuesto;
             $soldicom = $dto->soldicom;
             $sobre_tasa = $dto->sobre_tasa;
@@ -138,9 +138,9 @@ class CompraService
         });
     }
 
-    public function confirmar(int $id): Compra
+    public function confirmar(int $id, ConfirmarCompraDTO $dto): Compra
     {
-        return DB::transaction(function () use ($id) {
+        return DB::transaction(function () use ($id, $dto) {
             $compra = $this->findById($id);
 
             if ($compra->estado !== 'borrador') {
@@ -194,40 +194,80 @@ class CompraService
                 'saldo_pendiente' => $saldoPendiente,
             ]);
 
-            if($compra->tipo_pago != 'credito')
-            {
-                $tipoCaja = $compra->tipo_pago === 'efectivo' || $compra->tipo_pago === 'consignacion'? 'efectivo' : 'digital';
-
-                $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
+            if ($compra->tipo_pago != 'credito') {
+                $caja = $this->compraRepository
+                    ->findCajaById(
+                        $dto->caja_id
+                    );
 
                 if (!$caja) {
-                    throw new HttpException(422, "No hay caja {$compra->tipo_pago} abierta.");
+
+                    throw new HttpException(
+                        422,
+                        'La caja seleccionada no existe.'
+                    );
                 }
 
-                $ingresos = $this->cajaRepository->sumMovimientosByTipo($caja->id, 'ingreso');
-                $egresos = $this->cajaRepository->sumMovimientosByTipo($caja->id, 'egreso');
+                if ($caja->estado != 'abierta') {
 
-                $saldoActual = $ingresos - $egresos;
-
-                if($compra->total > $saldoActual)
-                {
-                    throw new HttpException(422, 'No hay saldo suficiente en caja');
+                    throw new HttpException(
+                        422,
+                        'La caja se encuentra cerrada.'
+                    );
                 }
 
-                $this->compraRepository->createMovimientoCaja([
-                    'caja_id' => $caja->id,
-                    'tipo_movimiento' => 'egreso',
-                    'categoria_movimiento' => 'compra',
-                    'origen_modulo' => 'compras',
-                    'origen_id' => $compra->id,
-                    'medio_pago' => $compra->tipo_pago,
-                    'monto' => $compra->total,
-                    'descripcion' => "Compra #{$compra->id}",
-                    'user_id' => $compra->user_id,
-                    'fecha_movimiento' => now(),
-                ]);
+                $tipoEsperado =
+                    in_array(
+                        $compra->tipo_pago,
+                        ['efectivo', 'consignacion']
+                    )
+                    ? 'efectivo'
+                    : 'digital';
+
+                if ($caja->tipo_caja != $tipoEsperado) {
+
+                    throw new HttpException(
+                        422,
+                        'La caja seleccionada no corresponde al método de pago.'
+                    );
+                }
+
+                $saldoCaja =
+                    $this->cajaRepository
+                    ->sumMovimientosByTipo(
+                        $caja->id,
+                        'ingreso'
+                    )
+                    -
+                    $this->cajaRepository
+                    ->sumMovimientosByTipo(
+                        $caja->id,
+                        'egreso'
+                    );
+
+                if ($saldoCaja < $compra->total) {
+
+                    throw new HttpException(
+                        422,
+                        'La caja no tiene saldo suficiente.'
+                    );
+                }
+
+                $this->compraRepository
+                    ->createMovimientoCaja([
+                        'caja_id' => $caja->id,
+                        'tipo_movimiento' => 'egreso',
+                        'categoria_movimiento' => 'compra',
+                        'origen_modulo' => 'compras',
+                        'origen_id' => $compra->id,
+                        'medio_pago' => $compra->tipo_pago,
+                        'monto' => $compra->total,
+                        'descripcion' => 'Compra #' . $compra->id,
+                        'user_id' => $compra->user_id,
+                        'fecha_movimiento' => now(),
+                    ]);
             }
-            
+
 
             return $this->findById($compra->id);
         });
@@ -265,8 +305,8 @@ class CompraService
                 'metodo_pago' => $dto->metodo_pago,
                 'observacion' => $dto->observacion,
             ]);
-            
-            $tipoCaja = $dto->metodo_pago === 'efectivo' || $dto->metodo_pago === 'consignacion'? 'efectivo' : 'digital';
+
+            $tipoCaja = $dto->metodo_pago === 'efectivo' || $dto->metodo_pago === 'consignacion' ? 'efectivo' : 'digital';
 
             $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
 
@@ -279,8 +319,7 @@ class CompraService
 
             $saldoActual = $ingresos - $egresos;
 
-            if($dto->monto > $saldoActual)
-            {
+            if ($dto->monto > $saldoActual) {
                 throw new HttpException(422, 'No hay saldo suficiente en caja');
             }
 
@@ -296,7 +335,7 @@ class CompraService
                 'user_id' => $dto->user_id,
                 'fecha_movimiento' => now(),
             ]);
-            
+
 
             $nuevoTotalPagado = (float) $compra->total_pagado + (float) $dto->monto;
             $nuevoSaldoPendiente = (float) $compra->total - $nuevoTotalPagado;

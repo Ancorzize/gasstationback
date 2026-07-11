@@ -16,6 +16,7 @@ use App\Modules\Compras\Presentation\Resources\CompraResource;
 use App\Modules\PagosCompra\Presentation\Resources\PagoCompraResource;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ConfiguracionEmpresa;
+use App\Modules\Compras\Presentation\Requests\ConfirmarCompraRequest;
 class CompraController extends Controller
 {
     public function __construct(
@@ -126,14 +127,17 @@ class CompraController extends Controller
         }
     }
 
-    public function confirmar(Request $request, int $id)
+    public function confirmar(ConfirmarCompraRequest $request,int $id)
     {
         try {
             if (!$request->user()->can('confirmar_compras')) {
                 return ApiResponse::error('Sin permisos.', 403);
             }
 
-            $compra = $this->compraService->confirmar($id);
+            $dto = CompraMapper::fromArrayToConfirmarDTO(
+                $request->validated()
+            );
+            $compra = $this->compraService->confirmar($id, $dto);
 
             return ApiResponse::success(
                 new CompraResource($compra),
