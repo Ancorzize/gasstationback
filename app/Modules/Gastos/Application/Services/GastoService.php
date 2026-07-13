@@ -7,14 +7,12 @@ use App\Models\Gasto;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\Gastos\Application\DTOs\CreateGastoDTO;
 use App\Modules\Gastos\Application\Interfaces\GastoRepositoryInterface;
-use App\Modules\Compras\Application\Interfaces\CompraRepositoryInterface;
 use App\Modules\Caja\Application\Interfaces\CajaRepositoryInterface;
 
 class GastoService
 {
     public function __construct(
         protected GastoRepositoryInterface $gastoRepository,
-        protected CompraRepositoryInterface $compraRepository,
         protected CajaRepositoryInterface $cajaRepository
     ) {}
 
@@ -49,10 +47,19 @@ class GastoService
 
             $tipoCaja = $dto->medio_pago === 'efectivo' || $dto->medio_pago === 'consignacion'? 'efectivo' : 'digital';
 
-            $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
+            $caja = $this->cajaRepository
+                ->getCajaAbiertaByTipoAndDestino(
+                    $tipoCaja,
+                    $dto->destino_recaudo_id
+                );
 
             if (!$caja) {
-                throw new HttpException(422, "No hay caja {$dto->medio_pago} abierta.");
+
+                throw new HttpException(
+                    422,
+                    'No existe una caja abierta para el tipo y destino seleccionados.'
+                );
+
             }
 
             $ingresos = $this->cajaRepository->sumMovimientosByTipo($caja->id, 'ingreso');
@@ -65,13 +72,6 @@ class GastoService
                 throw new HttpException(422, 'No hay saldo suficiente en caja');
             }
 
-            /*if ($dto->medio_pago === 'efectivo') {
-                $saldoDisponible = $this->gastoRepository->getSaldoEfectivoCaja($caja->id);
-
-                if ((float) $dto->valor > $saldoDisponible) {
-                    throw new HttpException(422, 'No hay suficiente saldo en caja para registrar este gasto.');
-                }
-            }*/
 
             $gasto = $this->gastoRepository->create([
                 'fecha_gasto' => $dto->fecha_gasto,
@@ -113,10 +113,19 @@ class GastoService
 
             $tipoCaja = $gasto->medio_pago === 'efectivo' || $gasto->medio_pago === 'consignacion'? 'efectivo' : 'digital';
 
-            $caja = $this->compraRepository->getCajaAbiertaPorTipo($tipoCaja);
+            $caja = $this->cajaRepository
+                ->getCajaAbiertaByTipoAndDestino(
+                    $tipoCaja,
+                    $gasto->caja->destino_recaudo_id
+                );
 
             if (!$caja) {
-                throw new HttpException(422, "No hay caja {$tipoCaja} abierta para anular el gasto.");
+
+                throw new HttpException(
+                    422,
+                    'La caja donde se registró el gasto no se encuentra abierta.'
+                );
+
             }
 
             $gastoActualizado = $this->gastoRepository->update($gasto, [

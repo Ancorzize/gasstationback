@@ -20,6 +20,12 @@ class StoreGastoRequest extends FormRequest
             'medio_pago' => ['required', 'in:efectivo,transferencia,consignacion'],
             'valor' => ['required', 'numeric', 'gt:0'],
             'descripcion' => ['required', 'string'],
+
+            'destino_recaudo_id' => [
+                'required',
+                'integer',
+                'exists:destinos_recaudo,id'
+            ],
         ];
     }
 

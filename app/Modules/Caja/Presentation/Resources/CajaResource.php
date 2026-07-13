@@ -37,8 +37,10 @@ class CajaResource extends JsonResource
             'updated_at' => $this->updated_at,
             'nombre' => $this->nombre,
             'destino_recaudo_id' => $this->destino_recaudo_id,
+            'ultimo_monto_cierre' => $this->monto_cierre_real,
             'destino_recaudo' => $this->destinoRecaudo ? [
                 'id' => $this->destinoRecaudo->id,
+                'codigo' => $this->destinoRecaudo->codigo,
                 'nombre' => $this->destinoRecaudo->nombre,
             ]: null];
     }

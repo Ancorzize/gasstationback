@@ -166,7 +166,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'ver_destinos_recaudo',
             'crear_destino_recaudo',
             'editar_destino_recaudo',
-            'eliminar_destino_recaudo'
+            'eliminar_destino_recaudo',
+            'configurar_dashboard'
         ];
 
         foreach ($permissions as $perm) {

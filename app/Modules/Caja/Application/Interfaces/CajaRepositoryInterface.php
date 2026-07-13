@@ -30,4 +30,6 @@ interface CajaRepositoryInterface
     public function getCajaAbiertaByTipoAndDestino(string $tipoCaja, int $destinoRecaudoId): ?Caja;
 
     public function existsCajaAbiertaByTipoAndDestino(string $tipoCaja, int $destinoRecaudoId): bool;
+
+    public function getSugerenciasApertura(): Collection;
 }

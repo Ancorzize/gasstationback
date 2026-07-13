@@ -10,11 +10,20 @@ class GastoMapper
     {
         return new CreateGastoDTO(
             fecha_gasto: $data['fecha_gasto'],
-            proveedor_id: isset($data['proveedor_id']) ? (int) $data['proveedor_id'] : null,
+            proveedor_id: isset($data['proveedor_id'])
+                ? (int) $data['proveedor_id']
+                : null,
+
             categoria_gasto_id: (int) $data['categoria_gasto_id'],
+
+            destino_recaudo_id: (int) $data['destino_recaudo_id'],
+
             medio_pago: $data['medio_pago'],
+
             valor: (float) $data['valor'],
+
             descripcion: $data['descripcion'],
+
             user_id: $userId,
         );
     }

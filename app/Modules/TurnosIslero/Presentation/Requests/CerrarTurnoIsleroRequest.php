@@ -31,59 +31,6 @@ class CerrarTurnoIsleroRequest extends FormRequest
 
             /*
              |--------------------------------------------------------------------------
-             | Destinos de recaudo
-             |--------------------------------------------------------------------------
-             */
-
-            'destinos' => [
-                'required',
-                'array',
-                'min:1'
-            ],
-
-            'destinos.*.destino_recaudo_id' => [
-                'required',
-                'integer',
-                'exists:destinos_recaudo,id'
-            ],
-
-            'destinos.*.pagos' => [
-                'required',
-                'array'
-            ],
-
-            'destinos.*.pagos.efectivo' => [
-                'nullable',
-                'numeric',
-                'gte:0'
-            ],
-
-            'destinos.*.pagos.qr' => [
-                'nullable',
-                'numeric',
-                'gte:0'
-            ],
-
-            'destinos.*.pagos.datafono' => [
-                'nullable',
-                'numeric',
-                'gte:0'
-            ],
-
-            'destinos.*.pagos.transferencia' => [
-                'nullable',
-                'numeric',
-                'gte:0'
-            ],
-
-            'destinos.*.pagos.consignacion' => [
-                'nullable',
-                'numeric',
-                'gte:0'
-            ],
-
-            /*
-             |--------------------------------------------------------------------------
              | Otros movimientos
              |--------------------------------------------------------------------------
              */

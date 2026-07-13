@@ -224,4 +224,17 @@ class CajaRepository implements CajaRepositoryInterface
             )
             ->exists();
     }
+
+    public function getSugerenciasApertura(): Collection
+    {
+        return Caja::query()
+            ->with('destinoRecaudo')
+            ->where('estado', 'cerrada')
+            ->orderByDesc('fecha_cierre')
+            ->get()
+            ->unique(function ($caja) {
+                return $caja->tipo_caja . '_' . $caja->destino_recaudo_id;
+            })
+            ->values();
+    }
 }

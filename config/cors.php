@@ -5,10 +5,9 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // Agrega AQUÍ la URL de tu frontend de Render (sin la barra / al final)
     'allowed_origins' => [
         'https://gasstationfront.onrender.com',
-        'http://localhost:5173', // Para que sigas pudiendo probar en local
+        'http://localhost:5173', 
     ],
 
     'allowed_origins_patterns' => [],
@@ -19,5 +18,5 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => true, // Importante para Sanctum/Tokens
+    'supports_credentials' => true, 
 ];

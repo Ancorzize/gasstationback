@@ -12,25 +12,18 @@ class DestinoRecaudoSeeder extends Seeder
         DestinoRecaudo::insert([
             [
                 'id' => 1,
-                'codigo' => '001',
+                'codigo' => 'COMB',
                 'nombre' => 'Combustible',
                 'descripcion' => 'Ventas de combustible',
                 'is_active' => true,
             ],
             [
                 'id' => 2,
-                'codigo' => '002',
+                'codigo' => 'LUBR',
                 'nombre' => 'Lubricantes',
-                'descripcion' => 'Lubricantes y servicios',
+                'descripcion' => 'Lubricantes',
                 'is_active' => true,
-            ],-
-            [
-                'id' => 3,
-                'codigo' => '003',
-                'nombre' => 'Cartera',
-                'descripcion' => 'Abonos de cartera',
-                'is_active' => true,
-            ],
+            ]
         ]);
     }
 }

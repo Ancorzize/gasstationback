@@ -708,17 +708,26 @@ class TurnoIsleroService
                     continue;
                 }
 
-                $caja = $this->turnoRepository
-                    ->getCajaAbiertaByTipoAndDestino(
-                        $medioPago,
-                        $destinoRecaudoId
-                    );
+                $tipoCaja = $this->resolverTipoCaja($medioPago);
+
+                $caja =
+                    $this->ventaRepository
+                        ->getCajaAbiertaByTipoAndDestino(
+                            $tipoCaja,
+                            $destinoRecaudoId
+                        );
+
+                //$caja = $this->turnoRepository
+                    //->getCajaAbiertaByTipoAndDestino(
+                    //    $medioPago,
+                    //    $destinoRecaudoId
+                    //);
 
                 if (!$caja) {
 
                     throw new HttpException(
                         422,
-                        "No existe una caja abierta para el destino Combustibles en efectivo."
+                        "No existe una caja abierta para el medio de pago {$medioPago} y el destino de recaudo {$destinoRecaudoId}."
                     );
 
                 }
@@ -758,8 +767,8 @@ class TurnoIsleroService
             $esperado[$item->destino_recaudo_id][$item->metodo_pago] =
                 (float) $item->total;
 
-            $esperado[$item->destino_recaudo_id]['nombre'] =
-                $item->destino;
+            $esperado[$item->destino_recaudo_id]['codigo'] =
+                $item->codigo;
         }
 
         $enviados = [];
@@ -776,6 +785,10 @@ class TurnoIsleroService
                     422,
                     "El destino de recaudo {$destinoId} no existe en las ventas del turno."
                 );
+            }
+
+            if ($esperado[$destinoId]['codigo'] === 'COMB') {
+                continue;
             }
 
             foreach (
@@ -816,6 +829,27 @@ class TurnoIsleroService
                 'Faltan destinos de recaudo por reportar.'
             );
         }
+    }
+
+    private function resolverTipoCaja(
+        string $metodoPago
+    ): string
+    {
+        return match ($metodoPago) {
+
+            'efectivo' => 'efectivo',
+
+            'qr',
+            'transferencia',
+            'datafono',
+            'consignacion',
+            'digital' => 'digital',
+
+            default => throw new HttpException(
+                422,
+                "Método de pago {$metodoPago} inválido."
+            ),
+        };
     }
     
 }

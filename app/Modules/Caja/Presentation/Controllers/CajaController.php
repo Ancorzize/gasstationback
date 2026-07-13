@@ -183,4 +183,32 @@ class CajaController extends Controller
             return ApiResponse::error('Error interno del servidor.', 500);
         }
     }
+
+    public function sugerenciasApertura(Request $request)
+    {
+        try {
+
+            if (!$request->user()->can('abrir_caja')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            return ApiResponse::success(
+                CajaResource::collection(
+                    $this->cajaService->getSugerenciasApertura()
+                ),
+                'Sugerencias de apertura.'
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+
+        }
+    }
 }

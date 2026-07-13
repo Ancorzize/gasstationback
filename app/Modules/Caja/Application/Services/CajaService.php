@@ -209,4 +209,10 @@ class CajaService
     {
         return $this->cajaRepository->paginateHistorico($filters, $perPage);
     }
+
+    public function getSugerenciasApertura()
+    {
+        return $this->cajaRepository
+            ->getSugerenciasApertura();
+    }
 }

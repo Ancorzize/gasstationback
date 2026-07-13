@@ -74,13 +74,6 @@ class GastoRepository implements GastoRepositoryInterface
         return Gasto::create($data)->load(['proveedor', 'categoriaGasto', 'caja', 'usuario']);
     }
 
-    public function getCajaAbierta(): ?Caja
-    {
-        return Caja::query()
-            ->where('estado', 'abierta')
-            ->first();
-    }
-
     public function findCategoriaGastoById(int $id): ?CategoriaGasto
     {
         return CategoriaGasto::find($id);

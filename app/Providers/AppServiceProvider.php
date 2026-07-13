@@ -62,6 +62,10 @@ use App\Modules\PreciosCombustible\Application\Interfaces\PrecioCombustibleRepos
 use App\Modules\PreciosCombustible\Infrastructure\Repositories\PrecioCombustibleRepository;
 use App\Modules\DestinoRecaudo\Application\Interfaces\DestinoRecaudoRepositoryInterface;
 use App\Modules\DestinoRecaudo\Infrastructure\Repositories\DestinoRecaudoRepository;
+use App\Modules\Dashboard\Application\Interfaces\DashboardRepositoryInterface;
+use App\Modules\Dashboard\Infrastructure\Repositories\DashboardRepository;
+use App\Modules\Dashboard\Application\Interfaces\DashboardConfigRepositoryInterface;
+use App\Modules\Dashboard\Infrastructure\Repositories\DashboardConfigRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -96,6 +100,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TurnoIsleroRepositoryInterface::class, TurnoIsleroRepository::class);
         $this->app->bind(PrecioCombustibleRepositoryInterface::class, PrecioCombustibleRepository::class);
         $this->app->bind(DestinoRecaudoRepositoryInterface::class, DestinoRecaudoRepository::class);
+        $this->app->bind(DashboardRepositoryInterface::class, DashboardRepository::class);
+        $this->app->bind(DashboardConfigRepositoryInterface::class, DashboardConfigRepository::class);
     }
 
     public function boot(): void

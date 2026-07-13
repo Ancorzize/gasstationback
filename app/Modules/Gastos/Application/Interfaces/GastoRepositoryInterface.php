@@ -16,8 +16,6 @@ interface GastoRepositoryInterface
 
     public function create(array $data): Gasto;
 
-    public function getCajaAbierta(): ?Caja;
-
     public function findCategoriaGastoById(int $id): ?CategoriaGasto;
 
     public function createMovimientoCaja(array $data): MovimientoCaja;

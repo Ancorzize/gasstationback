@@ -32,8 +32,10 @@ use App\Modules\Bombas\Presentation\Controllers\BombaController;
 use App\Modules\Mangueras\Presentation\Controllers\MangueraController;
 use App\Modules\TurnosIslero\Presentation\Controllers\TurnoIsleroController;
 use App\Modules\PreciosCombustible\Presentation\Controllers\PrecioCombustibleController;
+use App\Modules\Dashboard\Presentation\Controllers\DashboardController;
+use App\Modules\Dashboard\Presentation\Controllers\DashboardConfigController;
 
-Route::get('/historico', [CajaController::class, 'historico']);
+//Route::get('/historico', [CajaController::class, 'historico']);
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -192,6 +194,7 @@ Route::middleware(['auth:sanctum'])->prefix('caja')->group(function () {
     Route::get('/movimientos', [CajaController::class, 'movimientos']);
     Route::get('/resumen', [CajaController::class, 'resumen']);
     Route::get('/historico', [CajaController::class, 'historico']);
+    Route::get('/sugerencias-apertura',[CajaController::class, 'sugerenciasApertura']);
 });
 
 Route::middleware(['auth:sanctum'])->prefix('categorias-gasto')->group(function () {
@@ -280,4 +283,13 @@ Route::middleware(['auth:sanctum'])->prefix('destinos-recaudo')->group(function 
     Route::put('{id}', [DestinoRecaudoController::class,'update']);
     Route::patch('{id}/status', [DestinoRecaudoController::class,'changeStatus']);
     Route::delete('{id}', [DestinoRecaudoController::class,'destroy']);
+});
+
+
+Route::middleware(['auth:sanctum'])->prefix('dashboard')->group(function () {
+    Route::get('/dashboard',[DashboardController::class, 'index']);
+    Route::get('/roles',[DashboardConfigController::class, 'roles']);
+    Route::get('/configuracion/{roleId}', [DashboardConfigController::class, 'configuracion']);
+    Route::put('/configuracion/{roleId}', [DashboardConfigController::class, 'guardar']);
+
 });
