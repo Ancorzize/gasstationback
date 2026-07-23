@@ -58,8 +58,6 @@ class DashboardIndicatorService
 
             'saldo_cartera' => $this->saldoCartera(),
 
-            'inventario_valorizado' => $this->inventarioValorizado(),
-
             'ventas_30_dias'=>$this->ventas30Dias(),
 
             'ventas_medio_pago'=>$this->ventasMedioPago(),
@@ -93,6 +91,14 @@ class DashboardIndicatorService
             'flujo_caja'=>$this->flujoCaja(),
 
             'ingresos_egresos'=>$this->ingresosEgresos(),
+
+            'ticket_promedio' => $this->ticketPromedio(),
+
+            'comparativo_ventas' =>  $this->comparativoVentasPeriodo(),
+
+            'ventas_por_hora' =>$this->ventasPorHora(),
+
+            'cartera_vencida' => $this->carteraVencida(),
 
             default => null,
         };
@@ -227,14 +233,6 @@ class DashboardIndicatorService
         return [
             'valor'=>$this->dashboardRepository
                 ->saldoCartera($this->fechaDesde, $this->fechaHasta)
-        ];
-    }
-
-    private function inventarioValorizado(): array
-    {
-        return [
-            'valor'=>$this->dashboardRepository
-                ->inventarioValorizado($this->fechaDesde, $this->fechaHasta)
         ];
     }
 
@@ -521,6 +519,56 @@ class DashboardIndicatorService
                 ->pluck('total'),
 
             'items'=>$datos,
+
+        ];
+    }
+
+    private function ticketPromedio(): array
+    {
+        return [
+
+            'valor' => $this->dashboardRepository
+                ->ticketPromedio(
+                    $this->fechaDesde,
+                    $this->fechaHasta
+                ),
+
+            'tipo' => 'currency',
+
+        ];
+    }
+
+    private function comparativoVentasPeriodo(): array
+    {
+        return $this->dashboardRepository
+            ->comparativoVentasPeriodo(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
+    }
+
+    private function ventasPorHora(): array
+    {
+        $datos = $this->dashboardRepository->ventasPorHora($this->fechaDesde,$this->fechaHasta);
+
+        return [
+            'labels' => collect($datos)->pluck('hora'),
+            'series' => collect($datos)->pluck('total'),
+            'items' => $datos
+        ];
+    }
+
+    private function carteraVencida(): array
+    {
+        return [
+
+            'valor' => $this->dashboardRepository
+                ->carteraVencida(
+                    $this->fechaDesde,
+                    $this->fechaHasta
+                ),
+
+            'formato' => 'currency',
 
         ];
     }

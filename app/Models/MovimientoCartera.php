@@ -20,7 +20,7 @@ class MovimientoCartera extends Model
         'medio_pago',
         'descripcion',
         'user_id',
-        'fecha_movimiento',
+        'fecha_movimiento'
     ];
 
     protected $casts = [

@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\DashboardWidget;
 use Illuminate\Database\Seeder;
-//ejecutar: php artisan db:seed --class=Dashboard
+//ejecutar: C:\php84\php.exe artisan db:seed --class=Dashboard
 
 class Dashboard extends Seeder
 {
@@ -13,7 +13,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'ventas_hoy',
             'nombre' => 'Ventas Hoy',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'ventas',
             'icono' => 'DollarSign',
             'color' => 'green',
@@ -22,7 +22,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'compras_hoy',
             'nombre' => 'Compras Hoy',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'compras',
             'icono' => 'ShoppingCart',
             'color' => 'blue',
@@ -31,7 +31,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'gastos_hoy',
             'nombre' => 'Gastos Hoy',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'gastos',
             'icono' => 'Wallet',
             'color' => 'red',
@@ -40,7 +40,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'top_productos',
             'nombre' => 'Top Productos',
-            'tipo' => 'bar',
+            'tipo' => 'chart',
             'categoria' => 'ventas',
             'icono' => 'Package',
             'color' => 'blue',
@@ -51,7 +51,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'ventas_por_islero',
             'nombre' => 'Ventas por Islero',
-            'tipo' => 'bar',
+            'tipo' => 'chart',
             'categoria' => 'ventas',
             'icono' => 'Users',
             'color' => 'blue',
@@ -62,7 +62,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo'=>'galones_combustible',
             'nombre'=>'Galones por Combustible',
-            'tipo'=>'bar',
+            'tipo'=>'chart',
             'categoria'=>'combustibles',
             'icono'=>'Fuel',
             'color'=>'orange',
@@ -141,7 +141,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'ventas_destino_recaudo',
             'nombre' => 'Ventas por Destino de Recaudo',
-            'tipo' => 'pie',
+            'tipo' => 'chart',
             'categoria' => 'ventas',
             'icono' => 'PieChart',
             'color' => 'green',
@@ -152,7 +152,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'top_clientes',
             'nombre' => 'Top Clientes',
-            'tipo' => 'bar',
+            'tipo' => 'chart',
             'categoria' => 'ventas',
             'icono' => 'Users',
             'color' => 'blue',
@@ -164,7 +164,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'top_proveedores',
             'nombre' => 'Top Proveedores',
-            'tipo' => 'bar',
+            'tipo' => 'chart',
             'categoria' => 'compras',
             'icono' => 'Truck',
             'color' => 'orange',
@@ -176,7 +176,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo'=>'recaudo_medio_pago',
             'nombre'=>'Recaudo por Medio de Pago',
-            'tipo'=>'pie',
+            'tipo'=>'chart',
             'categoria'=>'caja',
             'icono'=>'CreditCard',
             'color'=>'green',
@@ -189,7 +189,7 @@ class Dashboard extends Seeder
 
             'codigo'=>'flujo_caja',
             'nombre'=>'Flujo Diario de Caja',
-            'tipo'=>'line',
+            'tipo'=>'chart',
             'categoria'=>'caja',
             'icono'=>'TrendingUp',
             'color'=>'blue',
@@ -202,7 +202,7 @@ class Dashboard extends Seeder
 
             'codigo'=>'ingresos_egresos',
             'nombre'=>'Ingresos vs Egresos',
-            'tipo'=>'pie',
+            'tipo'=>'chart',
             'categoria'=>'caja',
             'icono'=>'Scale',
             'color'=>'orange',
@@ -214,7 +214,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'ventas_mes',
             'nombre' => 'Ventas del Período',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'ventas',
             'icono' => 'DollarSign',
             'color' => 'green',
@@ -223,7 +223,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'compras_mes',
             'nombre' => 'Compras del Período',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'compras',
             'icono' => 'ShoppingCart',
             'color' => 'blue',
@@ -232,7 +232,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'gastos_mes',
             'nombre' => 'Gastos del Período',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'gastos',
             'icono' => 'Wallet',
             'color' => 'red',
@@ -241,7 +241,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'clientes_totales',
             'nombre' => 'Clientes Totales',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'clientes',
             'icono' => 'Users',
             'color' => 'blue',
@@ -250,7 +250,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'clientes_nuevos',
             'nombre' => 'Clientes Nuevos',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'clientes',
             'icono' => 'UserPlus',
             'color' => 'green',
@@ -259,7 +259,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'productos_activos',
             'nombre' => 'Productos Activos',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'inventario',
             'icono' => 'Package',
             'color' => 'blue',
@@ -268,7 +268,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'productos_bajo_stock',
             'nombre' => 'Productos Bajo Stock',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'inventario',
             'icono' => 'TriangleAlert',
             'color' => 'red',
@@ -277,7 +277,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'cajas_abiertas',
             'nombre' => 'Cajas Abiertas',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'caja',
             'icono' => 'Wallet',
             'color' => 'green',
@@ -286,7 +286,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'turnos_abiertos',
             'nombre' => 'Turnos Abiertos',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'turnos',
             'icono' => 'Clock',
             'color' => 'orange',
@@ -295,7 +295,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'ventas_credito_hoy',
             'nombre' => 'Ventas a Crédito',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'ventas',
             'icono' => 'CreditCard',
             'color' => 'orange',
@@ -304,7 +304,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'abonos_hoy',
             'nombre' => 'Abonos',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'cartera',
             'icono' => 'BadgeDollarSign',
             'color' => 'green',
@@ -313,25 +313,16 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'saldo_cartera',
             'nombre' => 'Saldo de Cartera',
-            'tipo' => 'kpi',
+            'tipo' => 'card',
             'categoria' => 'cartera',
             'icono' => 'FileText',
             'color' => 'red',
         ]);
 
         DashboardWidget::create([
-            'codigo' => 'inventario_valorizado',
-            'nombre' => 'Inventario Valorizado',
-            'tipo' => 'kpi',
-            'categoria' => 'inventario',
-            'icono' => 'Boxes',
-            'color' => 'blue',
-        ]);
-
-        DashboardWidget::create([
             'codigo' => 'ventas_30_dias',
             'nombre' => 'Ventas Últimos 30 Días',
-            'tipo' => 'line',
+            'tipo' => 'chart',
             'categoria' => 'ventas',
             'icono' => 'TrendingUp',
             'color' => 'green',
@@ -342,12 +333,21 @@ class Dashboard extends Seeder
         DashboardWidget::create([
             'codigo' => 'ventas_medio_pago',
             'nombre' => 'Ventas por Medio de Pago',
-            'tipo' => 'pie',
+            'tipo' => 'chart',
             'categoria' => 'ventas',
             'icono' => 'PieChart',
             'color' => 'blue',
             'ancho' => 6,
             'alto' => 2,
+        ]);
+
+        DashboardWidget::create([
+            'codigo' => 'ticket_promedio',
+            'nombre' => 'Ticket Promedio',
+            'tipo' => 'card',
+            'categoria' => 'ventas',
+            'icono' => 'Receipt',
+            'color' => 'green',
         ]);
     }
 }

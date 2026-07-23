@@ -19,6 +19,7 @@ class StoreAbonoCarteraRequest extends FormRequest
             'valor' => ['required', 'numeric', 'gt:0'],
             'medio_pago' => ['required', 'in:efectivo,transferencia,consignacion,datafono,qr'],
             'observacion' => ['nullable', 'string'],
+            'caja_id' => ['required','integer','exists:cajas,id'],
         ];
     }
 

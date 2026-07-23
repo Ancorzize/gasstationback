@@ -11,5 +11,6 @@ class CreateAbonoCarteraDTO
         public string $medio_pago,
         public ?string $observacion,
         public int $user_id,
+        public int $caja_id,  
     ) {}
 }

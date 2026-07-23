@@ -15,7 +15,6 @@ use App\Models\PagoVenta;
 use App\Models\DetalleVenta;
 use App\Models\Caja;
 use App\Models\MovimientoCaja;
-use Illuminate\Support\Facades\DB;
 class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
@@ -500,6 +499,39 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
                 'destinos_recaudo.nombre',
                 'pagos_venta.metodo_pago'
             )
+            ->get();
+    }
+
+    public function getDestinosConCajaAbierta()
+    {
+        return Caja::query()
+
+            ->join(
+                'destinos_recaudo',
+                'destinos_recaudo.id',
+                '=',
+                'cajas.destino_recaudo_id'
+            )
+
+            ->where(
+                'cajas.estado',
+                'abierta'
+            )
+
+            ->select(
+
+                'destinos_recaudo.id',
+
+                'destinos_recaudo.codigo',
+
+                'destinos_recaudo.nombre'
+
+            )
+
+            ->distinct()
+
+            ->orderBy('destinos_recaudo.nombre')
+
             ->get();
     }
 }

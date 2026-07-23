@@ -10,6 +10,8 @@ use App\Models\MovimientoCartera;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Models\TurnoIslero;
+use App\Models\Venta;
+use App\Modules\Cartera\Application\DTOs\CreateAbonoCarteraDetalleDTO;
 interface CarteraRepositoryInterface
 {
     public function findClienteById(int $id): ?Cliente;
@@ -31,4 +33,13 @@ interface CarteraRepositoryInterface
     public function getTurnoAbiertoByUser(int $userId): ?TurnoIslero;
 
     public function getCajaAbiertaByTipoAndDestino(string $tipoCaja, int $destinoRecaudoId): ?Caja;
+
+    public function findCajaById(int $id): ?Caja;
+
+    public function getVentasPendientesCliente(int $clienteId);
+
+
+    public function createAbonoDetalle(CreateAbonoCarteraDetalleDTO $dto);
+
+    public function updateVenta(Venta $venta, array $data): Venta;
 }

@@ -34,6 +34,7 @@ class Venta extends Model
         'turno_islero_id',
         'tipo_origen',
         'bodega_id',
+        'fecha_vencimiento'
     ];
 
     protected $casts = [
@@ -47,6 +48,7 @@ class Venta extends Model
         'saldo_pendiente' => 'decimal:2',
         'fecha_venta' => 'datetime',
         'fecha_anulacion' => 'datetime',
+        'fecha_vencimiento' => 'datetime',
     ];
 
     public function cliente(): BelongsTo
@@ -77,5 +79,19 @@ class Venta extends Model
     public function turnoIslero(): BelongsTo
     {
         return $this->belongsTo(TurnoIslero::class, 'turno_islero_id');
+    }
+
+    public function movimientosCartera(): HasMany
+    {
+        return $this->hasMany(
+            MovimientoCartera::class
+        );
+    }
+
+    public function abonosDetalle(): HasMany
+    {
+        return $this->hasMany(
+            AbonoCarteraDetalle::class
+        );
     }
 }

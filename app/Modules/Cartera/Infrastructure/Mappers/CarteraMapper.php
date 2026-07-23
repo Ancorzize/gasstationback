@@ -15,6 +15,7 @@ class CarteraMapper
             medio_pago: $data['medio_pago'],
             observacion: $data['observacion'] ?? null,
             user_id: $userId,
+            caja_id: (int) $data['caja_id'],
         );
     }
 }

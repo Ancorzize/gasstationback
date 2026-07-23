@@ -492,64 +492,66 @@ class TurnoIsleroService
         $abonosDetalle = $this->turnoRepository
             ->getAbonosDetalleByTurno($turno->id);
 
-        $ventasProductos = $ventasLubricantesDetalle
-        ->map(function ($detalle) {
-
-            return [
-                'id' => $detalle['id'],
-                'nombre' => $detalle['nombre'],
-                'cantidad' => (float) $detalle['cantidad'],
-                'precio_unitario' => (float) $detalle['precio_unitario'],
-                'total' => (float) $detalle['total'],
-            ];
-        })
-        ->values();
+        $ventasProductos = $ventasLubricantesDetalle->map(function ($detalle) {
+                return [
+                    'id' => $detalle['id'],
+                    'nombre' => $detalle['nombre'],
+                    'cantidad' => (float) $detalle['cantidad'],
+                    'precio_unitario' => (float) $detalle['precio_unitario'],
+                    'total' => (float) $detalle['total'],
+                ];
+            })->values();
 
         $abonosRecibidos = $abonosDetalle
-        ->map(function ($abono) {
+            ->map(function ($abono) {
 
-            return [
-                'id' => $abono['id'],
-                'cliente' => $abono['cliente'],
-                'monto' => (float) $abono['monto'],
-                'fecha' => $abono['fecha']->toDateString()
-            ];
-        })
-        ->values();
+                return [
+                    'id' => $abono['id'],
+                    'cliente' => $abono['cliente'],
+                    'monto' => (float) $abono['monto'],
+                    'fecha' => $abono['fecha']->toDateString()
+                ];
+            })->values();
 
         $resumen = $this->turnoRepository->getResumenDestinosTurno($turno->id);
 
+        $destinos = $this->turnoRepository->getDestinosConCajaAbierta();
+
         $destinosRecaudo = [];
+
+        foreach ($destinos as $destino) {
+
+            $destinosRecaudo[$destino->id] = [
+
+                'destino_recaudo_id' => $destino->id,
+
+                'codigo' => $destino->codigo,
+
+                'nombre' => $destino->nombre,
+
+                'pagos' => [
+
+                    'efectivo' => 0,
+
+                    'qr' => 0,
+
+                    'datafono' => 0,
+
+                    'transferencia' => 0,
+
+                    'consignacion' => 0,
+
+                ],
+
+                'total' => 0,
+
+            ];
+        }
 
         foreach ($resumen as $item) {
 
             if (!isset($destinosRecaudo[$item->destino_recaudo_id])) {
-
-                $destinosRecaudo[$item->destino_recaudo_id] = [
-
-                    'destino_recaudo_id' => $item->destino_recaudo_id,
-
-                    'codigo' => $item->codigo,
-
-                    'nombre' => $item->nombre,
-
-                    'pagos' => [
-
-                        'efectivo' => 0,
-
-                        'qr' => 0,
-
-                        'datafono' => 0,
-
-                        'transferencia' => 0,
-
-                        'consignacion' => 0,
-
-                    ],
-
-                    'total' => 0,
-
-                ];
+                continue;
             }
 
             $destinosRecaudo[$item->destino_recaudo_id]['pagos'][$item->metodo_pago] =
@@ -757,18 +759,43 @@ class TurnoIsleroService
         CerrarTurnoIsleroDTO $dto
     ): void {
 
-        $resumenSistema = $this->turnoRepository
-            ->getResumenDestinosTurno($turno->id);
+        $destinos = $this->turnoRepository
+            ->getDestinosConCajaAbierta();
 
         $esperado = [];
 
+        foreach ($destinos as $destino) {
+
+            $esperado[$destino->id] = [
+
+                'codigo' => $destino->codigo,
+
+                'nombre' => $destino->nombre,
+
+                'efectivo' => 0,
+
+                'qr' => 0,
+
+                'datafono' => 0,
+
+                'transferencia' => 0,
+
+                'consignacion' => 0,
+
+            ];
+        }
+
+        $resumenSistema = $this->turnoRepository
+            ->getResumenDestinosTurno($turno->id);
+
         foreach ($resumenSistema as $item) {
+
+            if (!isset($esperado[$item->destino_recaudo_id])) {
+                continue;
+            }
 
             $esperado[$item->destino_recaudo_id][$item->metodo_pago] =
                 (float) $item->total;
-
-            $esperado[$item->destino_recaudo_id]['codigo'] =
-                $item->codigo;
         }
 
         $enviados = [];
@@ -783,9 +810,10 @@ class TurnoIsleroService
 
                 throw new HttpException(
                     422,
-                    "El destino de recaudo {$destinoId} no existe en las ventas del turno."
+                    "El destino de recaudo {$destinoId} no tiene una caja abierta."
                 );
             }
+
 
             if ($esperado[$destinoId]['codigo'] === 'COMB') {
                 continue;
@@ -797,7 +825,7 @@ class TurnoIsleroService
                     'qr',
                     'datafono',
                     'transferencia',
-                    'consignacion'
+                    'consignacion',
                 ] as $medio
             ) {
 
@@ -807,7 +835,7 @@ class TurnoIsleroService
                 $valorEnviado =
                     (float) ($destino['pagos'][$medio] ?? 0);
 
-                if (round($valorSistema, 2) != round($valorEnviado, 2)) {
+                if (round($valorSistema, 2) !== round($valorEnviado, 2)) {
 
                     throw new HttpException(
                         422,

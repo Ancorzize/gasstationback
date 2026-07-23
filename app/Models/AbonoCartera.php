@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AbonoCartera extends Model
 {
@@ -44,5 +45,12 @@ class AbonoCartera extends Model
     public function turnoIslero(): BelongsTo
     {
         return $this->belongsTo(TurnoIslero::class, 'turno_islero_id');
+    }
+
+    public function detalles(): HasMany
+    {
+        return $this->hasMany(
+            AbonoCarteraDetalle::class
+        );
     }
 }

@@ -403,7 +403,7 @@ class DashboardRepository implements DashboardRepositoryInterface
 
         }
 
-        return (float) $query->sum('monto');
+        return (float) $query->sum('valor');
     }
 
     public function saldoCartera(
@@ -416,22 +416,7 @@ class DashboardRepository implements DashboardRepositoryInterface
         Cliente::query()
 
             ->sum(
-                'saldo_cartera'
-            );
-    }
-
-    public function inventarioValorizado(): float
-    {
-        return (float)
-
-        Inventario::query()
-
-            ->selectRaw(
-                'SUM(cantidad * costo_promedio) as total'
-            )
-
-            ->value(
-                'total'
+                'saldo_credito'
             );
     }
 
@@ -502,7 +487,7 @@ class DashboardRepository implements DashboardRepositoryInterface
                 'ventas',
                 'ventas.id',
                 '=',
-                'pago_ventas.venta_id'
+                'pagos_venta.venta_id'
             )
 
             ->where(
@@ -1616,5 +1601,460 @@ class DashboardRepository implements DashboardRepositoryInterface
             ],
 
         ];
+    }
+
+    public function ticketPromedio(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): float
+    {
+        $query = Venta::query()
+            ->where('estado', 'confirmada');
+
+        if ($fechaDesde) {
+            $query->whereDate('fecha_venta', '>=', $fechaDesde);
+        }
+
+        if ($fechaHasta) {
+            $query->whereDate('fecha_venta', '<=', $fechaHasta);
+        }
+
+        $ventas = (float) $query->sum('total');
+
+        $cantidad = (clone $query)->count();
+
+        if ($cantidad == 0) {
+            return 0;
+        }
+
+        return round($ventas / $cantidad, 2);
+    }
+
+    public function comparativoVentasPeriodo(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array
+    {
+        if (!$fechaDesde || !$fechaHasta) {
+
+            $fechaDesde = now()->startOfMonth()->toDateString();
+            $fechaHasta = now()->toDateString();
+        }
+
+        $inicio = \Carbon\Carbon::parse($fechaDesde);
+        $fin = \Carbon\Carbon::parse($fechaHasta);
+
+        $dias = $inicio->diffInDays($fin) + 1;
+
+        $inicioAnterior = $inicio->copy()->subDays($dias);
+        $finAnterior = $inicio->copy()->subDay();
+
+        $actual = (float) Venta::query()
+
+            ->where('estado', 'confirmada')
+
+            ->whereBetween('fecha_venta', [
+                $inicio,
+                $fin
+            ])
+
+            ->sum('total');
+
+        $anterior = (float) Venta::query()
+
+            ->where('estado', 'confirmada')
+
+            ->whereBetween('fecha_venta', [
+                $inicioAnterior,
+                $finAnterior
+            ])
+
+            ->sum('total');
+
+        $porcentaje = 0;
+
+        if ($anterior > 0) {
+
+            $porcentaje =
+                (($actual - $anterior) / $anterior) * 100;
+        }
+
+        return [
+
+            'actual' => $actual,
+
+            'anterior' => $anterior,
+
+            'porcentaje' => round($porcentaje, 2),
+
+        ];
+    }
+
+    public function ventasPorHora(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array
+    {
+        $query = Venta::query()
+
+            ->where('estado', 'confirmada');
+
+        if ($fechaDesde) {
+            $query->whereDate(
+                'fecha_venta',
+                '>=',
+                $fechaDesde
+            );
+        }
+
+        if ($fechaHasta) {
+            $query->whereDate(
+                'fecha_venta',
+                '<=',
+                $fechaHasta
+            );
+        }
+
+        return $query
+
+            ->selectRaw("
+                EXTRACT(HOUR FROM fecha_venta) hora,
+                SUM(total) total
+            ")
+
+            ->groupByRaw("
+                EXTRACT(HOUR FROM fecha_venta)
+            ")
+
+            ->orderByRaw("
+                EXTRACT(HOUR FROM fecha_venta)
+            ")
+
+            ->get()
+
+            ->map(fn($item)=>[
+
+                'hora'=>(int)$item->hora,
+
+                'total'=>(float)$item->total,
+
+            ])
+
+            ->toArray();
+    }
+
+    public function productosMayorUtilidad(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array {
+
+        $query = DetalleVenta::query()
+
+            ->join(
+                'ventas',
+                'ventas.id',
+                '=',
+                'detalle_ventas.venta_id'
+            )
+
+            ->join(
+                'productos',
+                'productos.id',
+                '=',
+                'detalle_ventas.producto_id'
+            )
+
+            ->where(
+                'ventas.estado',
+                'confirmada'
+            );
+
+        if ($fechaDesde) {
+            $query->whereDate(
+                'ventas.fecha_venta',
+                '>=',
+                $fechaDesde
+            );
+        }
+
+        if ($fechaHasta) {
+            $query->whereDate(
+                'ventas.fecha_venta',
+                '<=',
+                $fechaHasta
+            );
+        }
+
+        return $query
+
+            ->selectRaw("
+                productos.id,
+                productos.nombre,
+                SUM(
+                    (detalle_ventas.precio_unitario - detalle_ventas.costo_unitario)
+                    * detalle_ventas.cantidad
+                ) utilidad
+            ")
+
+            ->groupBy(
+                'productos.id',
+                'productos.nombre'
+            )
+
+            ->orderByDesc('utilidad')
+
+            ->limit(10)
+
+            ->get()
+
+            ->map(fn($item)=>[
+
+                'id'=>$item->id,
+
+                'nombre'=>$item->nombre,
+
+                'utilidad'=>(float)$item->utilidad,
+
+            ])
+
+            ->toArray();
+    }
+
+    public function productosSinMovimiento(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array {
+
+        return Producto::query()
+
+            ->leftJoin(
+                'detalle_ventas',
+                'detalle_ventas.producto_id',
+                '=',
+                'productos.id'
+            )
+
+            ->select(
+                'productos.id',
+                'productos.nombre'
+            )
+
+            ->groupBy(
+                'productos.id',
+                'productos.nombre'
+            )
+
+            ->havingRaw(
+                'COUNT(detalle_ventas.id)=0'
+            )
+
+            ->orderBy('productos.nombre')
+
+            ->limit(20)
+
+            ->get()
+
+            ->map(fn($item)=>[
+
+                'id'=>$item->id,
+
+                'nombre'=>$item->nombre,
+
+            ])
+
+            ->toArray();
+    }
+
+    public function saldoPorCaja(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array {
+
+        return Caja::query()
+
+            ->with('destinoRecaudo')
+
+            ->get()
+
+            ->map(function($caja){
+
+                $ingresos = MovimientoCaja::query()
+
+                    ->where('caja_id',$caja->id)
+
+                    ->where(
+                        'tipo_movimiento',
+                        'ingreso'
+                    )
+
+                    ->sum('monto');
+
+                $egresos = MovimientoCaja::query()
+
+                    ->where('caja_id',$caja->id)
+
+                    ->where(
+                        'tipo_movimiento',
+                        'egreso'
+                    )
+
+                    ->sum('monto');
+
+                return [
+
+                    'id'=>$caja->id,
+
+                    'nombre'=>$caja->nombre,
+
+                    'saldo'=>$ingresos-$egresos,
+
+                ];
+
+            })
+
+            ->toArray();
+    }
+
+    public function recaudoPorCaja(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array {
+
+        $query = MovimientoCaja::query()
+
+            ->join(
+                'cajas',
+                'cajas.id',
+                '=',
+                'movimiento_cajas.caja_id'
+            )
+
+            ->where(
+                'tipo_movimiento',
+                'ingreso'
+            );
+
+        if($fechaDesde){
+
+            $query->whereDate(
+                'fecha_movimiento',
+                '>=',
+                $fechaDesde
+            );
+
+        }
+
+        if($fechaHasta){
+
+            $query->whereDate(
+                'fecha_movimiento',
+                '<=',
+                $fechaHasta
+            );
+
+        }
+
+        return $query
+
+            ->selectRaw("
+                cajas.id,
+                cajas.nombre,
+                SUM(monto) total
+            ")
+
+            ->groupBy(
+                'cajas.id',
+                'cajas.nombre'
+            )
+
+            ->orderByDesc('total')
+
+            ->get()
+
+            ->map(fn($item)=>[
+
+                'id'=>$item->id,
+
+                'nombre'=>$item->nombre,
+
+                'total'=>(float)$item->total,
+
+            ])
+
+            ->toArray();
+    }
+
+    public function clientesMayorDeuda(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array {
+
+        return Cliente::query()
+
+            ->where(
+                'saldo_credito',
+                '>',
+                0
+            )
+
+            ->orderByDesc(
+                'saldo_credito'
+            )
+
+            ->limit(10)
+
+            ->get()
+
+            ->map(fn($item)=>[
+
+                'id'=>$item->id,
+
+                'nombre'=>$item->nombre,
+
+                'saldo'=>(float)$item->saldo_credito,
+
+            ])
+
+            ->toArray();
+    }
+
+    public function carteraVencida(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): float
+    {
+        $query = Venta::query()
+
+            ->where('estado', 'confirmada')
+
+            ->where('saldo_pendiente', '>', 0)
+
+            ->whereNotNull('fecha_vencimiento')
+
+            ->whereDate(
+                'fecha_vencimiento',
+                '<',
+                now()
+            );
+
+        if ($fechaDesde) {
+
+            $query->whereDate(
+                'fecha_venta',
+                '>=',
+                $fechaDesde
+            );
+        }
+
+        if ($fechaHasta) {
+
+            $query->whereDate(
+                'fecha_venta',
+                '<=',
+                $fechaHasta
+            );
+        }
+
+        return (float) $query->sum('saldo_pendiente');
     }
 }

@@ -11,6 +11,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Modules\Cartera\Application\Interfaces\CarteraRepositoryInterface;
 use App\Models\TurnoIslero;
+use App\Models\Venta;
+use App\Models\AbonoCarteraDetalle;
+use App\Modules\Cartera\Application\DTOs\CreateAbonoCarteraDetalleDTO;
 class CarteraRepository implements CarteraRepositoryInterface
 {
     public function findClienteById(int $id): ?Cliente
@@ -142,5 +145,52 @@ class CarteraRepository implements CarteraRepositoryInterface
                 $destinoRecaudoId
             )
             ->first();
+    }
+
+    public function findCajaById(
+        int $id
+    ): ?Caja
+    {
+        return Caja::query()
+            ->with('destinoRecaudo')
+            ->find($id);
+    }
+
+    public function getVentasPendientesCliente(int $clienteId)
+    {
+        return Venta::query()
+
+            ->where('cliente_id', $clienteId)
+
+            ->where('estado', 'confirmada')
+
+            ->where('saldo_pendiente', '>', 0)
+
+            ->orderBy('fecha_venta')
+
+            ->lockForUpdate()
+
+            ->get();
+    }
+
+    public function updateVenta(Venta $venta, array $data): Venta
+    {
+        $venta->update($data);
+
+        return $venta->fresh();
+    }
+
+    public function createAbonoDetalle(
+        CreateAbonoCarteraDetalleDTO $dto
+    ){
+        return AbonoCarteraDetalle::create([
+
+            'abono_cartera_id' => $dto->abono_cartera_id,
+
+            'venta_id' => $dto->venta_id,
+
+            'valor_aplicado' => $dto->valor_aplicado,
+
+        ]);
     }
 }

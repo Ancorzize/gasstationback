@@ -8,11 +8,10 @@ use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\Cartera\Application\DTOs\CreateAbonoCarteraDTO;
 use App\Modules\Cartera\Application\Interfaces\CarteraRepositoryInterface;
+use App\Modules\Cartera\Application\DTOs\CreateAbonoCarteraDetalleDTO;
 
 class CarteraService
 {
-    private const DESTINO_CARTERA = 3;
-
     public function __construct(
         protected CarteraRepositoryInterface $carteraRepository
     ) {}
@@ -75,6 +74,7 @@ class CarteraService
     public function registrarAbono(CreateAbonoCarteraDTO $dto): AbonoCartera
     {
         return DB::transaction(function () use ($dto) {
+
             $cliente = $this->carteraRepository->findClienteById($dto->cliente_id);
 
             if (!$cliente) {
@@ -93,63 +93,197 @@ class CarteraService
                 throw new HttpException(422, 'El abono no puede superar el saldo pendiente.');
             }
 
-            $tipoCaja = $dto->medio_pago === 'efectivo' ? 'efectivo' : 'digital';
-
-            $caja = $this->carteraRepository->getCajaAbiertaByTipoAndDestino( $tipoCaja, self::DESTINO_CARTERA);
+            $caja = $this->carteraRepository->findCajaById($dto->caja_id);
 
             if (!$caja) {
-                throw new HttpException(422, "No hay caja {$tipoCaja} abierta.");
+                throw new HttpException(422, 'La caja seleccionada no existe.');
+            }
+
+            if ($caja->estado !== 'abierta') {
+                throw new HttpException(422, 'La caja seleccionada no se encuentra abierta.');
+            }
+
+            $tipoCaja = in_array(
+                $dto->medio_pago,
+                ['efectivo', 'consignacion']
+            ) ? 'efectivo' : 'digital';
+
+            if ($caja->tipo_caja !== $tipoCaja) {
+                throw new HttpException(
+                    422,
+                    'La caja seleccionada no corresponde al medio de pago.'
+                );
             }
 
             $saldoAnterior = (float) $cliente->saldo_credito;
-            $saldoNuevo = $saldoAnterior - $dto->valor;
 
-            $turnoAbierto = $this->carteraRepository->getTurnoAbiertoByUser($dto->user_id);
+            $turnoAbierto = $this->carteraRepository
+                ->getTurnoAbiertoByUser($dto->user_id);
 
             $abono = $this->carteraRepository->createAbono([
+
                 'cliente_id' => $cliente->id,
+
                 'caja_id' => $caja->id,
+
                 'fecha_abono' => $dto->fecha_abono,
+
                 'valor' => $dto->valor,
+
                 'medio_pago' => $dto->medio_pago,
+
                 'observacion' => $dto->observacion,
+
                 'estado' => 'registrado',
+
                 'user_id' => $dto->user_id,
+
                 'turno_islero_id' => $turnoAbierto?->id,
+
             ]);
 
-            $this->carteraRepository->updateCliente($cliente, [
-                'saldo_credito' => $saldoNuevo,
-            ]);
+            $valorPendienteAbono = (float) $dto->valor;
+
+            $ventasPendientes = $this->carteraRepository
+                ->getVentasPendientesCliente($cliente->id);
+
+            if ($ventasPendientes->isEmpty()) {
+                throw new HttpException(
+                    422,
+                    'El cliente no tiene facturas pendientes.'
+                );
+            }
+
+            foreach ($ventasPendientes as $venta) {
+
+                if ($valorPendienteAbono <= 0) {
+                    break;
+                }
+
+                $saldoVenta = (float) $venta->saldo_pendiente;
+
+                if ($saldoVenta <= 0) {
+                    continue;
+                }
+
+                $valorAplicado = min(
+                    $saldoVenta,
+                    $valorPendienteAbono
+                );
+
+                $nuevoSaldoVenta = $saldoVenta - $valorAplicado;
+
+                $estadoPago = $nuevoSaldoVenta <= 0
+                    ? 'pagado'
+                    : 'parcial';
+
+                if ($nuevoSaldoVenta < 0) {
+                    $nuevoSaldoVenta = 0;
+                }
+
+                $this->carteraRepository->updateVenta(
+                    $venta,
+                    [
+                        'saldo_pendiente' => $nuevoSaldoVenta,
+                        'estado_pago' => $estadoPago,
+                    ]
+                );
+
+                $this->carteraRepository->createAbonoDetalle(
+
+                    new CreateAbonoCarteraDetalleDTO(
+
+                        abono_cartera_id: $abono->id,
+
+                        venta_id: $venta->id,
+
+                        valor_aplicado: $valorAplicado,
+
+                    )
+
+                );
+
+                $valorPendienteAbono -= $valorAplicado;
+            }
+
+            if ($valorPendienteAbono > 0) {
+                throw new HttpException(
+                    500,
+                    'No fue posible aplicar completamente el abono a las facturas pendientes.'
+                );
+            }
+
+            $saldoNuevo = $this->carteraRepository
+                ->getVentasPendientesCliente($cliente->id)
+                ->sum('saldo_pendiente');
+
+            $this->carteraRepository->updateCliente(
+                $cliente,
+                [
+                    'saldo_credito' => $saldoNuevo,
+                ]
+            );
 
             $this->carteraRepository->createMovimientoCartera([
+
                 'cliente_id' => $cliente->id,
+
                 'tipo_movimiento' => 'abono',
+
                 'origen_modulo' => 'abonos_cartera',
+
                 'origen_id' => $abono->id,
+
                 'valor' => $dto->valor,
+
                 'saldo_anterior' => $saldoAnterior,
+
                 'saldo_nuevo' => $saldoNuevo,
+
                 'medio_pago' => $dto->medio_pago,
-                'descripcion' => $dto->observacion ?: 'Abono de cartera',
+
+                'descripcion' => $dto->observacion
+                    ?: 'Abono aplicado automáticamente a las facturas pendientes.',
+
                 'user_id' => $dto->user_id,
+
                 'fecha_movimiento' => now(),
+
             ]);
+
 
             $this->carteraRepository->createMovimientoCaja([
+
                 'caja_id' => $caja->id,
+
                 'tipo_movimiento' => 'ingreso',
+
                 'categoria_movimiento' => 'abono_cartera',
+
                 'origen_modulo' => 'cartera',
+
                 'origen_id' => $abono->id,
+
                 'medio_pago' => $dto->medio_pago,
+
                 'monto' => $dto->valor,
+
                 'descripcion' => 'Abono cartera cliente #' . $cliente->id,
+
                 'user_id' => $dto->user_id,
+
                 'fecha_movimiento' => now(),
+
             ]);
 
-            return $abono->fresh()->load(['cliente', 'caja', 'usuario']);
+            return $abono
+                ->fresh()
+                ->load([
+                    'cliente',
+                    'caja',
+                    'usuario',
+                    'detalles.venta',
+                ]);
         });
     }
 }

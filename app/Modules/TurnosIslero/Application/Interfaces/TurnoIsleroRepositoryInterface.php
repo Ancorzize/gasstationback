@@ -74,4 +74,6 @@ interface TurnoIsleroRepositoryInterface
     public function createMovimientoCaja(array $data): MovimientoCaja;
 
     public function getResumenDestinosTurno( int $turnoId): Collection;
+
+    public function getDestinosConCajaAbierta();
 }

@@ -38,9 +38,6 @@ interface DashboardRepositoryInterface
 
     public function saldoCartera(?string $fechaDesde, ?string $fechaHasta): float;
 
-    public function inventarioValorizado(): float;
-
-
     public function ventasUltimos30Dias(?string $fechaDesde, ?string $fechaHasta): array;
 
     public function ventasPorMedioPago(?string $fechaDesde, ?string $fechaHasta): array;
@@ -87,4 +84,50 @@ interface DashboardRepositoryInterface
         ?string $fechaHasta,
         int $limit = 10
     ): array;
+
+    public function ticketPromedio(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): float;
+
+    public function comparativoVentasPeriodo(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array;
+
+    public function ventasPorHora(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array;
+
+    public function productosMayorUtilidad(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array;
+
+    public function productosSinMovimiento(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array;
+
+    public function saldoPorCaja(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array;
+
+    public function recaudoPorCaja(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array;
+
+    public function clientesMayorDeuda(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): array;
+
+    public function carteraVencida(
+        ?string $fechaDesde,
+        ?string $fechaHasta
+    ): float;
+
 }
