@@ -28,17 +28,11 @@ class DashboardIndicatorService
     {
         return match ($codigo) {
 
-            'ventas_hoy' => $this->ventasHoy(),
+            'ventas' => $this->ventas(),
 
-            'compras_hoy' => $this->comprasHoy(),
+            'compras' => $this->compras(),
 
-            'gastos_hoy' => $this->gastosHoy(),
-
-            'ventas_mes' => $this->ventasMes(),
-
-            'compras_mes' => $this->comprasMes(),
-
-            'gastos_mes' => $this->gastosMes(),
+            'gastos' => $this->gastos(),
 
             'clientes_totales' => $this->clientesTotales(),
 
@@ -52,9 +46,9 @@ class DashboardIndicatorService
 
             'turnos_abiertos' => $this->turnosAbiertos(),
 
-            'ventas_credito_hoy' => $this->ventasCreditoHoy(),
+            'ventas_credito' => $this->ventasCredito(),
 
-            'abonos_hoy' => $this->abonosHoy(),
+            'abonos' => $this->abonos(),
 
             'saldo_cartera' => $this->saldoCartera(),
 
@@ -100,66 +94,46 @@ class DashboardIndicatorService
 
             'cartera_vencida' => $this->carteraVencida(),
 
+            'productos_mayor_utilidad' => $this->productosMayorUtilidad(),
+
+            'productos_sin_movimiento' => $this->productosSinMovimiento(),
+
+            'saldo_por_caja' => $this->saldoPorCaja(),
+
+            'recaudo_por_caja' => $this->recaudoPorCaja(),
+
+            'clientes_mayor_deuda' => $this->clientesMayorDeuda(),
+
             default => null,
         };
     }
 
-    private function ventasHoy(): array
+    private function ventas(): array
     {
         return [
 
             'valor' => $this->dashboardRepository
-                ->ventasHoy($this->fechaDesde, $this->fechaHasta)
+                ->ventas($this->fechaDesde, $this->fechaHasta)
 
         ];
     }
 
-    private function comprasHoy(): array
+    private function compras(): array
     {
         return [
 
             'valor' => $this->dashboardRepository
-                ->comprasHoy($this->fechaDesde, $this->fechaHasta)
+                ->compras($this->fechaDesde, $this->fechaHasta)
 
         ];
     }
 
-    private function gastosHoy(): array
+    private function gastos(): array
     {
         return [
 
             'valor' => $this->dashboardRepository
-                ->gastosHoy($this->fechaDesde, $this->fechaHasta)
-
-        ];
-    }
-
-    private function ventasMes(): array
-    {
-        return [
-
-            'valor' => $this->dashboardRepository
-                ->ventasMes($this->fechaDesde, $this->fechaHasta)
-
-        ];
-    }
-
-    private function comprasMes(): array
-    {
-        return [
-
-            'valor' => $this->dashboardRepository
-                ->comprasMes($this->fechaDesde, $this->fechaHasta)
-
-        ];
-    }
-
-    private function gastosMes(): array
-    {
-        return [
-
-            'valor' => $this->dashboardRepository
-                ->gastosMes($this->fechaDesde, $this->fechaHasta)
+                ->gastos($this->fechaDesde, $this->fechaHasta)
 
         ];
     }
@@ -168,7 +142,7 @@ class DashboardIndicatorService
     {
         return [
             'valor'=>$this->dashboardRepository
-                ->clientesTotales($this->fechaDesde, $this->fechaHasta)
+                ->clientesTotales()
         ];
     }
 
@@ -176,7 +150,7 @@ class DashboardIndicatorService
     {
         return [
             'valor'=>$this->dashboardRepository
-                ->clientesNuevosHoy($this->fechaDesde, $this->fechaHasta)
+                ->clientesNuevos($this->fechaDesde, $this->fechaHasta)
         ];
     }
 
@@ -184,7 +158,7 @@ class DashboardIndicatorService
     {
         return [
             'valor'=>$this->dashboardRepository
-                ->productosActivos($this->fechaDesde, $this->fechaHasta)
+                ->productosActivos()
         ];
     }
 
@@ -192,7 +166,7 @@ class DashboardIndicatorService
     {
         return [
             'valor'=>$this->dashboardRepository
-                ->productosBajoStock($this->fechaDesde, $this->fechaHasta)
+                ->productosBajoStock()
         ];
     }
 
@@ -200,7 +174,7 @@ class DashboardIndicatorService
     {
         return [
             'valor'=>$this->dashboardRepository
-                ->cajasAbiertas($this->fechaDesde, $this->fechaHasta)
+                ->cajasAbiertas()
         ];
     }
 
@@ -208,31 +182,30 @@ class DashboardIndicatorService
     {
         return [
             'valor'=>$this->dashboardRepository
-                ->turnosAbiertos($this->fechaDesde, $this->fechaHasta)
+                ->turnosAbiertos()
         ];
     }
 
-    private function ventasCreditoHoy(): array
+    private function ventasCredito(): array
     {
         return [
             'valor'=>$this->dashboardRepository
-                ->ventasCreditoHoy($this->fechaDesde, $this->fechaHasta)
+                ->ventasCredito($this->fechaDesde, $this->fechaHasta)
         ];
     }
 
-    private function abonosHoy(): array
+    private function abonos(): array
     {
         return [
             'valor'=>$this->dashboardRepository
-                ->abonosHoy($this->fechaDesde, $this->fechaHasta)
+                ->abonos($this->fechaDesde, $this->fechaHasta)
         ];
     }
 
     private function saldoCartera(): array
     {
         return [
-            'valor'=>$this->dashboardRepository
-                ->saldoCartera($this->fechaDesde, $this->fechaHasta)
+            'valor'=>$this->dashboardRepository->saldoCartera()
         ];
     }
 
@@ -252,6 +225,8 @@ class DashboardIndicatorService
             'series' => collect($datos)
                 ->pluck('valor'),
 
+            'items' => $datos
+
         ];
     }
     
@@ -267,7 +242,9 @@ class DashboardIndicatorService
                 ->pluck('nombre'),
 
             'series'=>collect($datos)
-                ->pluck('valor')
+                ->pluck('valor'),
+
+            'items' => $datos
 
         ];
     }
@@ -283,7 +260,7 @@ class DashboardIndicatorService
                 ->pluck('nombre'),
 
             'series' => collect($datos)
-                ->pluck('total'),
+                ->pluck('valor'),
 
             'items' => $datos,
 
@@ -332,7 +309,7 @@ class DashboardIndicatorService
         return [
 
             'items' => $this->dashboardRepository
-                ->estadoCajas($this->fechaDesde, $this->fechaHasta)
+                ->estadoCajas()
 
         ];
     }
@@ -344,7 +321,7 @@ class DashboardIndicatorService
             'items' =>
 
             $this->dashboardRepository
-                ->productosCriticos($this->fechaDesde, $this->fechaHasta)
+                ->productosCriticos()
 
         ];
     }
@@ -356,7 +333,7 @@ class DashboardIndicatorService
             'items' =>
 
             $this->dashboardRepository
-                ->turnosAbiertosDetalle($this->fechaDesde, $this->fechaHasta)
+                ->turnosAbiertosDetalle()
 
         ];
     }
@@ -552,7 +529,7 @@ class DashboardIndicatorService
         $datos = $this->dashboardRepository->ventasPorHora($this->fechaDesde,$this->fechaHasta);
 
         return [
-            'labels' => collect($datos)->pluck('hora'),
+            'labels' => collect($datos)->pluck('hora')->map(fn($h) => "{$h}:00"),
             'series' => collect($datos)->pluck('total'),
             'items' => $datos
         ];
@@ -569,6 +546,94 @@ class DashboardIndicatorService
                 ),
 
             'formato' => 'currency',
+
+        ];
+    }
+
+    private function productosMayorUtilidad(): array
+    {
+        $datos = $this->dashboardRepository
+            ->productosMayorUtilidad(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
+
+        return [
+
+            'labels' => collect($datos)
+                ->pluck('nombre'),
+
+            'series' => collect($datos)
+                ->pluck('utilidad'),
+
+            'items' => $datos,
+
+        ];
+    }
+
+    private function productosSinMovimiento(): array
+    {
+        return [
+
+            'items' => $this->dashboardRepository
+                ->productosSinMovimiento(),
+
+        ];
+    }
+
+    private function saldoPorCaja(): array
+    {
+        $datos = $this->dashboardRepository
+            ->saldoPorCaja();
+
+        return [
+
+            'labels' => collect($datos)
+                ->pluck('nombre'),
+
+            'series' => collect($datos)
+                ->pluck('saldo'),
+
+            'items' => $datos,
+
+        ];
+    }
+
+    private function recaudoPorCaja(): array
+    {
+        $datos = $this->dashboardRepository
+            ->recaudoPorCaja(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
+
+        return [
+
+            'labels' => collect($datos)
+                ->pluck('nombre'),
+
+            'series' => collect($datos)
+                ->pluck('total'),
+
+            'items' => $datos,
+
+        ];
+    }
+
+    private function clientesMayorDeuda(): array
+    {
+        $datos = $this->dashboardRepository
+            ->clientesMayorDeuda();
+
+        return [
+
+            'labels' => collect($datos)
+                ->pluck('nombre'),
+
+            'series' => collect($datos)
+                ->pluck('saldo'),
+
+            'items' => $datos,
 
         ];
     }

@@ -8,21 +8,15 @@ interface DashboardRepositoryInterface
 {
     public function getWidgetsByRole(int $roleId): Collection;
 
-    public function ventasHoy(?string $fechaDesde, ?string $fechaHasta): float;
+    public function ventas(?string $fechaDesde, ?string $fechaHasta): float;
 
-    public function comprasHoy(?string $fechaDesde, ?string $fechaHasta): float;
+    public function compras(?string $fechaDesde, ?string $fechaHasta): float;
 
-    public function gastosHoy(?string $fechaDesde, ?string $fechaHasta): float;
+    public function gastos(?string $fechaDesde, ?string $fechaHasta): float;
 
-    public function ventasMes(?string $fechaDesde, ?string $fechaHasta): float;
+    public function clientesTotales(): int;
 
-    public function comprasMes(?string $fechaDesde, ?string $fechaHasta): float;
-
-    public function gastosMes(?string $fechaDesde, ?string $fechaHasta): float;
-
-    public function clientesTotales(?string $fechaDesde, ?string $fechaHasta): int;
-
-    public function clientesNuevosHoy(?string $fechaDesde, ?string $fechaHasta): int;
+    public function clientesNuevos(?string $fechaDesde, ?string $fechaHasta): int;
 
     public function productosActivos(): int;
 
@@ -32,11 +26,11 @@ interface DashboardRepositoryInterface
 
     public function turnosAbiertos(): int;
 
-    public function ventasCreditoHoy(?string $fechaDesde, ?string $fechaHasta): float;
+    public function ventasCredito(?string $fechaDesde, ?string $fechaHasta): float;
 
-    public function abonosHoy(?string $fechaDesde, ?string $fechaHasta): float;
+    public function abonos(?string $fechaDesde, ?string $fechaHasta): float;
 
-    public function saldoCartera(?string $fechaDesde, ?string $fechaHasta): float;
+    public function saldoCartera(): float;
 
     public function ventasUltimos30Dias(?string $fechaDesde, ?string $fechaHasta): array;
 
@@ -106,13 +100,9 @@ interface DashboardRepositoryInterface
     ): array;
 
     public function productosSinMovimiento(
-        ?string $fechaDesde,
-        ?string $fechaHasta
     ): array;
 
     public function saldoPorCaja(
-        ?string $fechaDesde,
-        ?string $fechaHasta
     ): array;
 
     public function recaudoPorCaja(
@@ -121,8 +111,6 @@ interface DashboardRepositoryInterface
     ): array;
 
     public function clientesMayorDeuda(
-        ?string $fechaDesde,
-        ?string $fechaHasta
     ): array;
 
     public function carteraVencida(

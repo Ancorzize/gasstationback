@@ -43,7 +43,7 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->get();
     }
 
-    public function ventasHoy(
+    public function ventas(
         ?string $fechaDesde,
         ?string $fechaHasta
     ): float
@@ -75,7 +75,7 @@ class DashboardRepository implements DashboardRepositoryInterface
         return (float) $query->sum('total');
     }
 
-    public function comprasHoy(
+    public function compras(
         ?string $fechaDesde,
         ?string $fechaHasta
     ): float
@@ -107,7 +107,7 @@ class DashboardRepository implements DashboardRepositoryInterface
         return (float) $query->sum('total');
     }
 
-    public function gastosHoy(
+    public function gastos(
         ?string $fechaDesde,
         ?string $fechaHasta
     ): float
@@ -139,133 +139,12 @@ class DashboardRepository implements DashboardRepositoryInterface
         return (float) $query->sum('valor');
     }
 
-    public function ventasMes(
-        ?string $fechaDesde,
-        ?string $fechaHasta
-    ): float
+    public function clientesTotales(): int
     {
-        $query = Venta::query()
-
-            ->where('estado', 'confirmada');
-
-        if ($fechaDesde) {
-
-            $query->whereDate(
-                'fecha_venta',
-                '>=',
-                $fechaDesde
-            );
-
-        }
-
-        if ($fechaHasta) {
-
-            $query->whereDate(
-                'fecha_venta',
-                '<=',
-                $fechaHasta
-            );
-
-        }
-
-        return (float) $query->sum('total');
+        return Cliente::count();
     }
 
-    public function comprasMes(
-        ?string $fechaDesde,
-        ?string $fechaHasta
-    ): float
-    {
-        $query = Compra::query()
-
-            ->where('estado', 'confirmada');
-
-        if ($fechaDesde) {
-
-            $query->whereDate(
-                'fecha_compra',
-                '>=',
-                $fechaDesde
-            );
-
-        }
-
-        if ($fechaHasta) {
-
-            $query->whereDate(
-                'fecha_compra',
-                '<=',
-                $fechaHasta
-            );
-
-        }
-
-        return (float) $query->sum('total');
-    }
-
-    public function gastosMes(
-        ?string $fechaDesde,
-        ?string $fechaHasta
-    ): float
-    {
-        $query = Gasto::query()
-
-            ->where('estado', 'registrado');
-
-        if ($fechaDesde) {
-
-            $query->whereDate(
-                'fecha_gasto',
-                '>=',
-                $fechaDesde
-            );
-
-        }
-
-        if ($fechaHasta) {
-
-            $query->whereDate(
-                'fecha_gasto',
-                '<=',
-                $fechaHasta
-            );
-
-        }
-
-        return (float) $query->sum('valor');
-    }
-
-    public function clientesTotales(
-        ?string $fechaDesde,
-        ?string $fechaHasta
-    ): int
-    {
-        $query = Cliente::query();
-
-        if ($fechaDesde) {
-
-            $query->whereDate(
-                'created_at',
-                '>=',
-                $fechaDesde
-            );
-
-        }
-
-        if ($fechaHasta) {
-
-            $query->whereDate(
-                'created_at',
-                '<=',
-                $fechaHasta
-            );
-
-        }
-
-        return $query->count();
-    }
-
-    public function clientesNuevosHoy(
+    public function clientesNuevos(
         ?string $fechaDesde,
         ?string $fechaHasta
     ): int
@@ -331,7 +210,7 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->count();
     }
 
-    public function ventasCreditoHoy(
+    public function ventasCredito(
         ?string $fechaDesde,
         ?string $fechaHasta
     ): float
@@ -371,7 +250,7 @@ class DashboardRepository implements DashboardRepositoryInterface
         return (float) $query->sum('total');
     }
 
-    public function abonosHoy(
+    public function abonos(
         ?string $fechaDesde,
         ?string $fechaHasta
     ): float
@@ -407,8 +286,6 @@ class DashboardRepository implements DashboardRepositoryInterface
     }
 
     public function saldoCartera(
-        ?string $fechaDesde,
-        ?string $fechaHasta
     ): float
     {
         return (float)
@@ -469,7 +346,7 @@ class DashboardRepository implements DashboardRepositoryInterface
 
                 'fecha' => $item->fecha,
 
-                'valor' => (float) $item->total,
+                'valor' => (float) $item->total
 
             ])
 
@@ -1641,13 +1518,18 @@ class DashboardRepository implements DashboardRepositoryInterface
             $fechaHasta = now()->toDateString();
         }
 
-        $inicio = \Carbon\Carbon::parse($fechaDesde);
-        $fin = \Carbon\Carbon::parse($fechaHasta);
+        $inicio = \Carbon\Carbon::parse($fechaDesde)->startOfDay();
+        $fin = \Carbon\Carbon::parse($fechaHasta)->endOfDay();
 
         $dias = $inicio->diffInDays($fin) + 1;
 
-        $inicioAnterior = $inicio->copy()->subDays($dias);
-        $finAnterior = $inicio->copy()->subDay();
+        $inicioAnterior = $inicio->copy()
+            ->subDays($dias)
+            ->startOfDay();
+
+        $finAnterior = $inicio->copy()
+            ->subDay()
+            ->endOfDay();
 
         $actual = (float) Venta::query()
 
@@ -1820,10 +1702,7 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->toArray();
     }
 
-    public function productosSinMovimiento(
-        ?string $fechaDesde,
-        ?string $fechaHasta
-    ): array {
+    public function productosSinMovimiento(): array {
 
         return Producto::query()
 
@@ -1866,8 +1745,6 @@ class DashboardRepository implements DashboardRepositoryInterface
     }
 
     public function saldoPorCaja(
-        ?string $fechaDesde,
-        ?string $fechaHasta
     ): array {
 
         return Caja::query()
@@ -1985,8 +1862,6 @@ class DashboardRepository implements DashboardRepositoryInterface
     }
 
     public function clientesMayorDeuda(
-        ?string $fechaDesde,
-        ?string $fechaHasta
     ): array {
 
         return Cliente::query()

@@ -11,8 +11,8 @@ class Dashboard extends Seeder
     public function run(): void
     {
         DashboardWidget::create([
-            'codigo' => 'ventas_hoy',
-            'nombre' => 'Ventas Hoy',
+            'codigo' => 'ventas',
+            'nombre' => 'Ventas',
             'tipo' => 'card',
             'categoria' => 'ventas',
             'icono' => 'DollarSign',
@@ -20,8 +20,8 @@ class Dashboard extends Seeder
         ]);
 
         DashboardWidget::create([
-            'codigo' => 'compras_hoy',
-            'nombre' => 'Compras Hoy',
+            'codigo' => 'compras',
+            'nombre' => 'Compras',
             'tipo' => 'card',
             'categoria' => 'compras',
             'icono' => 'ShoppingCart',
@@ -29,8 +29,8 @@ class Dashboard extends Seeder
         ]);
 
         DashboardWidget::create([
-            'codigo' => 'gastos_hoy',
-            'nombre' => 'Gastos Hoy',
+            'codigo' => 'gastos',
+            'nombre' => 'Gastos',
             'tipo' => 'card',
             'categoria' => 'gastos',
             'icono' => 'Wallet',
@@ -61,7 +61,7 @@ class Dashboard extends Seeder
 
         DashboardWidget::create([
             'codigo'=>'galones_combustible',
-            'nombre'=>'Galones por Combustible',
+            'nombre'=>'Consumo por Combustible',
             'tipo'=>'chart',
             'categoria'=>'combustibles',
             'icono'=>'Fuel',
@@ -175,7 +175,7 @@ class Dashboard extends Seeder
 
         DashboardWidget::create([
             'codigo'=>'recaudo_medio_pago',
-            'nombre'=>'Recaudo por Medio de Pago',
+            'nombre'=>'Recaudo por Medios de Pago',
             'tipo'=>'chart',
             'categoria'=>'caja',
             'icono'=>'CreditCard',
@@ -188,7 +188,7 @@ class Dashboard extends Seeder
         DashboardWidget::create([
 
             'codigo'=>'flujo_caja',
-            'nombre'=>'Flujo Diario de Caja',
+            'nombre'=>'Flujo de Caja',
             'tipo'=>'chart',
             'categoria'=>'caja',
             'icono'=>'TrendingUp',
@@ -211,32 +211,6 @@ class Dashboard extends Seeder
 
         ]);
 
-        DashboardWidget::create([
-            'codigo' => 'ventas_mes',
-            'nombre' => 'Ventas del Período',
-            'tipo' => 'card',
-            'categoria' => 'ventas',
-            'icono' => 'DollarSign',
-            'color' => 'green',
-        ]);
-
-        DashboardWidget::create([
-            'codigo' => 'compras_mes',
-            'nombre' => 'Compras del Período',
-            'tipo' => 'card',
-            'categoria' => 'compras',
-            'icono' => 'ShoppingCart',
-            'color' => 'blue',
-        ]);
-
-        DashboardWidget::create([
-            'codigo' => 'gastos_mes',
-            'nombre' => 'Gastos del Período',
-            'tipo' => 'card',
-            'categoria' => 'gastos',
-            'icono' => 'Wallet',
-            'color' => 'red',
-        ]);
 
         DashboardWidget::create([
             'codigo' => 'clientes_totales',
@@ -293,7 +267,7 @@ class Dashboard extends Seeder
         ]);
 
         DashboardWidget::create([
-            'codigo' => 'ventas_credito_hoy',
+            'codigo' => 'ventas_credito',
             'nombre' => 'Ventas a Crédito',
             'tipo' => 'card',
             'categoria' => 'ventas',
@@ -302,7 +276,7 @@ class Dashboard extends Seeder
         ]);
 
         DashboardWidget::create([
-            'codigo' => 'abonos_hoy',
+            'codigo' => 'abonos',
             'nombre' => 'Abonos',
             'tipo' => 'card',
             'categoria' => 'cartera',
@@ -321,7 +295,7 @@ class Dashboard extends Seeder
 
         DashboardWidget::create([
             'codigo' => 'ventas_30_dias',
-            'nombre' => 'Ventas Últimos 30 Días',
+            'nombre' => 'Ventas por Día',
             'tipo' => 'chart',
             'categoria' => 'ventas',
             'icono' => 'TrendingUp',
@@ -348,6 +322,99 @@ class Dashboard extends Seeder
             'categoria' => 'ventas',
             'icono' => 'Receipt',
             'color' => 'green',
+        ]);
+
+        DashboardWidget::create([
+            'codigo' => 'comparativo_ventas',
+            'nombre' => 'Comparativo Ventas',
+            'tipo' => 'chart',
+            'categoria' => 'ventas',
+            'icono' => 'TrendingUp',
+            'color' => 'blue',
+
+        ]);
+
+        DashboardWidget::create([
+            'codigo' => 'ventas_por_hora',
+            'nombre' => 'Ventas por Hora',
+            'tipo' => 'chart',
+            'categoria' => 'ventas',
+            'icono' => 'Clock',
+            'color' => 'orange',
+            'ancho' => 12,
+            'alto' => 2,
+
+        ]);
+
+        DashboardWidget::create([
+
+            'codigo' => 'cartera_vencida',
+
+            'nombre' => 'Cartera Vencida',
+
+            'tipo' => 'card',
+
+            'categoria' => 'cartera',
+
+            'icono' => 'TriangleAlert',
+
+            'color' => 'red',
+
+        ]);
+
+        DashboardWidget::create([
+            'codigo' => 'productos_mayor_utilidad',
+            'nombre' => 'Productos con Mayor Utilidad',
+            'tipo' => 'chart',
+            'categoria' => 'inventario',
+            'icono' => 'TrendingUp',
+            'color' => 'green',
+            'ancho' => 6,
+            'alto' => 2,
+        ]);
+
+        DashboardWidget::create([
+            'codigo' => 'productos_sin_movimiento',
+            'nombre' => 'Productos Sin Movimiento',
+            'tipo' => 'table',
+            'categoria' => 'inventario',
+            'icono' => 'PackageX',
+            'color' => 'orange',
+            'ancho' => 6,
+            'alto' => 2,
+        ]);
+
+        DashboardWidget::create([
+            'codigo' => 'saldo_por_caja',
+            'nombre' => 'Saldo por Caja',
+            'tipo' => 'chart',
+            'categoria' => 'caja',
+            'icono' => 'Wallet',
+            'color' => 'blue',
+            'ancho' => 6,
+            'alto' => 2,
+        ]);
+
+        DashboardWidget::create([
+            'codigo' => 'recaudo_por_caja',
+            'nombre' => 'Recaudo por Caja',
+            'tipo' => 'chart',
+            'categoria' => 'caja',
+            'icono' => 'Landmark',
+            'color' => 'green',
+            'ancho' => 6,
+            'alto' => 2,
+        ]);
+
+        DashboardWidget::create([
+            'codigo' => 'clientes_mayor_deuda',
+            'nombre' => 'Clientes con Mayor Deuda',
+            'tipo' => 'chart',
+            'categoria' => 'cartera',
+            'icono' => 'BadgeAlert',
+            'color' => 'red',
+            'ancho' => 6,
+            'alto' => 2,
         ]);
     }
 }

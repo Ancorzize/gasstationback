@@ -371,15 +371,9 @@ class TurnoIsleroService
                 array_sum($pagos) +
                 $dto->otros_movimientos;
 
-            $totalSistema =
-                $totalVentasCombustible +
-                $totalVentasLubricantes +
-                $totalAbonos -
-                $totalCreditos;
+            $totalSistema = $totalVentasCombustible + $totalVentasLubricantes - $totalCreditos;
 
-            $balanceFinal =
-                $totalSistema -
-                $totalReportado;
+            $balanceFinal = $totalSistema -$totalReportado;
 
             /*
             |--------------------------------------------------------------------------
