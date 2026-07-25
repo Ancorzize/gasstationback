@@ -568,8 +568,7 @@ class TurnoIsleroService
 
         $totalSistema =
             $totalVentasCombustible +
-            $totalVentasLubricantes +
-            $totalAbonos -
+            $totalVentasLubricantes -
             $totalCreditos;
 
         $lecturas = $turno->lecturas->map(function ($lectura) use ($turno) {
