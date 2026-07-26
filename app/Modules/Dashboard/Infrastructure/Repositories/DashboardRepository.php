@@ -702,6 +702,8 @@ class DashboardRepository implements DashboardRepositoryInterface
 
             ->with('destinoRecaudo')
 
+            ->where('estado', 'abierta')
+
             ->orderBy('tipo_caja')
 
             ->get()
@@ -736,6 +738,8 @@ class DashboardRepository implements DashboardRepositoryInterface
 
             })
 
+            ->values()
+
             ->toArray();
     }
 
@@ -750,25 +754,24 @@ class DashboardRepository implements DashboardRepositoryInterface
                 'inventarios.producto_id'
             )
 
-            ->where(
-                'inventarios.cantidad',
-                '<=',
-                10
+            ->selectRaw("
+                productos.id,
+                productos.nombre,
+                SUM(inventarios.cantidad) cantidad
+            ")
+
+            ->groupBy(
+                'productos.id',
+                'productos.nombre'
             )
 
-            ->orderBy('inventarios.cantidad')
+            ->havingRaw('SUM(inventarios.cantidad) <= 10')
+
+            ->orderBy('cantidad')
 
             ->limit(10)
 
-            ->get([
-
-                'productos.id',
-
-                'productos.nombre',
-
-                'inventarios.cantidad',
-
-            ])
+            ->get()
 
             ->map(fn ($item) => [
 
@@ -1625,82 +1628,6 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->toArray();
     }
 
-    public function productosMayorUtilidad(
-        ?string $fechaDesde,
-        ?string $fechaHasta
-    ): array {
-
-        $query = DetalleVenta::query()
-
-            ->join(
-                'ventas',
-                'ventas.id',
-                '=',
-                'detalle_ventas.venta_id'
-            )
-
-            ->join(
-                'productos',
-                'productos.id',
-                '=',
-                'detalle_ventas.producto_id'
-            )
-
-            ->where(
-                'ventas.estado',
-                'confirmada'
-            );
-
-        if ($fechaDesde) {
-            $query->whereDate(
-                'ventas.fecha_venta',
-                '>=',
-                $fechaDesde
-            );
-        }
-
-        if ($fechaHasta) {
-            $query->whereDate(
-                'ventas.fecha_venta',
-                '<=',
-                $fechaHasta
-            );
-        }
-
-        return $query
-
-            ->selectRaw("
-                productos.id,
-                productos.nombre,
-                SUM(
-                    (detalle_ventas.precio_unitario - detalle_ventas.precio_unitario)
-                    * detalle_ventas.cantidad
-                ) utilidad
-            ")
-
-            ->groupBy(
-                'productos.id',
-                'productos.nombre'
-            )
-
-            ->orderByDesc('utilidad')
-
-            ->limit(10)
-
-            ->get()
-
-            ->map(fn($item)=>[
-
-                'id'=>$item->id,
-
-                'nombre'=>$item->nombre,
-
-                'utilidad'=>(float)$item->utilidad,
-
-            ])
-
-            ->toArray();
-    }
 
     public function productosSinMovimiento(): array {
 
@@ -1744,50 +1671,47 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->toArray();
     }
 
-    public function saldoPorCaja(
-    ): array {
-
+    public function saldoPorCaja(): array
+    {
         return Caja::query()
 
-            ->with('destinoRecaudo')
+            ->where('estado', 'abierta')
+
+            ->orderBy('tipo_caja')
 
             ->get()
 
-            ->map(function($caja){
+            ->map(function ($caja) {
 
-                $ingresos = MovimientoCaja::query()
+                $ingresos = (float) MovimientoCaja::query()
 
-                    ->where('caja_id',$caja->id)
+                    ->where('caja_id', $caja->id)
 
-                    ->where(
-                        'tipo_movimiento',
-                        'ingreso'
-                    )
+                    ->where('tipo_movimiento', 'ingreso')
 
                     ->sum('monto');
 
-                $egresos = MovimientoCaja::query()
+                $egresos = (float) MovimientoCaja::query()
 
-                    ->where('caja_id',$caja->id)
+                    ->where('caja_id', $caja->id)
 
-                    ->where(
-                        'tipo_movimiento',
-                        'egreso'
-                    )
+                    ->where('tipo_movimiento', 'egreso')
 
                     ->sum('monto');
 
                 return [
 
-                    'id'=>$caja->id,
+                    'id' => $caja->id,
 
-                    'nombre'=>$caja->nombre,
+                    'nombre' => $caja->nombre,
 
-                    'saldo'=>$ingresos-$egresos,
+                    'saldo' => $ingresos - $egresos,
 
                 ];
 
             })
+
+            ->values()
 
             ->toArray();
     }
@@ -1806,25 +1730,24 @@ class DashboardRepository implements DashboardRepositoryInterface
                 'movimientos_caja.caja_id'
             )
 
-            ->where(
-                'tipo_movimiento',
-                'ingreso'
-            );
+            ->where('movimientos_caja.tipo_movimiento', 'ingreso')
 
-        if($fechaDesde){
+            ->where('cajas.estado', 'abierta');
+
+        if ($fechaDesde) {
 
             $query->whereDate(
-                'fecha_movimiento',
+                'movimientos_caja.fecha_movimiento',
                 '>=',
                 $fechaDesde
             );
 
         }
 
-        if($fechaHasta){
+        if ($fechaHasta) {
 
             $query->whereDate(
-                'fecha_movimiento',
+                'movimientos_caja.fecha_movimiento',
                 '<=',
                 $fechaHasta
             );
@@ -1836,7 +1759,7 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->selectRaw("
                 cajas.id,
                 cajas.nombre,
-                SUM(monto) total
+                SUM(movimientos_caja.monto) total
             ")
 
             ->groupBy(
@@ -1848,13 +1771,13 @@ class DashboardRepository implements DashboardRepositoryInterface
 
             ->get()
 
-            ->map(fn($item)=>[
+            ->map(fn ($item) => [
 
-                'id'=>$item->id,
+                'id' => $item->id,
 
-                'nombre'=>$item->nombre,
+                'nombre' => $item->nombre,
 
-                'total'=>(float)$item->total,
+                'total' => (float) $item->total,
 
             ])
 

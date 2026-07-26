@@ -94,8 +94,6 @@ class DashboardIndicatorService
 
             'cartera_vencida' => $this->carteraVencida(),
 
-            'productos_mayor_utilidad' => $this->productosMayorUtilidad(),
-
             'productos_sin_movimiento' => $this->productosSinMovimiento(),
 
             'saldo_por_caja' => $this->saldoPorCaja(),
@@ -550,26 +548,6 @@ class DashboardIndicatorService
         ];
     }
 
-    private function productosMayorUtilidad(): array
-    {
-        $datos = $this->dashboardRepository
-            ->productosMayorUtilidad(
-                $this->fechaDesde,
-                $this->fechaHasta
-            );
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('nombre'),
-
-            'series' => collect($datos)
-                ->pluck('utilidad'),
-
-            'items' => $datos,
-
-        ];
-    }
 
     private function productosSinMovimiento(): array
     {

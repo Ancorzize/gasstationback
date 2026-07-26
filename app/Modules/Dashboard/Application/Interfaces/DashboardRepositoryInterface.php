@@ -94,11 +94,6 @@ interface DashboardRepositoryInterface
         ?string $fechaHasta
     ): array;
 
-    public function productosMayorUtilidad(
-        ?string $fechaDesde,
-        ?string $fechaHasta
-    ): array;
-
     public function productosSinMovimiento(
     ): array;
 

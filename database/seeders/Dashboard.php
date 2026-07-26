@@ -95,7 +95,7 @@ class Dashboard extends Seeder
 
         DashboardWidget::create([
             'codigo' => 'turnos_abiertos_detalle',
-            'nombre' => 'Turnos Abiertos',
+            'nombre' => 'Turnos Abiertos Detalle',
             'tipo' => 'table',
             'categoria' => 'turnos',
             'icono' => 'Clock',
