@@ -1673,7 +1673,7 @@ class DashboardRepository implements DashboardRepositoryInterface
                 productos.id,
                 productos.nombre,
                 SUM(
-                    (detalle_ventas.precio_unitario - detalle_ventas.costo_unitario)
+                    (detalle_ventas.precio_unitario - detalle_ventas.precio_unitario)
                     * detalle_ventas.cantidad
                 ) utilidad
             ")
@@ -1803,7 +1803,7 @@ class DashboardRepository implements DashboardRepositoryInterface
                 'cajas',
                 'cajas.id',
                 '=',
-                'movimiento_cajas.caja_id'
+                'movimientos_caja.caja_id'
             )
 
             ->where(
