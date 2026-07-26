@@ -1070,8 +1070,8 @@ class DashboardRepository implements DashboardRepositoryInterface
     public function ventasPorDestinoRecaudo(
         ?string $fechaDesde,
         ?string $fechaHasta
-    ): array
-    {
+    ): array {
+
         $query = DetalleVenta::query()
 
             ->join(
@@ -1082,86 +1082,72 @@ class DashboardRepository implements DashboardRepositoryInterface
             )
 
             ->join(
-                'productos',
-                'productos.id',
-                '=',
-                'detalle_ventas.producto_id'
-            )
-
-            ->join(
-                'categorias_producto',
-                'categorias_producto.id',
-                '=',
-                'productos.categoria_producto_id'
-            )
-
-            ->join(
                 'destinos_recaudo',
                 'destinos_recaudo.id',
                 '=',
-                'categorias_producto.destino_recaudo_id'
+                'detalle_ventas.destino_recaudo_id'
             )
 
             ->where(
                 'ventas.estado',
                 'confirmada'
-            )
-
-            ->selectRaw("
-                destinos_recaudo.id,
-                destinos_recaudo.nombre,
-                SUM(detalle_ventas.total) total
-            ");
+            );
 
         if ($fechaDesde) {
-
             $query->whereDate(
                 'ventas.fecha_venta',
                 '>=',
                 $fechaDesde
             );
-
         }
 
         if ($fechaHasta) {
-
             $query->whereDate(
                 'ventas.fecha_venta',
                 '<=',
                 $fechaHasta
             );
-
         }
 
-        return $query
+        return [
 
-            ->groupBy(
-                'destinos_recaudo.id',
-                'destinos_recaudo.nombre'
-            )
+            'items' =>
 
-            ->orderByDesc('total')
+                $query
 
-            ->get()
+                    ->selectRaw("
+                        destinos_recaudo.nombre,
+                        SUM(detalle_ventas.total) total
+                    ")
 
-            ->map(fn ($item) => [
+                    ->groupBy(
+                        'destinos_recaudo.nombre'
+                    )
 
-                'id' => $item->id,
+                    ->orderByDesc('total')
 
-                'nombre' => $item->nombre,
+                    ->get()
 
-                'total' => (float) $item->total,
+                    ->map(fn($item) => [
 
-            ])
+                        'label' => $item->nombre,
 
-            ->toArray();
+                        'value' => (float) $item->total,
+
+                    ])
+
+                    ->values()
+
+                    ->toArray()
+
+        ];
     }
 
     public function topClientes(
         ?string $fechaDesde,
         ?string $fechaHasta
-    ): array
-    {
+    ): array {
+
         $query = Venta::query()
 
             ->join(
@@ -1174,65 +1160,65 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->where(
                 'ventas.estado',
                 'confirmada'
-            )
-
-            ->selectRaw("
-                clientes.id,
-                clientes.nombre,
-                SUM(ventas.total) total
-            ");
+            );
 
         if ($fechaDesde) {
-
             $query->whereDate(
                 'ventas.fecha_venta',
                 '>=',
                 $fechaDesde
             );
-
         }
 
         if ($fechaHasta) {
-
             $query->whereDate(
                 'ventas.fecha_venta',
                 '<=',
                 $fechaHasta
             );
-
         }
 
-        return $query
+        return [
 
-            ->groupBy(
-                'clientes.id',
-                'clientes.nombre'
-            )
+            'items' =>
 
-            ->orderByDesc('total')
+                $query
 
-            ->limit(10)
+                    ->selectRaw("
+                        clientes.nombre,
+                        SUM(ventas.total) total
+                    ")
 
-            ->get()
+                    ->groupBy(
+                        'clientes.nombre'
+                    )
 
-            ->map(fn ($item) => [
+                    ->orderByDesc('total')
 
-                'id' => $item->id,
+                    ->limit(10)
 
-                'nombre' => $item->nombre,
+                    ->get()
 
-                'total' => (float) $item->total,
+                    ->map(fn($item)=>[
 
-            ])
+                        'label'=>$item->nombre,
 
-            ->toArray();
+                        'value'=>(float)$item->total,
+
+                    ])
+
+                    ->values()
+
+                    ->toArray()
+
+        ];
     }
 
     public function topProveedores(
         ?string $fechaDesde,
         ?string $fechaHasta
-    ): array
-    {
+    ): array {
+
         $query = Compra::query()
 
             ->join(
@@ -1240,154 +1226,132 @@ class DashboardRepository implements DashboardRepositoryInterface
                 'proveedores.id',
                 '=',
                 'compras.proveedor_id'
-            )
-
-            ->where(
-                'compras.estado',
-                'confirmada'
-            )
-
-            ->selectRaw("
-                proveedores.id,
-                proveedores.nombre,
-                SUM(compras.total) total
-            ");
+            );
 
         if ($fechaDesde) {
-
             $query->whereDate(
                 'compras.fecha_compra',
                 '>=',
                 $fechaDesde
             );
-
         }
 
         if ($fechaHasta) {
-
             $query->whereDate(
                 'compras.fecha_compra',
                 '<=',
                 $fechaHasta
             );
-
         }
 
-        return $query
+        return [
 
-            ->groupBy(
-                'proveedores.id',
-                'proveedores.nombre'
-            )
+            'items' =>
 
-            ->orderByDesc('total')
+                $query
 
-            ->limit(10)
+                    ->selectRaw("
+                        proveedores.nombre,
+                        SUM(compras.total) total
+                    ")
 
-            ->get()
+                    ->groupBy(
+                        'proveedores.nombre'
+                    )
 
-            ->map(fn ($item) => [
+                    ->orderByDesc('total')
 
-                'id' => $item->id,
+                    ->limit(10)
 
-                'nombre' => $item->nombre,
+                    ->get()
 
-                'total' => (float) $item->total,
+                    ->map(fn($item)=>[
 
-            ])
+                        'label'=>$item->nombre,
 
-            ->toArray();
+                        'value'=>(float)$item->total,
+
+                    ])
+
+                    ->values()
+
+                    ->toArray()
+
+        ];
     }
 
     public function recaudoPorMedioPago(
         ?string $fechaDesde,
         ?string $fechaHasta
-    ): array
-    {
-        $query = PagoVenta::query()
+    ): array {
 
-            ->join(
-                'ventas',
-                'ventas.id',
-                '=',
-                'pagos_venta.venta_id'
-            )
+        $query = MovimientoCaja::query()
 
             ->where(
-                'ventas.estado',
-                'confirmada'
-            )
+                'tipo_movimiento',
+                'ingreso'
+            );
 
-            ->selectRaw("
-                metodo_pago,
-                SUM(monto) total
-            ");
-
-        if ($fechaDesde) {
+        if($fechaDesde){
 
             $query->whereDate(
-                'ventas.fecha_venta',
+                'fecha_movimiento',
                 '>=',
                 $fechaDesde
             );
 
         }
 
-        if ($fechaHasta) {
+        if($fechaHasta){
 
             $query->whereDate(
-                'ventas.fecha_venta',
+                'fecha_movimiento',
                 '<=',
                 $fechaHasta
             );
 
         }
 
-        return $query
+        return [
 
-            ->groupBy('metodo_pago')
+            'items' =>
 
-            ->orderByDesc('total')
+                $query
 
-            ->get()
+                    ->selectRaw("
+                        metodo_pago,
+                        SUM(monto) total
+                    ")
 
-            ->map(fn($item)=>[
+                    ->groupBy(
+                        'metodo_pago'
+                    )
 
-                'nombre'=>$item->metodo_pago,
+                    ->orderByDesc('total')
 
-                'total'=>(float)$item->total
+                    ->get()
 
-            ])
+                    ->map(fn($item)=>[
 
-            ->toArray();
+                        'label'=>$item->metodo_pago,
+
+                        'value'=>(float)$item->total,
+
+                    ])
+
+                    ->values()
+
+                    ->toArray()
+
+        ];
     }
 
     public function flujoCajaUltimos30Dias(
         ?string $fechaDesde,
         ?string $fechaHasta
-    ): array
-    {
-        $query = MovimientoCaja::query()
+    ): array {
 
-            ->selectRaw("
-                DATE(fecha_movimiento) fecha,
-
-                SUM(
-                    CASE
-                        WHEN tipo_movimiento='ingreso'
-                        THEN monto
-                        ELSE 0
-                    END
-                ) ingresos,
-
-                SUM(
-                    CASE
-                        WHEN tipo_movimiento='egreso'
-                        THEN monto
-                        ELSE 0
-                    END
-                ) egresos
-            ");
+        $query = MovimientoCaja::query();
 
         if ($fechaDesde) {
 
@@ -1409,25 +1373,55 @@ class DashboardRepository implements DashboardRepositoryInterface
 
         }
 
-        return $query
+        return [
 
-            ->groupByRaw("DATE(fecha_movimiento)")
+            'items' =>
 
-            ->orderByRaw("DATE(fecha_movimiento)")
+                $query
 
-            ->get()
+                    ->selectRaw("
+                        DATE(fecha_movimiento) fecha,
+                        SUM(
+                            CASE
+                                WHEN tipo_movimiento = 'ingreso'
+                                THEN monto
+                                ELSE 0
+                            END
+                        ) ingresos,
+                        SUM(
+                            CASE
+                                WHEN tipo_movimiento = 'egreso'
+                                THEN monto
+                                ELSE 0
+                            END
+                        ) egresos
+                    ")
 
-            ->map(fn($item)=>[
+                    ->groupByRaw("
+                        DATE(fecha_movimiento)
+                    ")
 
-                'fecha'=>$item->fecha,
+                    ->orderByRaw("
+                        DATE(fecha_movimiento)
+                    ")
 
-                'ingresos'=>(float)$item->ingresos,
+                    ->get()
 
-                'egresos'=>(float)$item->egresos,
+                    ->map(fn($item) => [
 
-            ])
+                        'label' => $item->fecha,
 
-            ->toArray();
+                        'ingresos' => (float) $item->ingresos,
+
+                        'egresos' => (float) $item->egresos,
+
+                    ])
+
+                    ->values()
+
+                    ->toArray(),
+
+        ];
     }
 
 
@@ -1606,54 +1600,67 @@ class DashboardRepository implements DashboardRepositoryInterface
     public function ventasPorHora(
         ?string $fechaDesde,
         ?string $fechaHasta
-    ): array
-    {
+    ): array {
+
         $query = Venta::query()
 
-            ->where('estado', 'confirmada');
+            ->where(
+                'estado',
+                'confirmada'
+            );
 
-        if ($fechaDesde) {
+        if($fechaDesde){
+
             $query->whereDate(
                 'fecha_venta',
                 '>=',
                 $fechaDesde
             );
+
         }
 
-        if ($fechaHasta) {
+        if($fechaHasta){
+
             $query->whereDate(
                 'fecha_venta',
                 '<=',
                 $fechaHasta
             );
+
         }
 
-        return $query
+        return [
 
-            ->selectRaw("
-                EXTRACT(HOUR FROM fecha_venta) hora,
-                SUM(total) total
-            ")
+            'items' =>
 
-            ->groupByRaw("
-                EXTRACT(HOUR FROM fecha_venta)
-            ")
+                $query
 
-            ->orderByRaw("
-                EXTRACT(HOUR FROM fecha_venta)
-            ")
+                    ->selectRaw("
+                        EXTRACT(HOUR FROM fecha_venta) hora,
+                        SUM(total) total
+                    ")
 
-            ->get()
+                    ->groupByRaw("
+                        EXTRACT(HOUR FROM fecha_venta)
+                    ")
 
-            ->map(fn($item)=>[
+                    ->orderBy('hora')
 
-                'hora'=>(int)$item->hora,
+                    ->get()
 
-                'total'=>(float)$item->total,
+                    ->map(fn($item)=>[
 
-            ])
+                        'label'=>sprintf('%02d:00',$item->hora),
 
-            ->toArray();
+                        'value'=>(float)$item->total,
+
+                    ])
+
+                    ->values()
+
+                    ->toArray()
+
+        ];
     }
 
 
@@ -1701,47 +1708,53 @@ class DashboardRepository implements DashboardRepositoryInterface
 
     public function saldoPorCaja(): array
     {
-        return Caja::query()
+        return [
 
-            ->where('estado', 'abierta')
+            'items' =>
 
-            ->orderBy('tipo_caja')
+                Caja::query()
 
-            ->get()
+                    ->get()
 
-            ->map(function ($caja) {
+                    ->map(function($caja){
 
-                $ingresos = (float) MovimientoCaja::query()
+                        $ingresos = MovimientoCaja::query()
 
-                    ->where('caja_id', $caja->id)
+                            ->where('caja_id',$caja->id)
 
-                    ->where('tipo_movimiento', 'ingreso')
+                            ->where(
+                                'tipo_movimiento',
+                                'ingreso'
+                            )
 
-                    ->sum('monto');
+                            ->sum('monto');
 
-                $egresos = (float) MovimientoCaja::query()
+                        $egresos = MovimientoCaja::query()
 
-                    ->where('caja_id', $caja->id)
+                            ->where('caja_id',$caja->id)
 
-                    ->where('tipo_movimiento', 'egreso')
+                            ->where(
+                                'tipo_movimiento',
+                                'egreso'
+                            )
 
-                    ->sum('monto');
+                            ->sum('monto');
 
-                return [
+                        return [
 
-                    'id' => $caja->id,
+                            'label'=>$caja->nombre,
 
-                    'nombre' => $caja->nombre,
+                            'value'=>$ingresos-$egresos,
 
-                    'saldo' => $ingresos - $egresos,
+                        ];
 
-                ];
+                    })
 
-            })
+                    ->values()
 
-            ->values()
+                    ->toArray()
 
-            ->toArray();
+        ];
     }
 
     public function recaudoPorCaja(
@@ -1758,58 +1771,63 @@ class DashboardRepository implements DashboardRepositoryInterface
                 'movimientos_caja.caja_id'
             )
 
-            ->where('movimientos_caja.tipo_movimiento', 'ingreso')
+            ->where(
+                'tipo_movimiento',
+                'ingreso'
+            );
 
-            ->where('cajas.estado', 'abierta');
-
-        if ($fechaDesde) {
+        if($fechaDesde){
 
             $query->whereDate(
-                'movimientos_caja.fecha_movimiento',
+                'fecha_movimiento',
                 '>=',
                 $fechaDesde
             );
 
         }
 
-        if ($fechaHasta) {
+        if($fechaHasta){
 
             $query->whereDate(
-                'movimientos_caja.fecha_movimiento',
+                'fecha_movimiento',
                 '<=',
                 $fechaHasta
             );
 
         }
 
-        return $query
+        return [
 
-            ->selectRaw("
-                cajas.id,
-                cajas.nombre,
-                SUM(movimientos_caja.monto) total
-            ")
+            'items' =>
 
-            ->groupBy(
-                'cajas.id',
-                'cajas.nombre'
-            )
+                $query
 
-            ->orderByDesc('total')
+                    ->selectRaw("
+                        cajas.nombre,
+                        SUM(monto) total
+                    ")
 
-            ->get()
+                    ->groupBy(
+                        'cajas.nombre'
+                    )
 
-            ->map(fn ($item) => [
+                    ->orderByDesc('total')
 
-                'id' => $item->id,
+                    ->get()
 
-                'nombre' => $item->nombre,
+                    ->map(fn($item)=>[
 
-                'total' => (float) $item->total,
+                        'label'=>$item->nombre,
 
-            ])
+                        'value'=>(float)$item->total,
 
-            ->toArray();
+                    ])
+
+                    ->values()
+
+                    ->toArray()
+
+        ];
     }
 
     public function clientesMayorDeuda(): array

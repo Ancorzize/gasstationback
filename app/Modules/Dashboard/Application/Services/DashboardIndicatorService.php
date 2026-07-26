@@ -360,37 +360,11 @@ class DashboardIndicatorService
 
     private function flujoCaja(): array
     {
-        $datos =
-            $this->dashboardRepository
-                ->flujoCajaUltimos30Dias(
-                    $this->fechaDesde,
-                    $this->fechaHasta
-                );
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('fecha'),
-
-            'series' => [
-
-                [
-                    'name' => 'Ingresos',
-                    'data' => collect($datos)
-                        ->pluck('ingresos'),
-                ],
-
-                [
-                    'name' => 'Egresos',
-                    'data' => collect($datos)
-                        ->pluck('egresos'),
-                ],
-
-            ],
-
-            'items' => $datos,
-
-        ];
+        return $this->dashboardRepository
+        ->flujoCajaUltimos30Dias(
+            $this->fechaDesde,
+            $this->fechaHasta
+        );
     }
 
     private function ingresosEgresos(): array
@@ -463,12 +437,8 @@ class DashboardIndicatorService
 
     private function productosSinMovimiento(): array
     {
-        return [
-
-            'items' => $this->dashboardRepository
-                ->productosSinMovimiento(),
-
-        ];
+        return $this->dashboardRepository
+            ->productosSinMovimiento();
     }
 
     private function saldoPorCaja(): array
