@@ -209,97 +209,47 @@ class DashboardIndicatorService
 
     private function ventas30Dias(): array
     {
-        $datos = $this->dashboardRepository
-        ->ventasUltimos30Dias(
-            $this->fechaDesde,
-            $this->fechaHasta
-        );
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('fecha'),
-
-            'series' => collect($datos)
-                ->pluck('valor'),
-
-            'items' => $datos
-
-        ];
+        return $this->dashboardRepository
+            ->ventasUltimos30Dias(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
     
     private function ventasMedioPago(): array
     {
-        $datos=
-            $this->dashboardRepository
-                ->ventasPorMedioPago($this->fechaDesde, $this->fechaHasta);
-
-        return [
-
-            'labels'=>collect($datos)
-                ->pluck('nombre'),
-
-            'series'=>collect($datos)
-                ->pluck('valor'),
-
-            'items' => $datos
-
-        ];
+        return $this->dashboardRepository
+            ->ventasPorMedioPago(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
 
     private function topProductos(): array
     {
-        $datos = $this->dashboardRepository
-            ->topProductos($this->fechaDesde, $this->fechaHasta);
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('nombre'),
-
-            'series' => collect($datos)
-                ->pluck('valor'),
-
-            'items' => $datos,
-
-        ];
+        return $this->dashboardRepository
+            ->topProductos(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
 
     private function ventasPorIslero(): array
     {
-        $datos = $this->dashboardRepository
-            ->ventasPorIslero($this->fechaDesde, $this->fechaHasta);
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('nombre'),
-
-            'series' => collect($datos)
-                ->pluck('total'),
-
-            'items' => $datos,
-
-        ];
+        return $this->dashboardRepository
+            ->ventasPorIslero(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
 
     private function galonesCombustible(): array
     {
-        $datos =
-            $this->dashboardRepository
-                ->galonesPorCombustible($this->fechaDesde, $this->fechaHasta);
-
-        return [
-
-            'labels'=>collect($datos)
-                ->pluck('nombre'),
-
-            'series'=>collect($datos)
-                ->pluck('galones'),
-
-            'items'=>$datos,
-
-        ];
+        return $this->dashboardRepository
+            ->galonesPorCombustible(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
 
     private function estadoCajas(): array
@@ -374,74 +324,38 @@ class DashboardIndicatorService
 
     private function ventasDestinoRecaudo(): array
     {
-        $datos = $this->dashboardRepository
-            ->ventasPorDestinoRecaudo($this->fechaDesde, $this->fechaHasta);
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('nombre'),
-
-            'series' => collect($datos)
-                ->pluck('total'),
-
-            'items' => $datos,
-
-        ];
+        return $this->dashboardRepository
+            ->ventasPorDestinoRecaudo(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
 
     private function topClientes(): array
     {
-        $datos = $this->dashboardRepository
-            ->topClientes($this->fechaDesde, $this->fechaHasta);
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('nombre'),
-
-            'series' => collect($datos)
-                ->pluck('total'),
-
-            'items' => $datos,
-
-        ];
+        return $this->dashboardRepository
+            ->topClientes(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
+
     private function topProveedores(): array
     {
-        $datos = $this->dashboardRepository
-            ->topProveedores($this->fechaDesde, $this->fechaHasta);
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('nombre'),
-
-            'series' => collect($datos)
-                ->pluck('total'),
-
-            'items' => $datos,
-
-        ];
+        return $this->dashboardRepository
+            ->topProveedores(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
 
     private function recaudoMedioPago(): array
     {
-        $datos =
-            $this->dashboardRepository
-                ->recaudoPorMedioPago($this->fechaDesde, $this->fechaHasta);
-
-        return [
-
-            'labels'=>collect($datos)
-                ->pluck('nombre'),
-
-            'series'=>collect($datos)
-                ->pluck('total'),
-
-            'items'=>$datos,
-
-        ];
+        return $this->dashboardRepository
+            ->recaudoPorMedioPago(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
 
     private function flujoCaja(): array
@@ -524,13 +438,11 @@ class DashboardIndicatorService
 
     private function ventasPorHora(): array
     {
-        $datos = $this->dashboardRepository->ventasPorHora($this->fechaDesde,$this->fechaHasta);
-
-        return [
-            'labels' => collect($datos)->pluck('hora')->map(fn($h) => "{$h}:00"),
-            'series' => collect($datos)->pluck('total'),
-            'items' => $datos
-        ];
+        return $this->dashboardRepository
+            ->ventasPorHora(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
 
     private function carteraVencida(): array
@@ -561,58 +473,22 @@ class DashboardIndicatorService
 
     private function saldoPorCaja(): array
     {
-        $datos = $this->dashboardRepository
+        return $this->dashboardRepository
             ->saldoPorCaja();
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('nombre'),
-
-            'series' => collect($datos)
-                ->pluck('saldo'),
-
-            'items' => $datos,
-
-        ];
     }
 
     private function recaudoPorCaja(): array
     {
-        $datos = $this->dashboardRepository
+        return $this->dashboardRepository
             ->recaudoPorCaja(
                 $this->fechaDesde,
                 $this->fechaHasta
             );
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('nombre'),
-
-            'series' => collect($datos)
-                ->pluck('total'),
-
-            'items' => $datos,
-
-        ];
     }
 
     private function clientesMayorDeuda(): array
     {
-        $datos = $this->dashboardRepository
+        return $this->dashboardRepository
             ->clientesMayorDeuda();
-
-        return [
-
-            'labels' => collect($datos)
-                ->pluck('nombre'),
-
-            'series' => collect($datos)
-                ->pluck('saldo'),
-
-            'items' => $datos,
-
-        ];
     }
 }

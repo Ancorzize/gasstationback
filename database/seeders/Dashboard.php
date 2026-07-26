@@ -362,16 +362,6 @@ class Dashboard extends Seeder
 
         ]);
 
-        DashboardWidget::create([
-            'codigo' => 'productos_mayor_utilidad',
-            'nombre' => 'Productos con Mayor Utilidad',
-            'tipo' => 'chart',
-            'categoria' => 'inventario',
-            'icono' => 'TrendingUp',
-            'color' => 'green',
-            'ancho' => 6,
-            'alto' => 2,
-        ]);
 
         DashboardWidget::create([
             'codigo' => 'productos_sin_movimiento',

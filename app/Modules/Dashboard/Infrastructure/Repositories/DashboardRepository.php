@@ -334,23 +334,29 @@ class DashboardRepository implements DashboardRepositoryInterface
 
         }
 
-        return $query
+        return [
 
-            ->groupByRaw("DATE(fecha_venta)")
+            'items' => $query
 
-            ->orderByRaw("DATE(fecha_venta)")
+                ->groupByRaw("DATE(fecha_venta)")
 
-            ->get()
+                ->orderByRaw("DATE(fecha_venta)")
 
-            ->map(fn($item) => [
+                ->get()
 
-                'fecha' => $item->fecha,
+                ->map(fn ($item) => [
 
-                'valor' => (float) $item->total
+                    'label' => $item->fecha,
 
-            ])
+                    'value' => (float) $item->total,
 
-            ->toArray();
+                ])
+
+                ->values()
+
+                ->toArray(),
+
+        ];
     }
 
     public function ventasPorMedioPago(
@@ -397,21 +403,27 @@ class DashboardRepository implements DashboardRepositoryInterface
 
         }
 
-        return $query
+        return [
 
-            ->groupBy('metodo_pago')
+            'items' => $query
 
-            ->get()
+                ->groupBy('metodo_pago')
 
-            ->map(fn($item) => [
+                ->get()
 
-                'nombre' => $item->metodo_pago,
+                ->map(fn ($item) => [
 
-                'valor' => (float) $item->total,
+                    'label' => $item->metodo_pago,
 
-            ])
+                    'value' => (float) $item->total,
 
-            ->toArray();
+                ])
+
+                ->values()
+
+                ->toArray(),
+
+        ];
     }
 
     public function gastosPorCategoria(
@@ -458,23 +470,27 @@ class DashboardRepository implements DashboardRepositoryInterface
 
         }
 
-        return $query
+        return [
 
-            ->groupBy(
-                'categorias_gasto.nombre'
-            )
+            'items' => $query
 
-            ->get()
+                ->groupBy('categorias_gasto.nombre')
 
-            ->map(fn($item) => [
+                ->get()
 
-                'nombre' => $item->nombre,
+                ->map(fn ($item) => [
 
-                'valor' => (float) $item->total,
+                    'label' => $item->nombre,
 
-            ])
+                    'value' => (float) $item->total,
 
-            ->toArray();
+                ])
+
+                ->values()
+
+                ->toArray(),
+
+        ];
     }
 
     public function topProductos(
@@ -528,27 +544,31 @@ class DashboardRepository implements DashboardRepositoryInterface
 
         }
 
-        return $query
+        return [
 
-            ->groupBy(
-                'productos.nombre'
-            )
+            'items' => $query
 
-            ->orderByDesc('cantidad')
+                ->groupBy('productos.nombre')
 
-            ->limit(10)
+                ->orderByDesc('cantidad')
 
-            ->get()
+                ->limit(10)
 
-            ->map(fn($item) => [
+                ->get()
 
-                'nombre' => $item->nombre,
+                ->map(fn ($item) => [
 
-                'valor' => (float) $item->cantidad,
+                    'label' => $item->nombre,
 
-            ])
+                    'value' => (float) $item->cantidad,
 
-            ->toArray();
+                ])
+
+                ->values()
+
+                ->toArray(),
+
+        ];
     }
 
     public function ventasPorIslero(
@@ -596,28 +616,33 @@ class DashboardRepository implements DashboardRepositoryInterface
 
         }
 
-        return $query
+        return [
+            'items' => $query
 
-            ->groupBy(
-                'users.id',
-                'users.name'
-            )
+                ->groupBy(
+                    'users.id',
+                    'users.name'
+                )
 
-            ->orderByDesc('total')
+                ->orderByDesc('total')
 
-            ->get()
+                ->get()
 
-            ->map(fn($item) => [
+                ->map(fn ($item) => [
 
-                'id' => $item->id,
+                    'id' => $item->id,
 
-                'nombre' => $item->name,
+                    'label' => $item->name,
 
-                'total' => (float) $item->total,
+                    'value' => (float) $item->total,
 
-            ])
+                ])
 
-            ->toArray();
+                ->values()
+
+                ->toArray(),
+
+        ];
     }
 
     public function galonesPorCombustible(
@@ -675,25 +700,28 @@ class DashboardRepository implements DashboardRepositoryInterface
 
         }
 
-        return $query
+        return [
+            'items' => $query
 
-            ->groupBy(
-                'productos.nombre'
-            )
+                ->groupBy('productos.nombre')
 
-            ->orderByDesc('galones')
+                ->orderByDesc('galones')
 
-            ->get()
+                ->get()
 
-            ->map(fn($item) => [
+                ->map(fn ($item) => [
 
-                'nombre' => $item->nombre,
+                    'label' => $item->nombre,
 
-                'galones' => (float) $item->galones,
+                    'value' => (float) $item->galones,
 
-            ])
+                ])
 
-            ->toArray();
+                ->values()
+
+                ->toArray(),
+
+        ];
     }
 
     public function estadoCajas(): array
@@ -1784,36 +1812,35 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->toArray();
     }
 
-    public function clientesMayorDeuda(
-    ): array {
+    public function clientesMayorDeuda(): array
+    {
+        return [
 
-        return Cliente::query()
+            'items' => Cliente::query()
 
-            ->where(
-                'saldo_credito',
-                '>',
-                0
-            )
+                ->where('saldo_credito', '>', 0)
 
-            ->orderByDesc(
-                'saldo_credito'
-            )
+                ->orderByDesc('saldo_credito')
 
-            ->limit(10)
+                ->limit(10)
 
-            ->get()
+                ->get()
 
-            ->map(fn($item)=>[
+                ->map(fn ($item) => [
 
-                'id'=>$item->id,
+                    'id' => $item->id,
 
-                'nombre'=>$item->nombre,
+                    'label' => $item->nombre,
 
-                'saldo'=>(float)$item->saldo_credito,
+                    'value' => (float) $item->saldo_credito,
 
-            ])
+                ])
 
-            ->toArray();
+                ->values()
+
+                ->toArray(),
+
+        ];
     }
 
     public function carteraVencida(
