@@ -1082,10 +1082,24 @@ class DashboardRepository implements DashboardRepositoryInterface
             )
 
             ->join(
+                'productos',
+                'productos.id',
+                '=',
+                'detalle_ventas.producto_id'
+            )
+
+            ->join(
+                'categorias_producto',
+                'categorias_producto.id',
+                '=',
+                'productos.categoria_producto_id'
+            )
+
+            ->join(
                 'destinos_recaudo',
                 'destinos_recaudo.id',
                 '=',
-                'detalle_ventas.destino_recaudo_id'
+                'categorias_producto.destino_recaudo_id'
             )
 
             ->where(
@@ -1094,19 +1108,23 @@ class DashboardRepository implements DashboardRepositoryInterface
             );
 
         if ($fechaDesde) {
+
             $query->whereDate(
                 'ventas.fecha_venta',
                 '>=',
                 $fechaDesde
             );
+
         }
 
         if ($fechaHasta) {
+
             $query->whereDate(
                 'ventas.fecha_venta',
                 '<=',
                 $fechaHasta
             );
+
         }
 
         return [
@@ -1128,7 +1146,7 @@ class DashboardRepository implements DashboardRepositoryInterface
 
                     ->get()
 
-                    ->map(fn($item) => [
+                    ->map(fn ($item) => [
 
                         'label' => $item->nombre,
 
@@ -1319,12 +1337,12 @@ class DashboardRepository implements DashboardRepositoryInterface
                 $query
 
                     ->selectRaw("
-                        metodo_pago,
+                        medio_pago,
                         SUM(monto) total
                     ")
 
                     ->groupBy(
-                        'metodo_pago'
+                        'medio_pago'
                     )
 
                     ->orderByDesc('total')
@@ -1333,7 +1351,7 @@ class DashboardRepository implements DashboardRepositoryInterface
 
                     ->map(fn($item)=>[
 
-                        'label'=>$item->metodo_pago,
+                        'label'=>$item->medio_pago,
 
                         'value'=>(float)$item->total,
 
