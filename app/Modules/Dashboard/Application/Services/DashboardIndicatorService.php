@@ -369,21 +369,11 @@ class DashboardIndicatorService
 
     private function ingresosEgresos(): array
     {
-        $datos =
-            $this->dashboardRepository
-                ->ingresosVsEgresos($this->fechaDesde, $this->fechaHasta);
-
-        return [
-
-            'labels'=>collect($datos)
-                ->pluck('nombre'),
-
-            'series'=>collect($datos)
-                ->pluck('total'),
-
-            'items'=>$datos,
-
-        ];
+        return $this->dashboardRepository
+            ->ingresosVsEgresos(
+                $this->fechaDesde,
+                $this->fechaHasta
+            );
     }
 
     private function ticketPromedio(): array
