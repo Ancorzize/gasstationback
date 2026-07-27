@@ -1504,19 +1504,23 @@ class DashboardRepository implements DashboardRepositoryInterface
 
         return [
 
-            [
+            'items' => [
 
-                'nombre' => 'Ingresos',
+                [
 
-                'total' => (float) $ingresos->sum('monto'),
+                    'label' => 'Ingresos',
 
-            ],
+                    'value' => (float) $ingresos->sum('monto'),
 
-            [
+                ],
 
-                'nombre' => 'Egresos',
+                [
 
-                'total' => (float) $egresos->sum('monto'),
+                    'label' => 'Egresos',
+
+                    'value' => (float) $egresos->sum('monto'),
+
+                ],
 
             ],
 
