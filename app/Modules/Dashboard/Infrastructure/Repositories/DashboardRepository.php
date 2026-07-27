@@ -1686,46 +1686,46 @@ class DashboardRepository implements DashboardRepositoryInterface
     }
 
 
-    public function productosSinMovimiento(): array {
+    public function productosSinMovimiento(): array
+    {
+        return [
 
-        return Producto::query()
+            'items' =>
 
-            ->leftJoin(
-                'detalle_ventas',
-                'detalle_ventas.producto_id',
-                '=',
-                'productos.id'
-            )
+                Producto::query()
 
-            ->select(
-                'productos.id',
-                'productos.nombre'
-            )
+                    ->leftJoin(
+                        'detalle_ventas',
+                        'detalle_ventas.producto_id',
+                        '=',
+                        'productos.id'
+                    )
 
-            ->groupBy(
-                'productos.id',
-                'productos.nombre'
-            )
+                    ->select(
+                        'productos.id',
+                        'productos.nombre'
+                    )
 
-            ->havingRaw(
-                'COUNT(detalle_ventas.id)=0'
-            )
+                    ->groupBy(
+                        'productos.id',
+                        'productos.nombre'
+                    )
 
-            ->orderBy('productos.nombre')
+                    ->havingRaw(
+                        'COUNT(detalle_ventas.id)=0'
+                    )
 
-            ->limit(20)
+                    ->orderBy('productos.nombre')
 
-            ->get()
+                    ->limit(20)
 
-            ->map(fn($item)=>[
+                    ->get()
 
-                'id'=>$item->id,
+                    ->values()
 
-                'nombre'=>$item->nombre,
+                    ->toArray()
 
-            ])
-
-            ->toArray();
+        ];
     }
 
     public function saldoPorCaja(): array
