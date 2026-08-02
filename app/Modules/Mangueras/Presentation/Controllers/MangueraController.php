@@ -12,6 +12,7 @@ use App\Modules\Mangueras\Presentation\Requests\StoreMangueraRequest;
 use App\Modules\Mangueras\Presentation\Requests\UpdateMangueraRequest;
 use App\Modules\Mangueras\Presentation\Requests\ChangeMangueraStatusRequest;
 use App\Modules\Mangueras\Presentation\Resources\MangueraResource;
+use App\Modules\Mangueras\Presentation\Resources\LecturaMangueraResource;
 
 class MangueraController extends Controller
 {
@@ -32,6 +33,7 @@ class MangueraController extends Controller
                 'producto_id' => $request->get('producto_id'),
                 'estacion_id' => $request->get('estacion_id'),
                 'is_active' => $request->get('is_active'),
+                
             ];
 
             $mangueras = $this->mangueraService->paginate(
@@ -134,6 +136,61 @@ class MangueraController extends Controller
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
             return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function lecturas(Request $request)
+    {
+        try {
+
+            if (!$request->user()->can('ver_mangueras')) {
+
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+
+            }
+
+            $filters = [
+                'search'=>$request->get('search'),
+                'turno_id'=>$request->get('turno_id'),
+                'manguera_id'=>$request->get('manguera_id'),
+                'producto_id'=>$request->get('producto_id'),
+                'bomba_id'=>$request->get('bomba_id'),
+                'estacion_id'=>$request->get('estacion_id'),
+                'fecha_desde'=>$request->get('fecha_desde'),
+                'fecha_hasta'=>$request->get('fecha_hasta'),
+            ];
+
+            $lecturas = $this->mangueraService
+                ->paginateLecturas(
+                    $filters,
+                    (int)$request->get('per_page',10)
+                );
+
+            return ApiResponse::success([
+
+                'items'=>LecturaMangueraResource::collection(
+                    $lecturas->items()
+                ),
+
+                'pagination'=>[
+                    'current_page'=>$lecturas->currentPage(),
+                    'last_page'=>$lecturas->lastPage(),
+                    'per_page'=>$lecturas->perPage(),
+                    'total'=>$lecturas->total(),
+                ],
+
+            ],'Listado de lecturas.');
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+
         }
     }
 }

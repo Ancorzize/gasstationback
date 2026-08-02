@@ -15,4 +15,6 @@ interface MangueraRepositoryInterface
     public function update(Manguera $manguera, array $data): Manguera;
 
     public function changeStatus(Manguera $manguera, bool $isActive): Manguera;
+
+    public function paginateLecturas(array $filters = [], int $perPage = 10);
 }

@@ -102,6 +102,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'abrir_caja',
             'cerrar_caja',
             'ver_movimientos_caja',
+            'ver_caja_menu',
 
             // Categorías gasto
             'ver_categorias_gasto',

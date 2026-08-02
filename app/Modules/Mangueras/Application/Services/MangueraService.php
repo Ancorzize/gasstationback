@@ -59,4 +59,16 @@ class MangueraService
 
         return $this->mangueraRepository->changeStatus($manguera, $isActive);
     }
+
+    public function paginateLecturas(
+        array $filters = [],
+        int $perPage = 10
+    )
+    {
+        return $this->mangueraRepository
+            ->paginateLecturas(
+                $filters,
+                $perPage
+            );
+    }
 }

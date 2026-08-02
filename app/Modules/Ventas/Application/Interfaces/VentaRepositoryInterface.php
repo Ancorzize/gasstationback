@@ -60,4 +60,8 @@ interface VentaRepositoryInterface
     public function findUserById(int $id): ?User;
 
     public function getCajaAbiertaByTipoAndDestino( string $tipoCaja, int $destinoRecaudoId): ?Caja;
+
+    public function sumGalonesCombustibleByTurnoAndManguera(int $turnoId,int $mangueraId);
+
+    public function sumTotalCombustibleByTurnoAndManguera(int $turnoId, int $mangueraId);
 }

@@ -34,7 +34,7 @@ use App\Modules\TurnosIslero\Presentation\Controllers\TurnoIsleroController;
 use App\Modules\PreciosCombustible\Presentation\Controllers\PrecioCombustibleController;
 use App\Modules\Dashboard\Presentation\Controllers\DashboardController;
 use App\Modules\Dashboard\Presentation\Controllers\DashboardConfigController;
-
+use App\Modules\IndicadoresFinancieros\Presentation\Controllers\IndicadorFinancieroController;
 //Route::get('/historico', [CajaController::class, 'historico']);
 
 Route::prefix('auth')->group(function () {
@@ -253,6 +253,7 @@ Route::middleware(['auth:sanctum'])->prefix('bombas')->group(function () {
 
 Route::middleware(['auth:sanctum'])->prefix('mangueras')->group(function () {
     Route::get('/', [MangueraController::class, 'index']);
+    Route::get('/lecturas',[MangueraController::class, 'lecturas']);
     Route::get('/{id}', [MangueraController::class, 'show']);
     Route::post('/', [MangueraController::class, 'store']);
     Route::put('/{id}', [MangueraController::class, 'update']);
@@ -292,4 +293,8 @@ Route::middleware(['auth:sanctum'])->prefix('dashboard')->group(function () {
     Route::get('/configuracion/{roleId}', [DashboardConfigController::class, 'configuracion']);
     Route::put('/configuracion/{roleId}', [DashboardConfigController::class, 'guardar']);
 
+});
+
+Route::middleware(['auth:sanctum'])->prefix('indicadores-financieros')->group(function () {
+    Route::get('/', [IndicadorFinancieroController::class, 'index']);
 });

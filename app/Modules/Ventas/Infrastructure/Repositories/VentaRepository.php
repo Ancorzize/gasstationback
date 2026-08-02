@@ -212,4 +212,68 @@ class VentaRepository implements VentaRepositoryInterface
             )
             ->first();
     }
+
+    public function sumGalonesCombustibleByTurnoAndManguera(
+        int $turnoId,
+        int $mangueraId
+    )
+    {
+        return DetalleVenta::query()
+
+            ->join(
+                'ventas',
+                'ventas.id',
+                '=',
+                'detalle_ventas.venta_id'
+            )
+
+            ->where(
+                'ventas.turno_islero_id',
+                $turnoId
+            )
+
+            ->where(
+                'detalle_ventas.manguera_id',
+                $mangueraId
+            )
+
+            ->where(
+                'ventas.estado',
+                'confirmada'
+            )
+
+            ->sum('detalle_ventas.cantidad');
+    }
+
+    public function sumTotalCombustibleByTurnoAndManguera(
+        int $turnoId,
+        int $mangueraId
+    )
+    {
+        return DetalleVenta::query()
+
+            ->join(
+                'ventas',
+                'ventas.id',
+                '=',
+                'detalle_ventas.venta_id'
+            )
+
+            ->where(
+                'ventas.turno_islero_id',
+                $turnoId
+            )
+
+            ->where(
+                'detalle_ventas.manguera_id',
+                $mangueraId
+            )
+
+            ->where(
+                'ventas.estado',
+                'confirmada'
+            )
+
+            ->sum('detalle_ventas.total');
+    }
 }

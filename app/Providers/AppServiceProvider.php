@@ -66,6 +66,8 @@ use App\Modules\Dashboard\Application\Interfaces\DashboardRepositoryInterface;
 use App\Modules\Dashboard\Infrastructure\Repositories\DashboardRepository;
 use App\Modules\Dashboard\Application\Interfaces\DashboardConfigRepositoryInterface;
 use App\Modules\Dashboard\Infrastructure\Repositories\DashboardConfigRepository;
+use App\Modules\IndicadoresFinancieros\Application\Interfaces\IndicadorFinancieroRepositoryInterface;
+use App\Modules\IndicadoresFinancieros\Infrastructure\Repositories\IndicadorFinancieroRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -102,6 +104,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(DestinoRecaudoRepositoryInterface::class, DestinoRecaudoRepository::class);
         $this->app->bind(DashboardRepositoryInterface::class, DashboardRepository::class);
         $this->app->bind(DashboardConfigRepositoryInterface::class, DashboardConfigRepository::class);
+        $this->app->bind(IndicadorFinancieroRepositoryInterface::class, IndicadorFinancieroRepository::class);
     }
 
     public function boot(): void

@@ -10,12 +10,15 @@ use App\Modules\TurnosIslero\Application\DTOs\AbrirTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\DTOs\CerrarTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterface;
 use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
-use Illuminate\Support\Collection;
+use App\Modules\Ventas\Application\Services\VentaService;
+
 class TurnoIsleroService
 {
+
     public function __construct(
         protected TurnoIsleroRepositoryInterface $turnoRepository,
-        protected VentaRepositoryInterface $ventaRepository
+        protected VentaRepositoryInterface $ventaRepository,
+        protected VentaService $ventaService
     ) {}
 
     public function paginate(array $filters = [], int $perPage = 10)
@@ -199,12 +202,6 @@ class TurnoIsleroService
                 );
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Validar lecturas enviadas
-            |--------------------------------------------------------------------------
-            */
-
             $manguerasAsignadas = $turno->lecturas
                 ->pluck('manguera_id')
                 ->map(fn ($id) => (int) $id)
@@ -246,11 +243,7 @@ class TurnoIsleroService
 
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Guardar lecturas finales
-            |--------------------------------------------------------------------------
-            */
+            $totalVentasCombustibleFisica = 0;
 
             foreach ($dto->lecturas_finales as $item) {
 
@@ -258,12 +251,11 @@ class TurnoIsleroService
 
                 $lecturaFinal = (float) $item['lectura_final'];
 
-                $lectura =
-                    $this->turnoRepository
-                        ->findLecturaByTurnoAndManguera(
-                            $turno->id,
-                            $mangueraId
-                        );
+                $lectura = $this->turnoRepository
+                    ->findLecturaByTurnoAndManguera(
+                        $turno->id,
+                        $mangueraId
+                    );
 
                 if (!$lectura) {
 
@@ -291,6 +283,9 @@ class TurnoIsleroService
                     $galonesVendidos *
                     (float) $lectura->precio_galon;
 
+                $totalVentasCombustibleFisica +=
+                    $totalVentaFisica;
+
                 $this->turnoRepository
                     ->updateLectura(
                         $lectura,
@@ -300,15 +295,22 @@ class TurnoIsleroService
                             'total_venta' => $totalVentaFisica,
                         ]
                     );
+
+                $this->descontarInventarioCombustible(
+                    $turno,
+                    $lectura,
+                    $galonesVendidos,
+                    $dto->user_id
+                );
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Totales sistema
-            |--------------------------------------------------------------------------
-            */
+            $this->ventaService->crearVentaAjusteTurno(
+                $turno,
+                $turno->lecturas()->with('manguera.producto.categoriaProducto')->get(),
+                $dto->user_id
+            );
 
-            $totalVentasCombustible =
+            $totalVentasCombustibleSistema =
                 $this->turnoRepository
                     ->sumVentasCombustibleByTurno(
                         $turno->id
@@ -332,54 +334,44 @@ class TurnoIsleroService
                         $turno->id
                     );
 
+            $diferenciaCombustible =
+                $totalVentasCombustibleFisica -
+                $totalVentasCombustibleSistema;
+
             $this->validarRecaudoDestinos(
                 $turno,
                 $dto
             );
 
-            /*
-            |--------------------------------------------------------------------------
-            | Totales reportados por el usuario
-            |--------------------------------------------------------------------------
-            */
-
             $pagos = [
-
                 'efectivo' => 0,
-
                 'qr' => 0,
-
                 'datafono' => 0,
-
                 'transferencia' => 0,
-
                 'consignacion' => 0,
 
             ];
 
             foreach ($dto->destinos_recaudo as $destino) {
-
                 foreach ($destino['pagos'] as $medio => $valor) {
-
-                    $pagos[$medio] += (float) $valor;
-
+                    $pagos[$medio] +=
+                        (float) $valor;
                 }
-
             }
 
             $totalReportado =
                 array_sum($pagos) +
                 $dto->otros_movimientos;
 
-            $totalSistema = $totalVentasCombustible + $totalVentasLubricantes - $totalCreditos;
+            $totalRecaudoEsperado =
+                $totalVentasCombustibleFisica +
+                $totalVentasLubricantes +
+                $totalAbonos -
+                $totalCreditos;
 
-            $balanceFinal = $totalSistema -$totalReportado;
-
-            /*
-            |--------------------------------------------------------------------------
-            | Registrar ingresos en caja
-            |--------------------------------------------------------------------------
-            */
+            $balanceFinal =
+                $totalRecaudoEsperado -
+                $totalReportado;
 
             if ($turno->usuario->hasRole('islero')) {
 
@@ -389,12 +381,6 @@ class TurnoIsleroService
                 );
 
             }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Cerrar turno
-            |--------------------------------------------------------------------------
-            */
 
             $this->turnoRepository
                 ->updateTurno(
@@ -406,7 +392,16 @@ class TurnoIsleroService
                         'estado' => 'cerrado',
 
                         'total_ventas_combustible'
-                            => $totalVentasCombustible,
+                            => $totalVentasCombustibleSistema,
+
+                        'total_ventas_combustible_sistema'
+                            => $totalVentasCombustibleSistema,
+
+                        'total_ventas_combustible_fisica'
+                            => $totalVentasCombustibleFisica,
+
+                        'diferencia_combustible'
+                            => $diferenciaCombustible,
 
                         'total_ventas_lubricantes'
                             => $totalVentasLubricantes,
@@ -441,8 +436,11 @@ class TurnoIsleroService
                         'total_reportado'
                             => $totalReportado,
 
+                        'total_recaudo_esperado'
+                            => $totalRecaudoEsperado,
+
                         'total_sistema'
-                            => $totalSistema,
+                            => $totalRecaudoEsperado,
 
                         'balance_final'
                             => $balanceFinal,
@@ -458,6 +456,79 @@ class TurnoIsleroService
             );
 
         });
+    }
+
+    private function descontarInventarioCombustible(
+        TurnoIslero $turno,
+        $lectura,
+        float $galonesVendidos,
+        int $userId
+    ): void {
+
+        if ($galonesVendidos <= 0) {
+            return;
+        }
+
+        $bodegaId = $turno->usuario->bodega_id;
+
+        if (!$bodegaId) {
+
+            throw new HttpException(
+                422,
+                'El usuario no tiene una bodega asignada.'
+            );
+
+        }
+
+        $productoId = $lectura->manguera->producto_id;
+
+        $inventario = $this->ventaRepository
+            ->findInventario(
+                $productoId,
+                $bodegaId
+            );
+
+        if (!$inventario) {
+
+            throw new HttpException(
+                422,
+                "No existe inventario para el producto {$productoId} en la bodega del usuario."
+            );
+
+        }
+
+        if ((float) $inventario->cantidad < $galonesVendidos) {
+
+            throw new HttpException(
+                422,
+                "Inventario insuficiente para cerrar el turno."
+            );
+
+        }
+
+        $this->ventaRepository->decrementInventario(
+            $productoId,
+            $bodegaId,
+            $galonesVendidos
+        );
+
+        $this->ventaRepository->createMovimientoInventario([
+
+            'tipo_movimiento' => 'venta_combustible',
+
+            'producto_id' => $productoId,
+
+            'bodega_origen_id' => $bodegaId,
+
+            'bodega_destino_id' => null,
+
+            'cantidad' => $galonesVendidos,
+
+            'observacion' => "Salida automática por cierre del turno #{$turno->id}",
+
+            'user_id' => $userId,
+
+        ]);
     }
 
 

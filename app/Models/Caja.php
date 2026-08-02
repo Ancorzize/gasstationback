@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
 class Caja extends Model
 {
     protected $table = 'cajas';
@@ -48,7 +47,7 @@ class Caja extends Model
 
     public function movimientos(): HasMany
     {
-        return $this->hasMany(MovimientoCaja::class);
+        return $this->hasMany(MovimientoCaja::class, 'caja_id');
     }
 
     public function destinoRecaudo(): BelongsTo
@@ -58,4 +57,5 @@ class Caja extends Model
             'destino_recaudo_id'
         );
     }
+
 }

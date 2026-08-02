@@ -8,12 +8,15 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\Ventas\Application\DTOs\CreateVentaDTO;
 use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
 use App\Modules\Ventas\Application\DTOs\CreateVentaCombustibleDTO;
+use App\Models\TurnoIslero;
+use Illuminate\Support\Collection;
 
 class VentaService
 {
     public function __construct(
         protected VentaRepositoryInterface $ventaRepository
-    ) {}
+    ) {
+    }
 
     public function paginate(array $filters = [], int $perPage = 10)
     {
@@ -22,8 +25,9 @@ class VentaService
 
     public function findById(int $id): Venta
     {
-        $venta = $this->ventaRepository->findById($id);
-
+        $venta = $this->ventaRepository->findById(
+            $id
+        );
         if (!$venta) {
             throw new HttpException(404, 'Venta no encontrada.');
         }
@@ -94,14 +98,13 @@ class VentaService
 
                     $destinoRecaudoId =
                         $producto
-                            ->categoriaProducto
-                            ->destino_recaudo_id;
-
+                        ->categoriaProducto
+                        ->destino_recaudo_id;
                 } elseif (
                     $destinoRecaudoId !==
                     $producto
-                        ->categoriaProducto
-                        ->destino_recaudo_id
+                    ->categoriaProducto
+                    ->destino_recaudo_id
                 ) {
 
                     throw new HttpException(
@@ -182,7 +185,6 @@ class VentaService
                 if ($cupoDisponible < $saldoPendiente) {
                     throw new HttpException(422, 'El cliente no tiene cupo suficiente.');
                 }
-
             }
 
             $turnoAbierto = $this->ventaRepository->getTurnoAbiertoByUser($dto->user_id);
@@ -210,7 +212,7 @@ class VentaService
                 'total_pagado' => $totalPagado,
                 'saldo_pendiente' => $saldoPendiente,
                 'fecha_venta' => now(),
-                'fecha_vencimiento' => $saldoPendiente > 0 ? now()->addDays($cliente->dias_credito): null,
+                'fecha_vencimiento' => $saldoPendiente > 0 ? now()->addDays($cliente->dias_credito) : null,
                 'observacion' => $dto->observacion,
                 'turno_islero_id' => $turnoAbierto?->id,
                 'destino_recaudo_id' => $destinoRecaudoId,
@@ -234,7 +236,7 @@ class VentaService
                     'total' => $detalle->total,
                 ]);
 
-               
+
 
                 $this->ventaRepository->decrementInventario(
                     $detalle->producto_id,
@@ -263,10 +265,10 @@ class VentaService
 
                 $caja =
                     $this->ventaRepository
-                        ->getCajaAbiertaByTipoAndDestino(
-                            $tipoCaja,
-                            $destinoRecaudoId
-                        );
+                    ->getCajaAbiertaByTipoAndDestino(
+                        $tipoCaja,
+                        $destinoRecaudoId
+                    );
 
                 if (!$caja) {
                     throw new HttpException(
@@ -287,8 +289,7 @@ class VentaService
                 ]);
 
                 $isIslero = $turnoAbierto->usuario->hasRole('islero');
-                if(!$isIslero)
-                {
+                if (!$isIslero) {
 
                     $this->ventaRepository->createMovimientoCaja([
                         'caja_id' => $caja->id,
@@ -341,8 +342,7 @@ class VentaService
 
     private function resolverTipoCaja(
         string $metodoPago
-    ): string
-    {
+    ): string {
         return match ($metodoPago) {
 
             'efectivo' => 'efectivo',
@@ -376,7 +376,7 @@ class VentaService
             }
 
             foreach ($venta->detalles as $detalle) {
- 
+
                 if ($venta->tipo_origen === 'combustible') {
                     continue;
                 }
@@ -505,8 +505,8 @@ class VentaService
 
             $destinoRecaudoId =
                 $manguera->producto
-                    ->categoriaProducto
-                    ->destino_recaudo_id;
+                ->categoriaProducto
+                ->destino_recaudo_id;
 
             if (!$destinoRecaudoId) {
 
@@ -589,7 +589,7 @@ class VentaService
                     $dto->metodo_pago
                 );
 
-                $caja = $this->ventaRepository->getCajaAbiertaByTipoAndDestino($tipoCaja, $destinoRecaudoId );
+                $caja = $this->ventaRepository->getCajaAbiertaByTipoAndDestino($tipoCaja, $destinoRecaudoId);
                 if (!$caja) {
                     throw new HttpException(422, "No hay caja {$tipoCaja} abierta.");
                 }
@@ -616,7 +616,7 @@ class VentaService
                 'total_pagado' => $totalPagado,
                 'saldo_pendiente' => $saldoPendiente,
                 'fecha_venta' => now(),
-                'fecha_vencimiento' => $saldoPendiente > 0 ? now()->addDays($cliente->dias_credito): null,
+                'fecha_vencimiento' => $saldoPendiente > 0 ? now()->addDays($cliente->dias_credito) : null,
                 'observacion' => $dto->observacion,
                 'tipo_origen' => 'combustible',
                 'destino_recaudo_id' => $destinoRecaudoId,
@@ -649,8 +649,7 @@ class VentaService
                 ]);
 
                 $isIslero = $turnoAbierto->usuario->hasRole('islero');
-                if(!$isIslero)
-                {
+                if (!$isIslero) {
                     $this->ventaRepository->createMovimientoCaja([
                         'caja_id' => $caja->id,
                         'tipo_movimiento' => 'ingreso',
@@ -664,7 +663,6 @@ class VentaService
                         'fecha_movimiento' => now(),
                     ]);
                 }
-                
             }
 
             if ($dto->tipo_venta === 'credito') {
@@ -694,5 +692,111 @@ class VentaService
 
             return $this->findById($venta->id);
         });
+    }
+
+    public function crearVentaAjusteTurno(
+        TurnoIslero $turno,
+        Collection $lecturas,
+        int $userId
+    ): ?Venta {
+        $detalles = [];
+
+        $subtotal = 0;
+        $total = 0;
+        $destinoRecaudoId = null;
+
+        foreach ($lecturas as $lectura) {
+
+            $galonesSistema = $this->ventaRepository
+                ->sumGalonesCombustibleByTurnoAndManguera(
+                    $turno->id,
+                    $lectura->manguera_id
+                );
+
+            $galonesFisicos = (float)$lectura->galones_vendidos;
+
+            $galonesAjuste = round(
+                $galonesFisicos - $galonesSistema,
+                3
+            );
+
+            if ($galonesAjuste <= 0) {
+                continue;
+            }
+
+            $producto = $lectura->manguera->producto;
+
+            if (!$producto->categoriaProducto) {
+                throw new HttpException(
+                    422,
+                    "El producto {$producto->nombre} no tiene categoría."
+                );
+            }
+
+            $destinoRecaudoId = $producto->categoriaProducto->destino_recaudo_id;
+
+            $valor = round($galonesAjuste * (float)$lectura->precio_galon, 2);
+
+            $subtotal += $valor;
+            $total += $valor;
+
+            $detalles[] = [
+                'producto_id' => $producto->id,
+                'manguera_id' => $lectura->manguera_id,
+                'cantidad' => $galonesAjuste,
+                'precio_unitario' => (float)$lectura->precio_galon,
+                'subtotal' => $valor,
+                'total' => $valor,
+            ];
+        }
+
+        if (count($detalles) == 0) {
+            return null;
+        }
+
+        $venta = $this->ventaRepository->createVenta([
+            'prefijo' => 'AJT',
+            'numero_factura' => $this->ventaRepository->nextNumeroFactura(),
+            'cliente_id' => null,
+            'user_id' => $userId,
+            'bodega_id' => $turno->usuario->bodega_id,
+            'turno_islero_id' => $turno->id,
+            'tipo_venta' => 'contado',
+            'tipo_origen' => 'ajuste_turno',
+            'estado' => 'confirmada',
+            'estado_pago' => 'pagado',
+            'subtotal' => $subtotal,
+            'descuento' => 0,
+            'impuesto' => 0,
+            'soldicom' => 0,
+            'sobre_tasa' => 0,
+            'total' => $total,
+            'total_pagado' => $total,
+            'saldo_pendiente' => 0,
+            'fecha_venta' => now(),
+            'observacion' => "Venta automática por cierre del turno #{$turno->id}",
+            'destino_recaudo_id' => $destinoRecaudoId,
+
+        ]);
+
+        foreach ($detalles as $detalle) {
+
+            $this->ventaRepository->createDetalle([
+                'venta_id' => $venta->id,
+                'producto_id' => $detalle['producto_id'],
+                'manguera_id' => $detalle['manguera_id'],
+                'cantidad' => $detalle['cantidad'],
+                'precio_unitario' => $detalle['precio_unitario'],
+                'descuento' => 0,
+                'iva' => 0,
+                'iva_valor' => 0,
+                'soldicom' => 0,
+                'sobre_tasa' => 0,
+                'subtotal' => $detalle['subtotal'],
+                'total' => $detalle['total'],
+            ]);
+        }
+
+        return $venta;
     }
 }
