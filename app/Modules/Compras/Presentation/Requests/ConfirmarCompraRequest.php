@@ -16,7 +16,6 @@ class ConfirmarCompraRequest extends FormRequest
         return [
 
             'caja_id' => [
-                'required',
                 'integer',
                 'exists:cajas,id'
             ]
@@ -27,9 +26,6 @@ class ConfirmarCompraRequest extends FormRequest
     public function messages(): array
     {
         return [
-
-            'caja_id.required' =>
-                'Debe seleccionar una caja.',
 
             'caja_id.exists' =>
                 'La caja seleccionada no existe.',
