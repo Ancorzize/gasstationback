@@ -18,9 +18,9 @@ class IndicadorFinancieroController extends Controller
     {
         try {
 
-            if (!$request->user()->can('ver_indicadores_financieros')) {
-                return ApiResponse::error('Sin permisos.', 403);
-            }
+            //if (!$request->user()->can('ver_indicadores_financieros')) {
+            //    return ApiResponse::error('Sin permisos.', 403);
+            //}
 
             return ApiResponse::success(
                 $this->service->obtenerIndicador(
