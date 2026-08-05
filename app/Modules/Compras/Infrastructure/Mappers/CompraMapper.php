@@ -69,10 +69,6 @@ class CompraMapper
         array $data
     ): ConfirmarCompraDTO
     {
-        return new ConfirmarCompraDTO(
-
-            caja_id: (int) $data['caja_id']
-
-        );
+        return new ConfirmarCompraDTO( caja_id: isset($data['caja_id']) ? (int) $data['caja_id'] : null );
     }
 }

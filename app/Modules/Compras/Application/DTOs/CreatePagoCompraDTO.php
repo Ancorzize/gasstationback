@@ -10,6 +10,7 @@ class CreatePagoCompraDTO
         public  string $fecha_pago,
         public  float $monto,
         public  string $metodo_pago,
+        public int $caja_id,
         public  ?string $observacion,
     ) {}
 }

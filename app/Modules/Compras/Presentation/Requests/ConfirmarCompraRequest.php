@@ -14,13 +14,18 @@ class ConfirmarCompraRequest extends FormRequest
     public function rules(): array
     {
         return [
-
+           'caja_id' => [
+                'nullable',
+                'exists:cajas,id',
+            ]
         ];
     }
 
     public function messages(): array
     {
         return [
+            'caja_id.exists' =>
+                'La caja seleccionada no existe.',
 
         ];
     }

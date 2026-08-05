@@ -14,6 +14,7 @@ class PagoCompraMapper
             fecha_pago: $data['fecha_pago'],
             monto: (float) $data['monto'],
             metodo_pago: $data['metodo_pago'],
+            caja_id: (int) $data['caja_id'],
             observacion: $data['observacion'] ?? null,
         );
     }

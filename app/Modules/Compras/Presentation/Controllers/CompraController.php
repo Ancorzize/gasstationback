@@ -144,8 +144,10 @@ class CompraController extends Controller
                 'Compra confirmada correctamente.'
             );
         } catch (HttpException $e) {
+             print_r($e);
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
+            print_r($e);
             return ApiResponse::error('Error interno del servidor.', 500);
         }
     }
