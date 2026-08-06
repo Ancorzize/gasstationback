@@ -35,6 +35,9 @@ class VentaService
         return $venta;
     }
 
+    /**
+     * crear venta de lubricantes
+     */
     public function create(CreateVentaDTO $dto): Venta
     {
         return DB::transaction(function () use ($dto) {
@@ -465,6 +468,9 @@ class VentaService
         });
     }
 
+    /**
+     * Crear venta de combustible
+     */
     public function createCombustible(CreateVentaCombustibleDTO $dto): Venta
     {
         return DB::transaction(function () use ($dto) {
@@ -635,6 +641,22 @@ class VentaService
                 'subtotal' => $subtotal,
                 'total' => $total,
                 'manguera_id' => $manguera->id,
+            ]);
+
+            $this->ventaRepository->decrementInventario(
+                $manguera->producto_id,
+                $bodegaId,
+                $cantidadGalones
+            );
+
+            $this->ventaRepository->createMovimientoInventario([
+                'tipo_movimiento' => 'venta',
+                'producto_id' => $manguera->producto_id,
+                'bodega_origen_id' => $bodegaId,
+                'bodega_destino_id' => null,
+                'cantidad' => $cantidadGalones,
+                'observacion' => "Venta combustible #{$venta->id}",
+                'user_id' => $dto->user_id,
             ]);
 
             if ($dto->tipo_venta !== 'credito') {

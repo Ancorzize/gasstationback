@@ -285,6 +285,7 @@ class TurnoIsleroService
 
                 $totalVentasCombustibleFisica +=
                     $totalVentaFisica;
+                
 
                 $this->turnoRepository
                     ->updateLectura(
@@ -295,11 +296,24 @@ class TurnoIsleroService
                             'total_venta' => $totalVentaFisica,
                         ]
                     );
+                
+                $galonesSistema =
+                    $this->turnoRepository
+                        ->sumGalonesCombustibleByTurnoAndManguera(
+                            $turno->id,
+                            $lectura->manguera_id
+                        );
+
+                $galonesAjuste =
+                    max(
+                        0,
+                        $galonesVendidos - $galonesSistema
+                    );
 
                 $this->descontarInventarioCombustible(
                     $turno,
                     $lectura,
-                    $galonesVendidos,
+                    $galonesAjuste,
                     $dto->user_id
                 );
             }
