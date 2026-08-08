@@ -16,9 +16,9 @@ class GastoMapper
 
             categoria_gasto_id: (int) $data['categoria_gasto_id'],
 
-            destino_recaudo_id: (int) $data['destino_recaudo_id'],
+            caja_id: (int) $data['caja_id'],
 
-            medio_pago: $data['medio_pago'],
+            tipo_caja: $data['tipo_caja'],
 
             valor: (float) $data['valor'],
 

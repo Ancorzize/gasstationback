@@ -45,19 +45,15 @@ class GastoService
                 throw new HttpException(422, 'La categoría de gasto está inactiva.');
             }
 
-            $tipoCaja = $dto->medio_pago === 'efectivo' || $dto->medio_pago === 'consignacion'? 'efectivo' : 'digital';
+            //$tipoCaja = $dto->medio_pago === 'efectivo' || $dto->medio_pago === 'consignacion'? 'efectivo' : 'digital';
 
-            $caja = $this->cajaRepository
-                ->getCajaAbiertaByTipoAndDestino(
-                    $tipoCaja,
-                    $dto->destino_recaudo_id
-                );
+            $caja = $this->cajaRepository->findById($dto->caja_id);
 
             if (!$caja) {
 
                 throw new HttpException(
                     422,
-                    'No existe una caja abierta para el tipo y destino seleccionados.'
+                    'La caja seleccionada no esta abierta'
                 );
 
             }
@@ -79,7 +75,7 @@ class GastoService
                 'categoria_gasto_id' => $dto->categoria_gasto_id,
                 'caja_id' => $caja->id,
                 'user_id' => $dto->user_id,
-                'medio_pago' => $dto->medio_pago,
+                'medio_pago' => $dto->tipo_caja,
                 'valor' => $dto->valor,
                 'descripcion' => $dto->descripcion,
                 'estado' => 'registrado',
@@ -91,7 +87,7 @@ class GastoService
                 'categoria_movimiento' => 'gasto',
                 'origen_modulo' => 'gastos',
                 'origen_id' => $gasto->id,
-                'medio_pago' => $dto->medio_pago,
+                'medio_pago' => $dto->tipo_caja,
                 'monto' => $dto->valor,
                 'descripcion' => 'Gasto: ' . $dto->descripcion,
                 'user_id' => $dto->user_id,
