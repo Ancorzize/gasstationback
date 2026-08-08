@@ -7,6 +7,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
+        'http://localhost:5173',
         'https://gasstationfront-production.up.railway.app',
     ],
 

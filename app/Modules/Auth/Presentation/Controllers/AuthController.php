@@ -34,6 +34,7 @@ class AuthController extends Controller
             return ApiResponse::success([
                 'token' => $result['token'],
                 'user' => new AuthUserResource($result['user']),
+                'rol' => $result['rol']
             ], 'Inicio de sesión exitoso.');
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());

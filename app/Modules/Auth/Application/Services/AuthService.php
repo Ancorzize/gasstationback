@@ -31,6 +31,7 @@ class AuthService
         return [
             'token' => $token,
             'user' => $user,
+            'rol' => $user->getRoleNames()->first(), 
         ];
     }
 
