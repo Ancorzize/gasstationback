@@ -12,7 +12,9 @@ use App\Modules\Caja\Presentation\Requests\AbrirCajaRequest;
 use App\Modules\Caja\Presentation\Requests\CerrarCajaRequest;
 use App\Modules\Caja\Presentation\Resources\CajaResource;
 use App\Modules\Caja\Presentation\Resources\MovimientoCajaResource;
-
+use App\Modules\Caja\Presentation\Requests\IngresoCajaRequest;
+use App\Modules\Caja\Presentation\Requests\RetiroCajaRequest;
+use App\Modules\Caja\Presentation\Requests\TransferenciaCajaRequest;
 class CajaController extends Controller
 {
     public function __construct(
@@ -203,6 +205,163 @@ class CajaController extends Controller
             );
 
         } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+
+        }
+    }
+
+    public function ingresoManual(
+        IngresoCajaRequest $request
+    )
+    {
+        try {
+
+            if (!$request->user()->can('ingreso_manual_caja')) {
+
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+
+            }
+
+            $dto = CajaMapper::fromArrayToIngresoDTO(
+
+                $request->validated(),
+
+                $request->user()->id
+
+            );
+
+            $movimiento = $this->cajaService
+                ->ingresarDinero($dto);
+
+            return ApiResponse::success(
+                new MovimientoCajaResource($movimiento),
+                'Ingreso registrado correctamente.',
+                201
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+
+        }
+    }
+
+    public function retiroManual(
+        RetiroCajaRequest $request
+    )
+    {
+        try {
+
+            if (!$request->user()->can('retiro_manual_caja')) {
+
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+
+            }
+
+            $dto = CajaMapper::fromArrayToRetiroDTO(
+
+                $request->validated(),
+
+                $request->user()->id
+
+            );
+
+            $movimiento = $this->cajaService
+                ->retirarDinero($dto);
+
+            return ApiResponse::success(
+
+                new MovimientoCajaResource($movimiento),
+
+                'Retiro registrado correctamente.',
+
+                201
+
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+
+        }
+    }
+
+    public function transferencia(
+        TransferenciaCajaRequest $request
+    )
+    {
+        try {
+
+            if(!$request->user()->can('transferencia_caja')){
+
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+
+            }
+
+            $dto=CajaMapper::fromArrayToTransferenciaDTO(
+
+                $request->validated(),
+
+                $request->user()->id
+
+            );
+
+            $resultado=$this->cajaService
+                ->transferir($dto);
+
+            return ApiResponse::success(
+
+                $resultado,
+
+                'Transferencia realizada correctamente.'
+
+            );
+
+        }
+
+        catch(HttpException $e){
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        }
+
+        catch(\Throwable $e){
 
             return ApiResponse::error(
                 'Error interno del servidor.',

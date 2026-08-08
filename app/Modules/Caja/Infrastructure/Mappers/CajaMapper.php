@@ -5,7 +5,9 @@ namespace App\Modules\Caja\Infrastructure\Mappers;
 use App\Modules\Caja\Application\DTOs\AperturaCajaDTO;
 use App\Modules\Caja\Application\DTOs\CierreCajaDTO;
 use App\Modules\Caja\Application\DTOs\CierreCajaItemDTO;
-
+use App\Modules\Caja\Application\DTOs\IngresoCajaDTO;
+use App\Modules\Caja\Application\DTOs\RetiroCajaDTO;
+use App\Modules\Caja\Application\DTOs\TransferenciaCajaDTO;
 class CajaMapper
 {
     public static function fromArrayToAperturaDTO(
@@ -41,6 +43,66 @@ class CajaMapper
             observacion_cierre:
                 $data['observacion_cierre'] ?? null,
             user_id: $userId
+        );
+    }
+
+    public static function fromArrayToIngresoDTO(
+        array $data,
+        int $userId
+    ): IngresoCajaDTO
+    {
+        return new IngresoCajaDTO(
+
+            caja_id: (int)$data['caja_id'],
+
+            monto: (float)$data['monto'],
+
+            medio_pago: $data['medio_pago'],
+
+            descripcion: $data['descripcion'] ?? null,
+
+            user_id: $userId
+
+        );
+    }
+
+    public static function fromArrayToRetiroDTO(
+        array $data,
+        int $userId
+    ): RetiroCajaDTO
+    {
+        return new RetiroCajaDTO(
+
+            caja_id: (int)$data['caja_id'],
+
+            monto: (float)$data['monto'],
+
+            medio_pago: $data['medio_pago'],
+
+            descripcion: $data['descripcion'] ?? null,
+
+            user_id: $userId
+
+        );
+    }
+
+    public static function fromArrayToTransferenciaDTO(
+        array $data,
+        int $userId
+    ): TransferenciaCajaDTO
+    {
+        return new TransferenciaCajaDTO(
+
+            caja_origen_id:(int)$data['caja_origen_id'],
+
+            caja_destino_id:(int)$data['caja_destino_id'],
+
+            monto:(float)$data['monto'],
+
+            descripcion:$data['descripcion'] ?? null,
+
+            user_id:$userId
+
         );
     }
 }

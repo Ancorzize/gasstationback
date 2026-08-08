@@ -7,7 +7,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\Caja\Application\DTOs\AperturaCajaDTO;
 use App\Modules\Caja\Application\DTOs\CierreCajaDTO;
 use App\Modules\Caja\Application\Interfaces\CajaRepositoryInterface;
-
+use App\Modules\Caja\Application\DTOs\IngresoCajaDTO;
+use App\Modules\Caja\Application\DTOs\RetiroCajaDTO;
+use App\Modules\Caja\Application\DTOs\TransferenciaCajaDTO;
+use Illuminate\Support\Str;
 class CajaService
 {
     public function __construct(
@@ -214,5 +217,240 @@ class CajaService
     {
         return $this->cajaRepository
             ->getSugerenciasApertura();
+    }
+
+    public function ingresarDinero(IngresoCajaDTO $dto)
+    {
+        return DB::transaction(function () use ($dto) {
+
+            $caja = $this->cajaRepository->findById($dto->caja_id);
+
+            if (!$caja) {
+                throw new HttpException(
+                    422,
+                    'La caja no existe.'
+                );
+            }
+
+            if ($caja->estado !== 'abierta') {
+                throw new HttpException(
+                    422,
+                    'La caja se encuentra cerrada.'
+                );
+            }
+
+            return $this->cajaRepository->createMovimiento([
+
+                'caja_id' => $dto->caja_id,
+
+                'tipo_movimiento' => 'ingreso',
+
+                'categoria_movimiento' => 'ingreso_manual',
+
+                'origen_modulo' => 'caja',
+
+                'origen_id' => $dto->caja_id,
+
+                'medio_pago' => $dto->medio_pago,
+
+                'monto' => $dto->monto,
+
+                'descripcion' =>
+                    $dto->descripcion
+                    ?? 'Ingreso manual de caja',
+
+                'user_id' => $dto->user_id,
+
+                'fecha_movimiento' => now()
+
+            ]);
+        });
+    }
+
+    public function retirarDinero(RetiroCajaDTO $dto)
+    {
+        return DB::transaction(function () use ($dto) {
+
+            $caja = $this->cajaRepository->findById($dto->caja_id);
+
+            if (!$caja) {
+                throw new HttpException(
+                    422,
+                    'La caja no existe.'
+                );
+            }
+
+            if ($caja->estado !== 'abierta') {
+                throw new HttpException(
+                    422,
+                    'La caja está cerrada.'
+                );
+            }
+
+            $resumen = $this->getResumenCaja(
+                $dto->caja_id
+            );
+
+            if ($dto->monto > $resumen['saldo_sistema']) {
+
+                throw new HttpException(
+                    422,
+                    'La caja no tiene saldo suficiente.'
+                );
+
+            }
+
+            return $this->cajaRepository->createMovimiento([
+
+                'caja_id'=>$dto->caja_id,
+
+                'tipo_movimiento'=>'egreso',
+
+                'categoria_movimiento'=>'retiro_manual',
+
+                'origen_modulo'=>'caja',
+
+                'origen_id'=>$dto->caja_id,
+
+                'medio_pago'=>$dto->medio_pago,
+
+                'monto'=>$dto->monto,
+
+                'descripcion'=>$dto->descripcion
+                    ?? 'Retiro manual de caja',
+
+                'user_id'=>$dto->user_id,
+
+                'fecha_movimiento'=>now()
+
+            ]);
+
+        });
+    }
+
+    public function transferir(
+        TransferenciaCajaDTO $dto
+    )
+    {
+        return DB::transaction(function () use ($dto) {
+
+            $origen = $this->cajaRepository
+                ->findById($dto->caja_origen_id);
+
+            $destino = $this->cajaRepository
+                ->findById($dto->caja_destino_id);
+
+            if (!$origen) {
+                throw new HttpException(
+                    422,
+                    'La caja origen no existe.'
+                );
+            }
+
+            if (!$destino) {
+                throw new HttpException(
+                    422,
+                    'La caja destino no existe.'
+                );
+            }
+
+            if ($origen->estado!='abierta') {
+
+                throw new HttpException(
+                    422,
+                    'La caja origen está cerrada.'
+                );
+
+            }
+
+            if ($destino->estado!='abierta') {
+
+                throw new HttpException(
+                    422,
+                    'La caja destino está cerrada.'
+                );
+
+            }
+
+            $resumen = $this->getResumenCaja(
+                $origen->id
+            );
+
+            if ($dto->monto>$resumen['saldo_sistema']) {
+
+                throw new HttpException(
+                    422,
+                    'La caja origen no tiene saldo suficiente.'
+                );
+
+            }
+
+            $referencia='TRF-'.now()->format('YmdHis').'-'.Str::upper(Str::random(4));
+
+            $egreso=$this->cajaRepository->createMovimiento([
+
+                'referencia'=>$referencia,
+
+                'caja_id'=>$origen->id,
+
+                'tipo_movimiento'=>'egreso',
+
+                'categoria_movimiento'=>'transferencia',
+
+                'origen_modulo'=>'caja',
+
+                'origen_id'=>$origen->id,
+
+                'medio_pago'=>$origen->tipo_caja,
+
+                'monto'=>$dto->monto,
+
+                'descripcion'=>$dto->descripcion
+                    ?? 'Transferencia entre cajas',
+
+                'user_id'=>$dto->user_id,
+
+                'fecha_movimiento'=>now()
+
+            ]);
+
+            $ingreso=$this->cajaRepository->createMovimiento([
+
+                'referencia'=>$referencia,
+
+                'caja_id'=>$destino->id,
+
+                'tipo_movimiento'=>'ingreso',
+
+                'categoria_movimiento'=>'transferencia',
+
+                'origen_modulo'=>'caja',
+
+                'origen_id'=>$origen->id,
+
+                'medio_pago'=>$destino->tipo_caja,
+
+                'monto'=>$dto->monto,
+
+                'descripcion'=>$dto->descripcion
+                    ?? 'Transferencia entre cajas',
+
+                'user_id'=>$dto->user_id,
+
+                'fecha_movimiento'=>now()
+
+            ]);
+
+            return [
+
+                'referencia'=>$referencia,
+
+                'egreso'=>$egreso,
+
+                'ingreso'=>$ingreso
+
+            ];
+
+        });
     }
 }

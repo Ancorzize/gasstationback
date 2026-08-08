@@ -195,6 +195,9 @@ Route::middleware(['auth:sanctum'])->prefix('caja')->group(function () {
     Route::get('/resumen', [CajaController::class, 'resumen']);
     Route::get('/historico', [CajaController::class, 'historico']);
     Route::get('/sugerencias-apertura',[CajaController::class, 'sugerenciasApertura']);
+    Route::post('/ingresos', [CajaController::class,'ingresoManual']);
+    Route::post('/retiros', [CajaController::class,'retiroManual']);
+    Route::post('/transferencias', [CajaController::class,'transferencia']);
 });
 
 Route::middleware(['auth:sanctum'])->prefix('categorias-gasto')->group(function () {
