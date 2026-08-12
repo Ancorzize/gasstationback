@@ -10,7 +10,7 @@ use App\Modules\MovimientosInventario\Application\Services\MovimientoInventarioS
 use App\Modules\MovimientosInventario\Infrastructure\Mappers\MovimientoInventarioMapper;
 use App\Modules\MovimientosInventario\Presentation\Requests\StoreMovimientoInventarioRequest;
 use App\Modules\MovimientosInventario\Presentation\Resources\MovimientoInventarioResource;
-
+use App\Modules\MovimientosInventario\Presentation\Requests\StoreMovimientoInventarioMasivoRequest;
 class MovimientoInventarioController extends Controller
 {
     public function __construct(
@@ -76,6 +76,57 @@ class MovimientoInventarioController extends Controller
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
             return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function storeMasivo(
+        StoreMovimientoInventarioMasivoRequest $request
+    ) {
+        try {
+
+            if (!$request->user()->can('crear_movimientos_inventario')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $dto =
+                MovimientoInventarioMapper::fromArrayToMasivoDTO(
+                    $request->validated(),
+                    $request->user()->id
+                );
+
+            $movimientos =
+                $this->movimientoInventarioService
+                    ->trasladarMasivo($dto);
+
+            return ApiResponse::success(
+                [
+                    'cantidad_movimientos' => count($movimientos),
+
+                    'items' =>
+                        MovimientoInventarioResource::collection(
+                            $movimientos
+                        ),
+                ],
+                'Movimiento masivo de inventario registrado correctamente.',
+                201
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
         }
     }
 }

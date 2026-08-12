@@ -19,4 +19,6 @@ interface MovimientoInventarioRepositoryInterface
     public function decrementInventario(int $productoId, int $bodegaId, float $cantidad): void;
 
     public function createMovimiento(array $data): MovimientoInventario;
+
+    public function findInventarioForUpdate(int $productoId, int $bodegaId): ?Inventario;
 }

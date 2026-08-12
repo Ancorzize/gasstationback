@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\MovimientosInventario\Application\DTOs\CreateMovimientoInventarioDTO;
 use App\Modules\MovimientosInventario\Application\Interfaces\MovimientoInventarioRepositoryInterface;
-
+use App\Modules\MovimientosInventario\Application\DTOs\CreateMovimientoInventarioMasivoDTO;
 class MovimientoInventarioService
 {
     public function __construct(
@@ -72,6 +72,126 @@ class MovimientoInventarioService
                 'observacion' => $dto->observacion,
                 'user_id' => $dto->user_id,
             ]);
+        });
+    }
+
+    public function trasladarMasivo(
+        CreateMovimientoInventarioMasivoDTO $dto
+    ): array {
+        return DB::transaction(function () use ($dto) {
+
+            if (
+                $dto->bodega_origen_id ===
+                $dto->bodega_destino_id
+            ) {
+                throw new HttpException(
+                    422,
+                    'La bodega origen y destino no pueden ser iguales.'
+                );
+            }
+
+            if (empty($dto->items)) {
+                throw new HttpException(
+                    422,
+                    'Debe enviar al menos un producto.'
+                );
+            }
+
+
+            $inventariosOrigen = [];
+
+            foreach ($dto->items as $item) {
+
+                $inventarioOrigen =
+                    $this->repository->findInventarioForUpdate(
+                        $item->producto_id,
+                        $dto->bodega_origen_id
+                    );
+
+                if (!$inventarioOrigen) {
+                    throw new HttpException(
+                        422,
+                        "El producto {$item->producto_id} no existe en la bodega origen."
+                    );
+                }
+
+                $stockActual = (float) $inventarioOrigen->cantidad;
+                $cantidadSolicitada = (float) $item->cantidad;
+
+                if ($stockActual < $cantidadSolicitada) {
+                    throw new HttpException(
+                        422,
+                        "Stock insuficiente para el producto {$item->producto_id}. " .
+                        "Disponible: {$stockActual}. " .
+                        "Solicitado: {$cantidadSolicitada}."
+                    );
+                }
+
+                $inventariosOrigen[$item->producto_id] =
+                    $inventarioOrigen;
+            }
+
+
+
+            $movimientos = [];
+
+            foreach ($dto->items as $item) {
+
+                /*
+                * Descontar origen
+                */
+                $this->repository->decrementInventario(
+                    $item->producto_id,
+                    $dto->bodega_origen_id,
+                    $item->cantidad
+                );
+
+                /*
+                * Buscar inventario destino
+                */
+                $inventarioDestino =
+                    $this->repository->findInventario(
+                        $item->producto_id,
+                        $dto->bodega_destino_id
+                    );
+
+                /*
+                * Si no existe, crearlo
+                */
+                if (!$inventarioDestino) {
+
+                    $this->repository->createInventario([
+                        'producto_id' => $item->producto_id,
+                        'bodega_id' => $dto->bodega_destino_id,
+                        'cantidad' => 0,
+                    ]);
+                }
+
+                /*
+                * Incrementar destino
+                */
+                $this->repository->incrementInventario(
+                    $item->producto_id,
+                    $dto->bodega_destino_id,
+                    $item->cantidad
+                );
+
+                /*
+                * Registrar movimiento
+                */
+                $movimientos[] =
+                    $this->repository->createMovimiento([
+                        'tipo_movimiento' => 'traslado',
+                        'producto_id' => $item->producto_id,
+                        'bodega_origen_id' => $dto->bodega_origen_id,
+                        'bodega_destino_id' => $dto->bodega_destino_id,
+                        'cantidad' => $item->cantidad,
+                        'observacion' => $dto->observacion,
+                        'user_id' => $dto->user_id,
+                    ]);
+            }
+
+            return $movimientos;
         });
     }
 }

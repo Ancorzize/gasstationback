@@ -92,4 +92,15 @@ class MovimientoInventarioRepository implements MovimientoInventarioRepositoryIn
         return MovimientoInventario::create($data)
             ->load(['producto', 'bodegaOrigen', 'bodegaDestino', 'usuario']);
     }
+
+    public function findInventarioForUpdate(
+        int $productoId,
+        int $bodegaId
+    ): ?Inventario {
+        return Inventario::query()
+            ->where('producto_id', $productoId)
+            ->where('bodega_id', $bodegaId)
+            ->lockForUpdate()
+            ->first();
+    }
 }
