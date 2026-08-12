@@ -32,7 +32,7 @@ class InventarioController extends Controller
 
             $inventarios = $this->inventarioService->paginate(
                 $filters,
-                (int) $request->get('per_page', 10)
+                (int) $request->get('per_page', 150)
             );
 
             return ApiResponse::success([
