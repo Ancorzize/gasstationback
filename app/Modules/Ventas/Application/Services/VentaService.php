@@ -10,7 +10,7 @@ use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
 use App\Modules\Ventas\Application\DTOs\CreateVentaCombustibleDTO;
 use App\Models\TurnoIslero;
 use Illuminate\Support\Collection;
-
+use App\Models\User;
 class VentaService
 {
     public function __construct(
@@ -363,20 +363,43 @@ class VentaService
         };
     }
 
-    public function anular(int $id, string $motivoAnulacion, int $userId): Venta
-    {
-        return DB::transaction(function () use ($id, $motivoAnulacion, $userId) {
+    public function anular(
+        int $id,
+        string $motivoAnulacion,
+        int $userId
+    ): Venta {
+        return DB::transaction(function () use (
+            $id,
+            $motivoAnulacion,
+            $userId
+        ) {
+
             $venta = $this->findById($id);
 
             if ($venta->estado === 'anulada') {
-                throw new HttpException(422, 'La venta ya se encuentra anulada.');
+                throw new HttpException(
+                    422,
+                    'La venta ya se encuentra anulada.'
+                );
             }
+
+            $usuarioVenta = null;
+
+            if ($venta->user_id) {
+                $usuarioVenta = User::find($venta->user_id);
+            }
+
+            $esIslero = $usuarioVenta?->hasRole('islero') ?? false;
 
             $bodegaId = (int) $venta->bodega_id;
 
             if (!$bodegaId) {
-                throw new HttpException(422, 'La venta no tiene bodega asociada.');
+                throw new HttpException(
+                    422,
+                    'La venta no tiene bodega asociada.'
+                );
             }
+
 
             foreach ($venta->detalles as $detalle) {
 
@@ -401,44 +424,65 @@ class VentaService
                 ]);
             }
 
-            foreach ($venta->pagos as $pago) {
-                if ($pago->metodo_pago === 'credito') {
-                    continue;
-                }
 
-                if (!$pago->caja_id) {
-                    continue;
-                }
+            if (!$esIslero) {
 
-                $this->ventaRepository->createMovimientoCaja([
-                    'caja_id' => $pago->caja_id,
-                    'tipo_movimiento' => 'egreso',
-                    'categoria_movimiento' => 'anulacion_venta',
-                    'origen_modulo' => 'ventas',
-                    'origen_id' => $venta->id,
-                    'medio_pago' => $pago->metodo_pago,
-                    'monto' => $pago->monto,
-                    'descripcion' => "Anulación Venta #{$venta->id}: {$motivoAnulacion}",
-                    'user_id' => $userId,
-                    'fecha_movimiento' => now(),
-                ]);
+                foreach ($venta->pagos as $pago) {
+
+
+                    if ($pago->metodo_pago === 'credito') {
+                        continue;
+                    }
+
+
+                    if (!$pago->caja_id) {
+                        continue;
+                    }
+
+                    $this->ventaRepository->createMovimientoCaja([
+                        'caja_id' => $pago->caja_id,
+                        'tipo_movimiento' => 'egreso',
+                        'categoria_movimiento' => 'anulacion_venta',
+                        'origen_modulo' => 'ventas',
+                        'origen_id' => $venta->id,
+                        'medio_pago' => $pago->metodo_pago,
+                        'monto' => $pago->monto,
+                        'descripcion' => "Anulación Venta #{$venta->id}: {$motivoAnulacion}",
+                        'user_id' => $userId,
+                        'fecha_movimiento' => now(),
+                    ]);
+                }
             }
 
 
-            if ((float) $venta->saldo_pendiente > 0 && $venta->cliente_id) {
-                $cliente = $this->ventaRepository->findClienteById($venta->cliente_id);
+
+            if (
+                (float) $venta->saldo_pendiente > 0 &&
+                $venta->cliente_id
+            ) {
+
+                $cliente = $this->ventaRepository->findClienteById(
+                    $venta->cliente_id
+                );
 
                 if ($cliente) {
+
                     $saldoAnterior = (float) $cliente->saldo_credito;
-                    $saldoNuevo = $saldoAnterior - (float) $venta->saldo_pendiente;
+
+                    $saldoNuevo =
+                        $saldoAnterior -
+                        (float) $venta->saldo_pendiente;
 
                     if ($saldoNuevo < 0) {
                         $saldoNuevo = 0;
                     }
 
-                    $this->ventaRepository->updateCliente($cliente, [
-                        'saldo_credito' => $saldoNuevo,
-                    ]);
+                    $this->ventaRepository->updateCliente(
+                        $cliente,
+                        [
+                            'saldo_credito' => $saldoNuevo,
+                        ]
+                    );
 
                     $this->ventaRepository->createMovimientoCartera([
                         'cliente_id' => $cliente->id,
@@ -449,20 +493,24 @@ class VentaService
                         'saldo_anterior' => $saldoAnterior,
                         'saldo_nuevo' => $saldoNuevo,
                         'medio_pago' => null,
-                        'descripcion' => "Anulación venta crédito #{$venta->id}: {$motivoAnulacion}",
+                        'descripcion' =>
+                            "Anulación venta crédito #{$venta->id}: {$motivoAnulacion}",
                         'user_id' => $userId,
                         'fecha_movimiento' => now(),
                     ]);
                 }
             }
 
+            $this->ventaRepository->updateVenta(
+                $venta,
+                [
+                    'estado' => 'anulada',
+                    'motivo_anulacion' => $motivoAnulacion,
+                    'user_anulacion_id' => $userId,
+                    'fecha_anulacion' => now(),
+                ]
+            );
 
-            $this->ventaRepository->updateVenta($venta, [
-                'estado' => 'anulada',
-                'motivo_anulacion' => $motivoAnulacion,
-                'user_anulacion_id' => $userId,
-                'fecha_anulacion' => now(),
-            ]);
 
             return $this->findById($venta->id);
         });
