@@ -14,6 +14,8 @@ use App\Models\TurnoIslero;
 use App\Models\Venta;
 use App\Models\AbonoCarteraDetalle;
 use App\Modules\Cartera\Application\DTOs\CreateAbonoCarteraDetalleDTO;
+use App\Models\SaldoInicialCartera;
+use App\Models\AplicacionAbonoSaldoInicial;
 class CarteraRepository implements CarteraRepositoryInterface
 {
     public function findClienteById(int $id): ?Cliente
@@ -192,5 +194,54 @@ class CarteraRepository implements CarteraRepositoryInterface
             'valor_aplicado' => $dto->valor_aplicado,
 
         ]);
+    }
+
+    public function createSaldoInicial(array $data): SaldoInicialCartera
+    {
+        return SaldoInicialCartera::create($data)
+            ->load([
+                'cliente',
+                'usuario',
+            ]);
+    }
+
+    public function getSaldosInicialesPendientesCliente(
+        int $clienteId
+    ) {
+        return SaldoInicialCartera::query()
+            ->where('cliente_id', $clienteId)
+            ->whereIn('estado', [
+                'pendiente',
+                'parcial',
+            ])
+            ->where('saldo_pendiente', '>', 0)
+            ->orderBy('fecha_documento')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+    }
+
+    public function updateSaldoInicial(
+        SaldoInicialCartera $saldoInicial,
+        array $data
+    ): SaldoInicialCartera
+    {
+        $saldoInicial->update($data);
+
+        return $saldoInicial->fresh()
+            ->load([
+                'cliente',
+                'usuario',
+            ]);
+    }
+
+    public function createAplicacionSaldoInicial(
+        array $data
+    ): AplicacionAbonoSaldoInicial
+    {
+        return AplicacionAbonoSaldoInicial::create($data)
+            ->load([
+                'saldoInicial',
+            ]);
     }
 }

@@ -226,6 +226,7 @@ Route::middleware(['auth:sanctum'])->prefix('cartera')->group(function () {
     Route::get('/resumen', [CarteraController::class, 'resumen']);
     Route::get('/movimientos', [CarteraController::class, 'movimientos']);
     Route::post('/abonos', [CarteraController::class, 'registrarAbono']);
+    Route::post('/saldos-iniciales',[CarteraController::class, 'registrarSaldoInicial']);
 });
 
 Route::middleware(['auth:sanctum'])->prefix('ventas')->group(function () {

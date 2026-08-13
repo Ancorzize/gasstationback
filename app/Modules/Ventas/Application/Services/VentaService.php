@@ -391,6 +391,31 @@ class VentaService
 
             $esIslero = $usuarioVenta?->hasRole('islero') ?? false;
 
+            if ($esIslero) {
+                if (!$venta->turno_islero_id) {
+                    throw new HttpException(
+                        422,
+                        'La venta del islero no tiene un turno asociado.'
+                    );
+                }
+
+                $turno = TurnoIslero::find($venta->turno_islero_id);
+
+                if (!$turno) {
+                    throw new HttpException(
+                        422,
+                        'No se encontró el turno asociado a la venta.'
+                    );
+                }
+
+                if ($turno->estado !== 'abierto') {
+                    throw new HttpException(
+                        422,
+                        'No se puede anular la venta porque el turno donde fue realizada ya se encuentra cerrado.'
+                    );
+                }
+            }
+
             $bodegaId = (int) $venta->bodega_id;
 
             if (!$bodegaId) {

@@ -12,6 +12,8 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Models\TurnoIslero;
 use App\Models\Venta;
 use App\Modules\Cartera\Application\DTOs\CreateAbonoCarteraDetalleDTO;
+use App\Models\SaldoInicialCartera;
+use App\Models\AplicacionAbonoSaldoInicial;
 interface CarteraRepositoryInterface
 {
     public function findClienteById(int $id): ?Cliente;
@@ -42,4 +44,12 @@ interface CarteraRepositoryInterface
     public function createAbonoDetalle(CreateAbonoCarteraDetalleDTO $dto);
 
     public function updateVenta(Venta $venta, array $data): Venta;
+
+    public function createSaldoInicial(array $data): SaldoInicialCartera;
+
+    public function getSaldosInicialesPendientesCliente( int $clienteId );
+
+    public function updateSaldoInicial( SaldoInicialCartera $saldoInicial,  array $data): SaldoInicialCartera;
+
+    public function createAplicacionSaldoInicial( array $data): AplicacionAbonoSaldoInicial;
 }

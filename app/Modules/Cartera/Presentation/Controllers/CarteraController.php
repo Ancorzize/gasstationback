@@ -11,6 +11,7 @@ use App\Modules\Cartera\Infrastructure\Mappers\CarteraMapper;
 use App\Modules\Cartera\Presentation\Requests\StoreAbonoCarteraRequest;
 use App\Modules\Cartera\Presentation\Resources\AbonoCarteraResource;
 use App\Modules\Cartera\Presentation\Resources\MovimientoCarteraResource;
+use App\Modules\Cartera\Presentation\Requests\StoreSaldoInicialCarteraRequest;
 
 class CarteraController extends Controller
 {
@@ -92,6 +93,49 @@ class CarteraController extends Controller
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
             return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function registrarSaldoInicial(
+        StoreSaldoInicialCarteraRequest $request
+    )
+    {
+        try {
+
+            if (!$request->user()->can('crear_saldos_iniciales_cartera')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $dto = CarteraMapper::fromArrayToCreateSaldoInicialDTO(
+                $request->validated(),
+                $request->user()->id
+            );
+
+            $saldoInicial = $this->carteraService
+                ->registrarSaldoInicial($dto);
+
+            return ApiResponse::success(
+                $saldoInicial,
+                'Saldo inicial de cartera registrado correctamente.',
+                201
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
         }
     }
 }

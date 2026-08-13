@@ -3,6 +3,7 @@
 namespace App\Modules\Cartera\Infrastructure\Mappers;
 
 use App\Modules\Cartera\Application\DTOs\CreateAbonoCarteraDTO;
+use App\Modules\Cartera\Application\DTOs\CreateSaldoInicialCarteraDTO;
 
 class CarteraMapper
 {
@@ -16,6 +17,20 @@ class CarteraMapper
             observacion: $data['observacion'] ?? null,
             user_id: $userId,
             caja_id: (int) $data['caja_id'],
+        );
+    }
+
+    public static function fromArrayToCreateSaldoInicialDTO(
+        array $data,
+        int $userId
+    ): CreateSaldoInicialCarteraDTO
+    {
+        return new CreateSaldoInicialCarteraDTO(
+            cliente_id: (int) $data['cliente_id'],
+            fecha_documento: $data['fecha_documento'],
+            valor: (float) $data['valor'],
+            observacion: $data['observacion'] ?? null,
+            user_id: $userId,
         );
     }
 }
