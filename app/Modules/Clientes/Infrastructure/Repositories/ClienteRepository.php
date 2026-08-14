@@ -15,12 +15,9 @@ class ClienteRepository implements ClienteRepositoryInterface
             $search = $filters['search'];
 
             $query->where(function ($q) use ($search) {
-                $q->where('nombre', 'like', "%{$search}%")
-                ->orWhere('apellidos', 'like', "%{$search}%")
-                  ->orWhere('documento', 'like', "%{$search}%")
-                  ->orWhere('telefono_uno', 'like', "%{$search}%")
-                  ->orWhere('telefono_dos', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                $q->where('nombre', 'ilike', "%{$search}%")
+                ->orWhere('apellidos', 'ilike', "%{$search}%")
+                  ->orWhere('documento', 'ilike', "%{$search}%");
             });
         }
 

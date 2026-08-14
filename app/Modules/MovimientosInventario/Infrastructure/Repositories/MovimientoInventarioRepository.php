@@ -31,6 +31,13 @@ class MovimientoInventarioRepository implements MovimientoInventarioRepositoryIn
             });
         }
 
+        if (!empty($filters['tipo_movimiento'])) {
+            $query->whereIn(
+                'tipo_movimiento',
+                $filters['tipo_movimiento']
+            );
+        }
+
         if (isset($filters['producto_id']) && $filters['producto_id'] !== '') {
             $query->where('producto_id', $filters['producto_id']);
         }

@@ -16,9 +16,8 @@ class ProveedorRepository implements ProveedorRepositoryInterface
             $search = strtolower($filters['search']);
 
             $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(nombre) LIKE ?', ["%{$search}%"])
-                ->orWhereRaw('LOWER(nit) LIKE ?', ["%{$search}%"])
-                ->orWhereRaw('LOWER(telefono) LIKE ?', ["%{$search}%"])
+                $q->whereRaw('LOWER(nombre) ILIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(nit) ILIKE ?', ["%{$search}%"])
                 ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
             });
         }

@@ -32,11 +32,15 @@ class MovimientoInventarioController extends Controller
                 'user_id' => $request->get('user_id'),
                 'fecha_desde' => $request->get('fecha_desde'),
                 'fecha_hasta' => $request->get('fecha_hasta'),
+                'tipo_movimiento' => [
+                    'entrada',
+                    'traslado',
+                ],
             ];
 
             $movimientos = $this->movimientoInventarioService->paginate(
                 $filters,
-                (int) $request->get('per_page', 10)
+                (int) $request->get('per_page', 50)
             );
 
             return ApiResponse::success([

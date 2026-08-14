@@ -17,9 +17,8 @@ class ProductoRepository implements ProductoRepositoryInterface
             $search = strtolower($filters['search']);
 
             $query->where(function ($q) use ($search) {
-                $q->whereRaw('LOWER(codigo) LIKE ?', ["%{$search}%"])
-                ->orWhereRaw('LOWER(nombre) LIKE ?', ["%{$search}%"])
-                ->orWhereRaw('LOWER(descripcion) LIKE ?', ["%{$search}%"]);
+                $q->whereRaw('LOWER(codigo) ILIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(nombre) ILIKE ?', ["%{$search}%"]);
             });
         }
 

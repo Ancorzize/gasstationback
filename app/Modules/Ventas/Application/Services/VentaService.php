@@ -18,9 +18,9 @@ class VentaService
     ) {
     }
 
-    public function paginate(array $filters = [], int $perPage = 10)
+    public function paginate(array $filters = [])
     {
-        return $this->ventaRepository->paginate($filters, $perPage);
+        return $this->ventaRepository->getAll($filters);
     }
 
     public function findById(int $id): Venta

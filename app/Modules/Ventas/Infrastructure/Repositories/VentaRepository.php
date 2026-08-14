@@ -20,7 +20,7 @@ use App\Models\LecturaManguera;
 use App\Models\User;
 class VentaRepository implements VentaRepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
+    public function getAll(array $filters = [])
     {
         $query = Venta::query()
             ->with(['cliente', 'usuario', 'turnoIslero.estacion', 'detalles.producto', 'pagos']);
@@ -62,7 +62,7 @@ class VentaRepository implements VentaRepositoryInterface
             $query->whereDate('fecha_venta', '<=', $filters['fecha_hasta']);
         }
 
-        return $query->orderByDesc('id')->paginate($perPage);
+        return $query->orderByDesc('id')->get();
     }
 
     public function findById(int $id): ?Venta

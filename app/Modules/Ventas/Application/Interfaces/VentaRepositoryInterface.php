@@ -19,7 +19,7 @@ use App\Models\User;
 
 interface VentaRepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator;
+    public function getAll(array $filters = []);
 
     public function findById(int $id): ?Venta;
 

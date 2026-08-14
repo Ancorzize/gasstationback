@@ -39,18 +39,11 @@ class VentaController extends Controller
             ];
 
             $ventas = $this->ventaService->paginate(
-                $filters,
-                (int) $request->get('per_page', 10)
+                $filters
             );
 
             return ApiResponse::success([
-                'items' => VentaResource::collection($ventas->items()),
-                'pagination' => [
-                    'current_page' => $ventas->currentPage(),
-                    'last_page' => $ventas->lastPage(),
-                    'per_page' => $ventas->perPage(),
-                    'total' => $ventas->total(),
-                ]
+                'items' => VentaResource::collection($ventas),
             ], 'Listado de ventas.');
 
         } catch (\Throwable $e) {
