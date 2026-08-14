@@ -383,9 +383,7 @@ class TurnoIsleroService
                 $totalAbonos -
                 $totalCreditos;
 
-            $balanceFinal =
-                $totalRecaudoEsperado -
-                $totalReportado;
+            $balanceFinal = $totalReportado - $totalRecaudoEsperado;
 
             if ($turno->usuario->hasRole('islero')) {
 
