@@ -22,8 +22,21 @@ class ProductoController extends Controller
     public function index(Request $request)
     {
         try {
+
             if (!$request->user()->can('ver_productos')) {
-                return ApiResponse::error('Sin permisos.', 403);
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $user = $request->user();
+
+            if (!$user->bodega_id) {
+                return ApiResponse::error(
+                    'El usuario no tiene una bodega asignada.',
+                    422
+                );
             }
 
             $filters = [
@@ -36,20 +49,31 @@ class ProductoController extends Controller
 
             $productos = $this->productoService->paginate(
                 $filters,
-                (int) $request->get('per_page', 10)
+                (int) $request->get('per_page', 10),
+                (int) $user->bodega_id
             );
 
             return ApiResponse::success([
-                'items' => ProductoResource::collection($productos->items()),
+
+                'items' => ProductoResource::collection(
+                    $productos->items()
+                ),
+
                 'pagination' => [
                     'current_page' => $productos->currentPage(),
                     'last_page' => $productos->lastPage(),
                     'per_page' => $productos->perPage(),
                     'total' => $productos->total(),
                 ]
+
             ], 'Listado de productos.');
+
         } catch (\Throwable $e) {
-            return ApiResponse::error('Error interno del servidor.', 500);
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
         }
     }
 

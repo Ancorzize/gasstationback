@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\AbonoCarteraDetalle;
 
 class Venta extends Model
 {
@@ -88,10 +89,13 @@ class Venta extends Model
         );
     }
 
-    public function abonosDetalle(): HasMany
+    public function abonosCartera()
     {
         return $this->hasMany(
-            AbonoCarteraDetalle::class
-        );
+            AbonoCarteraDetalle::class,
+            'venta_id'
+        )->with([
+            'abonoCartera.usuario'
+        ]);
     }
 }

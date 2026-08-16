@@ -54,4 +54,12 @@ class Producto extends Model
     {
         return $this->hasMany(PrecioCombustible::class);
     }
+    
+    public function inventarios(): HasMany
+    {
+        return $this->hasMany(
+            Inventario::class,
+            'producto_id'
+        );
+    }
 }

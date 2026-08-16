@@ -78,6 +78,7 @@ class VentaRepository implements VentaRepositoryInterface
             'pagos.caja',
             'pagos.usuario',
             'detalles.manguera.bomba.estacion',
+            'abonosCartera.abonoCartera.usuario',
         ])->find($id);
     }
 

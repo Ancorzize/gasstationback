@@ -81,7 +81,28 @@ class VentaResource extends JsonResource
                     'codigo' => $this->turnoIslero->estacion->codigo,
                 ] : null,
             ] : null,
-        ];
+            'abonos_cartera' => $this->whenLoaded(
+                'abonosCartera',
+                    function () {
+                        return $this->abonosCartera->map(function ($detalle) {
+                            return [
+                                'id' => $detalle->id,
+                                'valor_aplicado' => $detalle->valor_aplicado,
+                                'abono_cartera_id' => $detalle->abono_cartera_id,
+                                'fecha_abono' => $detalle->abonoCartera?->fecha_abono,
+                                'medio_pago' => $detalle->abonoCartera?->medio_pago,
+                                'observacion' => $detalle->abonoCartera?->observacion,
+                                'usuario' => $detalle->abonoCartera?->usuario
+                                    ? [
+                                        'id' => $detalle->abonoCartera->usuario->id,
+                                        'name' => $detalle->abonoCartera->usuario->name,
+                                    ]
+                                    : null,
+                            ];
+                        });
+                    }
+                ),
+            ];
     }
 
     

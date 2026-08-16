@@ -39,6 +39,17 @@ class ProductoResource extends JsonResource
             'permite_decimal' => $this->permite_decimal,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at,
+            'stock' => $this->whenLoaded(
+                'inventarios',
+                function () {
+
+                        $inventario = $this->inventarios->first();
+
+                        return $inventario
+                            ? (float) $inventario->cantidad
+                            : 0;
+                    },
+            ),
         ];
     }
 }

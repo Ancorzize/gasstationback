@@ -14,9 +14,17 @@ class ProductoService
         protected ProductoRepositoryInterface $productoRepository
     ) {}
 
-    public function paginate(array $filters = [], int $perPage = 10)
+    public function paginate(
+        array $filters = [],
+        int $perPage = 10,
+        ?int $bodegaId = null
+    )
     {
-        return $this->productoRepository->paginate($filters, $perPage);
+        return $this->productoRepository->paginate(
+            $filters,
+            $perPage,
+            $bodegaId
+        );
     }
 
     public function findById(int $id): Producto

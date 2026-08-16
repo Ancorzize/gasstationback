@@ -25,18 +25,18 @@ class AbonoCarteraDetalle extends Model
 
     ];
 
-    public function abono(): BelongsTo
-    {
-        return $this->belongsTo(
-            AbonoCartera::class,
-            'abono_cartera_id'
-        );
-    }
-
     public function venta(): BelongsTo
     {
         return $this->belongsTo(
             Venta::class
+        );
+    }
+
+    public function abonoCartera()
+    {
+        return $this->belongsTo(
+            AbonoCartera::class,
+            'abono_cartera_id'
         );
     }
 }
