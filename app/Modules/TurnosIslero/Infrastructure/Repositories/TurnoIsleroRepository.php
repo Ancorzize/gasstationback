@@ -17,7 +17,7 @@ use App\Models\Caja;
 use App\Models\MovimientoCaja;
 class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
+    public function getAll(array $filters = []): Collection
     {
         $query = TurnoIslero::query()
             ->with(['estacion', 'usuario']);
@@ -51,14 +51,24 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
         }
 
         if (!empty($filters['fecha_desde'])) {
-            $query->whereDate('fecha_apertura', '>=', $filters['fecha_desde']);
+            $query->whereDate(
+                'fecha_apertura',
+                '>=',
+                $filters['fecha_desde']
+            );
         }
 
         if (!empty($filters['fecha_hasta'])) {
-            $query->whereDate('fecha_apertura', '<=', $filters['fecha_hasta']);
+            $query->whereDate(
+                'fecha_apertura',
+                '<=',
+                $filters['fecha_hasta']
+            );
         }
 
-        return $query->orderByDesc('id')->paginate($perPage);
+        return $query
+            ->orderByDesc('id')
+            ->get();
     }
 
     public function findById(int $id): ?TurnoIslero

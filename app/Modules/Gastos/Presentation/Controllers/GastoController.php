@@ -35,22 +35,17 @@ class GastoController extends Controller
                 'fecha_hasta' => $request->get('fecha_hasta'),
             ];
 
-            $gastos = $this->gastoService->paginate(
-                $filters,
-                (int) $request->get('per_page', 10)
-            );
+            $gastos = $this->gastoService->getAll($filters);
 
             return ApiResponse::success([
-                'items' => GastoResource::collection($gastos->items()),
-                'pagination' => [
-                    'current_page' => $gastos->currentPage(),
-                    'last_page' => $gastos->lastPage(),
-                    'per_page' => $gastos->perPage(),
-                    'total' => $gastos->total(),
-                ]
+                'items' => GastoResource::collection($gastos),
             ], 'Listado de gastos.');
+
         } catch (\Throwable $e) {
-            return ApiResponse::error('Error interno del servidor.', 500);
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
         }
     }
 

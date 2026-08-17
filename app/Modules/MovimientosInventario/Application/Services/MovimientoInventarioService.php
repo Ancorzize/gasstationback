@@ -13,9 +13,9 @@ class MovimientoInventarioService
         protected MovimientoInventarioRepositoryInterface $repository
     ) {}
 
-    public function paginate(array $filters = [], int $perPage = 10)
+    public function getAll(array $filters = [])
     {
-        return $this->repository->paginate($filters, $perPage);
+        return $this->repository->getAll($filters);
     }
 
     public function trasladar(CreateMovimientoInventarioDTO $dto)

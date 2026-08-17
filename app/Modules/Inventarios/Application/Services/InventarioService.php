@@ -11,7 +11,7 @@ class InventarioService
         protected InventarioRepositoryInterface $inventarioRepository
     ) {}
 
-    public function paginate(array $filters = [], int $perPage = 10)
+    public function paginate(array $filters = [], int $perPage = 1000)
     {
         return $this->inventarioRepository->paginate($filters, $perPage);
     }

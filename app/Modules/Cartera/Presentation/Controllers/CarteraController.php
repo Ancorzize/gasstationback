@@ -53,7 +53,7 @@ class CarteraController extends Controller
 
             $movimientos = $this->carteraService->paginateMovimientos(
                 $filters,
-                (int) $request->get('per_page', 10)
+                (int) $request->get('per_page', 5000)
             );
 
             return ApiResponse::success([

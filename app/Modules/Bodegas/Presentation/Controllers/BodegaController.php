@@ -35,7 +35,7 @@ class BodegaController extends Controller
 
             $bodegas = $this->bodegaService->paginate(
                 $filters,
-                (int) $request->get('per_page', 10)
+                (int) $request->get('per_page', 1000)
             );
 
             return ApiResponse::success([

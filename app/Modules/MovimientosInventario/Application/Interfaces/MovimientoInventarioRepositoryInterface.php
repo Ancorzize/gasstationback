@@ -5,10 +5,10 @@ namespace App\Modules\MovimientosInventario\Application\Interfaces;
 use App\Models\Inventario;
 use App\Models\MovimientoInventario;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-
+use \Illuminate\Support\Collection;
 interface MovimientoInventarioRepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator;
+    public function getAll(array $filters = []): Collection;
 
     public function findInventario(int $productoId, int $bodegaId): ?Inventario;
 

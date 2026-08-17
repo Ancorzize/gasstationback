@@ -21,9 +21,9 @@ class TurnoIsleroService
         protected VentaService $ventaService
     ) {}
 
-    public function paginate(array $filters = [], int $perPage = 10)
+    public function getAll(array $filters = [])
     {
-        return $this->turnoRepository->paginate($filters, $perPage);
+        return $this->turnoRepository->getAll($filters);
     }
 
     public function findById(int $id): TurnoIslero

@@ -32,28 +32,27 @@ class MovimientoInventarioController extends Controller
                 'user_id' => $request->get('user_id'),
                 'fecha_desde' => $request->get('fecha_desde'),
                 'fecha_hasta' => $request->get('fecha_hasta'),
+
                 'tipo_movimiento' => [
                     'entrada',
                     'traslado',
                 ],
             ];
 
-            $movimientos = $this->movimientoInventarioService->paginate(
-                $filters,
-                (int) $request->get('per_page', 50)
-            );
+            $movimientos = $this->movimientoInventarioService
+                ->getAll($filters);
 
             return ApiResponse::success([
-                'items' => MovimientoInventarioResource::collection($movimientos->items()),
-                'pagination' => [
-                    'current_page' => $movimientos->currentPage(),
-                    'last_page' => $movimientos->lastPage(),
-                    'per_page' => $movimientos->perPage(),
-                    'total' => $movimientos->total(),
-                ]
+                'items' => MovimientoInventarioResource::collection(
+                    $movimientos
+                ),
             ], 'Listado de movimientos de inventario.');
+
         } catch (\Throwable $e) {
-            return ApiResponse::error('Error interno del servidor.', 500);
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
         }
     }
 

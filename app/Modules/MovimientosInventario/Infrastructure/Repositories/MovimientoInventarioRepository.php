@@ -9,10 +9,15 @@ use App\Modules\MovimientosInventario\Application\Interfaces\MovimientoInventari
 
 class MovimientoInventarioRepository implements MovimientoInventarioRepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
+    public function getAll(array $filters = []): \Illuminate\Support\Collection
     {
         $query = MovimientoInventario::query()
-            ->with(['producto', 'bodegaOrigen', 'bodegaDestino', 'usuario']);
+            ->with([
+                'producto',
+                'bodegaOrigen',
+                'bodegaDestino',
+                'usuario'
+            ]);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -21,13 +26,20 @@ class MovimientoInventarioRepository implements MovimientoInventarioRepositoryIn
                 $q->whereHas('producto', function ($sub) use ($search) {
                     $sub->where('codigo', 'like', "%{$search}%")
                         ->orWhere('nombre', 'like', "%{$search}%");
-                })->orWhereHas('bodegaOrigen', function ($sub) use ($search) {
+                })
+                ->orWhereHas('bodegaOrigen', function ($sub) use ($search) {
                     $sub->where('nombre', 'like', "%{$search}%")
                         ->orWhere('codigo', 'like', "%{$search}%");
-                })->orWhereHas('bodegaDestino', function ($sub) use ($search) {
+                })
+                ->orWhereHas('bodegaDestino', function ($sub) use ($search) {
                     $sub->where('nombre', 'like', "%{$search}%")
                         ->orWhere('codigo', 'like', "%{$search}%");
-                })->orWhere('observacion', 'like', "%{$search}%");
+                })
+                ->orWhere(
+                    'observacion',
+                    'like',
+                    "%{$search}%"
+                );
             });
         }
 
@@ -38,31 +50,65 @@ class MovimientoInventarioRepository implements MovimientoInventarioRepositoryIn
             );
         }
 
-        if (isset($filters['producto_id']) && $filters['producto_id'] !== '') {
-            $query->where('producto_id', $filters['producto_id']);
+        if (
+            isset($filters['producto_id']) &&
+            $filters['producto_id'] !== ''
+        ) {
+            $query->where(
+                'producto_id',
+                $filters['producto_id']
+            );
         }
 
-        if (isset($filters['bodega_origen_id']) && $filters['bodega_origen_id'] !== '') {
-            $query->where('bodega_origen_id', $filters['bodega_origen_id']);
+        if (
+            isset($filters['bodega_origen_id']) &&
+            $filters['bodega_origen_id'] !== ''
+        ) {
+            $query->where(
+                'bodega_origen_id',
+                $filters['bodega_origen_id']
+            );
         }
 
-        if (isset($filters['bodega_destino_id']) && $filters['bodega_destino_id'] !== '') {
-            $query->where('bodega_destino_id', $filters['bodega_destino_id']);
+        if (
+            isset($filters['bodega_destino_id']) &&
+            $filters['bodega_destino_id'] !== ''
+        ) {
+            $query->where(
+                'bodega_destino_id',
+                $filters['bodega_destino_id']
+            );
         }
 
-        if (isset($filters['user_id']) && $filters['user_id'] !== '') {
-            $query->where('user_id', $filters['user_id']);
+        if (
+            isset($filters['user_id']) &&
+            $filters['user_id'] !== ''
+        ) {
+            $query->where(
+                'user_id',
+                $filters['user_id']
+            );
         }
 
         if (!empty($filters['fecha_desde'])) {
-            $query->whereDate('created_at', '>=', $filters['fecha_desde']);
+            $query->whereDate(
+                'created_at',
+                '>=',
+                $filters['fecha_desde']
+            );
         }
 
         if (!empty($filters['fecha_hasta'])) {
-            $query->whereDate('created_at', '<=', $filters['fecha_hasta']);
+            $query->whereDate(
+                'created_at',
+                '<=',
+                $filters['fecha_hasta']
+            );
         }
 
-        return $query->orderByDesc('id')->paginate($perPage);
+        return $query
+            ->orderByDesc('id')
+            ->get();
     }
 
     public function findInventario(int $productoId, int $bodegaId): ?Inventario

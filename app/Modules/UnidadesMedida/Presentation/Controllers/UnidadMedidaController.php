@@ -33,7 +33,7 @@ class UnidadMedidaController extends Controller
 
             $unidadesMedida = $this->unidadMedidaService->paginate(
                 $filters,
-                (int) $request->get('per_page', 10)
+                (int) $request->get('per_page', 1000)
             );
 
             return ApiResponse::success([

@@ -26,7 +26,7 @@ class UserController extends Controller
                 return ApiResponse::error('Sin permisos.', 403);
             }
 
-            $users = $this->userService->paginate((int) $request->get('per_page', 10));
+            $users = $this->userService->paginate((int) $request->get('per_page', 1000));
 
             return ApiResponse::success([
                 'items' => UserResource::collection($users->items()),

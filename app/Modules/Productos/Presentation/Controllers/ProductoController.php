@@ -49,7 +49,6 @@ class ProductoController extends Controller
 
             $productos = $this->productoService->paginate(
                 $filters,
-                (int) $request->get('per_page', 10),
                 (int) $user->bodega_id
             );
 

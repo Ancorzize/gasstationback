@@ -41,22 +41,17 @@ class CompraController extends Controller
                 'fecha_hasta' => $request->get('fecha_hasta'),
             ];
 
-            $compras = $this->compraService->paginate(
-                $filters,
-                (int) $request->get('per_page', 10)
-            );
+            $compras = $this->compraService->getAll($filters);
 
             return ApiResponse::success([
-                'items' => CompraResource::collection($compras->items()),
-                'pagination' => [
-                    'current_page' => $compras->currentPage(),
-                    'last_page' => $compras->lastPage(),
-                    'per_page' => $compras->perPage(),
-                    'total' => $compras->total(),
-                ]
+                'items' => CompraResource::collection($compras),
             ], 'Listado de compras.');
+
         } catch (\Throwable $e) {
-            return ApiResponse::error('Error interno del servidor.', 500);
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
         }
     }
 

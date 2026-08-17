@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
 
 interface CompraRepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator;
+    public function getAll(array $filters = []): Collection;
 
     public function findById(int $id): ?Compra;
 

@@ -6,11 +6,11 @@ use App\Models\Caja;
 use App\Models\Gasto;
 use App\Models\CategoriaGasto;
 use App\Models\MovimientoCaja;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 interface GastoRepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator;
+    public function getAll(array $filters = []): Collection;
 
     public function findById(int $id): ?Gasto;
 

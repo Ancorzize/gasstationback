@@ -16,9 +16,9 @@ class GastoService
         protected CajaRepositoryInterface $cajaRepository
     ) {}
 
-    public function paginate(array $filters = [], int $perPage = 10)
+    public function getAll(array $filters = [])
     {
-        return $this->gastoRepository->paginate($filters, $perPage);
+        return $this->gastoRepository->getAll($filters);
     }
 
     public function findById(int $id): Gasto

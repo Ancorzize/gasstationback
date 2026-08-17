@@ -34,22 +34,17 @@ class TurnoIsleroController extends Controller
                 'fecha_hasta' => $request->get('fecha_hasta'),
             ];
 
-            $turnos = $this->turnoService->paginate(
-                $filters,
-                (int) $request->get('per_page', 10)
-            );
+            $turnos = $this->turnoService->getAll($filters);
 
             return ApiResponse::success([
-                'items' => TurnoIsleroResource::collection($turnos->items()),
-                'pagination' => [
-                    'current_page' => $turnos->currentPage(),
-                    'last_page' => $turnos->lastPage(),
-                    'per_page' => $turnos->perPage(),
-                    'total' => $turnos->total(),
-                ],
+                'items' => TurnoIsleroResource::collection($turnos),
             ], 'Listado de turnos de islero.');
+
         } catch (\Throwable $e) {
-            return ApiResponse::error('Error interno del servidor.', 500);
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
         }
     }
 

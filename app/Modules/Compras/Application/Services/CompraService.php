@@ -19,9 +19,9 @@ class CompraService
         protected CajaRepositoryInterface $cajaRepository
     ) {}
 
-    public function paginate(array $filters = [], int $perPage = 10)
+    public function getAll(array $filters = [])
     {
-        return $this->compraRepository->paginate($filters, $perPage);
+        return $this->compraRepository->getAll($filters);
     }
 
     public function findById(int $id): Compra

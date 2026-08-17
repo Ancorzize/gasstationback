@@ -16,52 +16,92 @@ use App\Modules\Compras\Application\Interfaces\CompraRepositoryInterface;
 
 class CompraRepository implements CompraRepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
+    public function getAll(array $filters = []): Collection
     {
         $query = Compra::query()
-            ->with(['proveedor', 'bodega', 'usuario', 'detalles.producto']);
+            ->with([
+                'proveedor',
+                'bodega',
+                'usuario',
+                'detalles.producto'
+            ]);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
 
             $query->where(function ($q) use ($search) {
-                $q->where('numero_documento', 'like', "%{$search}%")
-                    ->orWhereHas('proveedor', function ($sub) use ($search) {
-                        $sub->where('nombre', 'like', "%{$search}%")
-                            ->orWhere('nit', 'like', "%{$search}%");
-                    });
+                $q->where(
+                    'numero_documento',
+                    'like',
+                    "%{$search}%"
+                )
+                ->orWhereHas('proveedor', function ($sub) use ($search) {
+                    $sub->where('nombre', 'like', "%{$search}%")
+                        ->orWhere('nit', 'like', "%{$search}%");
+                });
             });
         }
 
-        if (isset($filters['proveedor_id']) && $filters['proveedor_id'] !== '') {
-            $query->where('proveedor_id', $filters['proveedor_id']);
+        if (
+            isset($filters['proveedor_id']) &&
+            $filters['proveedor_id'] !== ''
+        ) {
+            $query->where(
+                'proveedor_id',
+                $filters['proveedor_id']
+            );
         }
 
-        if (isset($filters['bodega_id']) && $filters['bodega_id'] !== '') {
-            $query->where('bodega_id', $filters['bodega_id']);
+        if (
+            isset($filters['bodega_id']) &&
+            $filters['bodega_id'] !== ''
+        ) {
+            $query->where(
+                'bodega_id',
+                $filters['bodega_id']
+            );
         }
 
         if (!empty($filters['estado'])) {
-            $query->where('estado', $filters['estado']);
+            $query->where(
+                'estado',
+                $filters['estado']
+            );
         }
 
         if (!empty($filters['estado_pago'])) {
-            $query->where('estado_pago', $filters['estado_pago']);
+            $query->where(
+                'estado_pago',
+                $filters['estado_pago']
+            );
         }
 
         if (!empty($filters['tipo_pago'])) {
-            $query->where('tipo_pago', $filters['tipo_pago']);
+            $query->where(
+                'tipo_pago',
+                $filters['tipo_pago']
+            );
         }
 
         if (!empty($filters['fecha_desde'])) {
-            $query->whereDate('fecha_compra', '>=', $filters['fecha_desde']);
+            $query->whereDate(
+                'fecha_compra',
+                '>=',
+                $filters['fecha_desde']
+            );
         }
 
         if (!empty($filters['fecha_hasta'])) {
-            $query->whereDate('fecha_compra', '<=', $filters['fecha_hasta']);
+            $query->whereDate(
+                'fecha_compra',
+                '<=',
+                $filters['fecha_hasta']
+            );
         }
 
-        return $query->orderByDesc('id')->paginate($perPage);
+        return $query
+            ->orderByDesc('id')
+            ->get();
     }
 
     public function findById(int $id): ?Compra

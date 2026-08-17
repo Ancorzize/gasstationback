@@ -33,7 +33,7 @@ class MarcaController extends Controller
 
             $marcas = $this->marcaService->paginate(
                 $filters,
-                (int) $request->get('per_page', 10)
+                (int) $request->get('per_page', 1000)
             );
 
             return ApiResponse::success([

@@ -16,13 +16,12 @@ class ProductoService
 
     public function paginate(
         array $filters = [],
-        int $perPage = 10,
         ?int $bodegaId = null
     )
     {
         return $this->productoRepository->paginate(
             $filters,
-            $perPage,
+            1000,
             $bodegaId
         );
     }

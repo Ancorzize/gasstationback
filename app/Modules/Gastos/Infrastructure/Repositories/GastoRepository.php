@@ -11,10 +11,15 @@ use App\Modules\Gastos\Application\Interfaces\GastoRepositoryInterface;
 
 class GastoRepository implements GastoRepositoryInterface
 {
-    public function paginate(array $filters = [], int $perPage = 10): LengthAwarePaginator
+    public function getAll(array $filters = []): \Illuminate\Support\Collection
     {
         $query = Gasto::query()
-            ->with(['proveedor', 'categoriaGasto', 'caja', 'usuario']);
+            ->with([
+                'proveedor',
+                'categoriaGasto',
+                'caja',
+                'usuario'
+            ]);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -31,31 +36,59 @@ class GastoRepository implements GastoRepositoryInterface
             });
         }
 
-        if (isset($filters['proveedor_id']) && $filters['proveedor_id'] !== '') {
-            $query->where('proveedor_id', $filters['proveedor_id']);
+        if (
+            isset($filters['proveedor_id']) &&
+            $filters['proveedor_id'] !== ''
+        ) {
+            $query->where(
+                'proveedor_id',
+                $filters['proveedor_id']
+            );
         }
 
-        if (isset($filters['categoria_gasto_id']) && $filters['categoria_gasto_id'] !== '') {
-            $query->where('categoria_gasto_id', $filters['categoria_gasto_id']);
+        if (
+            isset($filters['categoria_gasto_id']) &&
+            $filters['categoria_gasto_id'] !== ''
+        ) {
+            $query->where(
+                'categoria_gasto_id',
+                $filters['categoria_gasto_id']
+            );
         }
 
         if (!empty($filters['medio_pago'])) {
-            $query->where('medio_pago', $filters['medio_pago']);
+            $query->where(
+                'medio_pago',
+                $filters['medio_pago']
+            );
         }
 
         if (!empty($filters['estado'])) {
-            $query->where('estado', $filters['estado']);
+            $query->where(
+                'estado',
+                $filters['estado']
+            );
         }
 
         if (!empty($filters['fecha_desde'])) {
-            $query->whereDate('fecha_gasto', '>=', $filters['fecha_desde']);
+            $query->whereDate(
+                'fecha_gasto',
+                '>=',
+                $filters['fecha_desde']
+            );
         }
 
         if (!empty($filters['fecha_hasta'])) {
-            $query->whereDate('fecha_gasto', '<=', $filters['fecha_hasta']);
+            $query->whereDate(
+                'fecha_gasto',
+                '<=',
+                $filters['fecha_hasta']
+            );
         }
 
-        return $query->orderByDesc('id')->paginate($perPage);
+        return $query
+            ->orderByDesc('id')
+            ->get();
     }
 
     public function findById(int $id): ?Gasto

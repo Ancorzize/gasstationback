@@ -33,7 +33,7 @@ class ServicioController extends Controller
 
             $servicios = $this->servicioService->paginate(
                 $filters,
-                (int) $request->get('per_page', 10)
+                (int) $request->get('per_page', 1000)
             );
 
             return ApiResponse::success([
