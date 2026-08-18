@@ -132,4 +132,74 @@ class MovimientoInventarioController extends Controller
             );
         }
     }
+
+    public function lotes(Request $request)
+    {
+        try {
+            if (!$request->user()->can('ver_movimientos_inventario')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $filters = [
+                'fecha_desde' => $request->get('fecha_desde'),
+                'fecha_hasta' => $request->get('fecha_hasta'),
+
+                'tipo_movimiento' => [
+                    'traslado',
+                ],
+
+                'bodega_origen_id' => $request->get('bodega_origen_id'),
+                'bodega_destino_id' => $request->get('bodega_destino_id'),
+                'user_id' => $request->get('user_id'),
+            ];
+
+            $lotes = $this->movimientoInventarioService
+                ->getLotes($filters);
+
+            return ApiResponse::success(
+                $lotes,
+                'Listado de lotes de movimientos de inventario.'
+            );
+
+        } catch (\Throwable $e) {
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+        }
+    }
+
+    public function productosLote(
+        Request $request,
+        string $codigoLote
+    ) {
+        try {
+            if (!$request->user()->can('ver_movimientos_inventario')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $movimientos = $this->movimientoInventarioService
+                ->getProductosByCodigoLote($codigoLote);
+
+            if ($movimientos->isEmpty()) {
+                return ApiResponse::error(
+                    'El lote no existe o no tiene movimientos asociados.',
+                    404
+                );
+            }
+
+            return ApiResponse::success(
+                MovimientoInventarioResource::collection(
+                    $movimientos
+                ),
+                'Productos trasladados en el lote.'
+            );
+
+        } catch (\Throwable $e) {
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+        }
+    }
 }

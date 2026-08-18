@@ -97,7 +97,6 @@ class MovimientoInventarioService
                 );
             }
 
-
             $inventariosOrigen = [];
 
             foreach ($dto->items as $item) {
@@ -131,7 +130,13 @@ class MovimientoInventarioService
                     $inventarioOrigen;
             }
 
-
+            /*
+            * Un solo código para todo el movimiento masivo.
+            *
+            * Ejemplo:
+            * TRA-000206
+            */
+            $codigoLote = $this->repository->nextCodigoLote();
 
             $movimientos = [];
 
@@ -177,10 +182,14 @@ class MovimientoInventarioService
                 );
 
                 /*
-                * Registrar movimiento
+                * Registrar movimiento.
+                *
+                * Todos los productos del mismo movimiento
+                * masivo tendrán el mismo codigo_lote.
                 */
                 $movimientos[] =
                     $this->repository->createMovimiento([
+                        'codigo_lote' => $codigoLote,
                         'tipo_movimiento' => 'traslado',
                         'producto_id' => $item->producto_id,
                         'bodega_origen_id' => $dto->bodega_origen_id,
@@ -193,5 +202,17 @@ class MovimientoInventarioService
 
             return $movimientos;
         });
+    }
+
+    public function getLotes(array $filters = [])
+    {
+        return $this->repository->getLotes($filters);
+    }
+
+    public function getProductosByCodigoLote(string $codigoLote)
+    {
+        return $this->repository->getProductosByCodigoLote(
+            $codigoLote
+        );
     }
 }

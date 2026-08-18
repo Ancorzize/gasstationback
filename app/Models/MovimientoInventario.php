@@ -10,6 +10,7 @@ class MovimientoInventario extends Model
     protected $table = 'movimientos_inventario';
 
     protected $fillable = [
+        'codigo_lote',
         'tipo_movimiento',
         'producto_id',
         'bodega_origen_id',

@@ -21,4 +21,10 @@ interface MovimientoInventarioRepositoryInterface
     public function createMovimiento(array $data): MovimientoInventario;
 
     public function findInventarioForUpdate(int $productoId, int $bodegaId): ?Inventario;
+
+    public function getLotes(array $filters = []): Collection;
+
+    public function getProductosByCodigoLote(string $codigoLote): Collection;
+
+    public function nextCodigoLote(): string;
 }

@@ -171,6 +171,8 @@ Route::middleware(['auth:sanctum'])->prefix('inventarios')->group(function () {
 
 Route::middleware(['auth:sanctum'])->prefix('movimientos-inventario')->group(function () {
     Route::get('/', [MovimientoInventarioController::class, 'index']);
+    Route::get('/lotes', [MovimientoInventarioController::class,'lotes']);
+    Route::get('/lotes/{codigoLote}', [MovimientoInventarioController::class,'productosLote']);
     Route::post('/', [MovimientoInventarioController::class, 'store']);
     Route::post('/masivo', [MovimientoInventarioController::class, 'storeMasivo']);
 });
