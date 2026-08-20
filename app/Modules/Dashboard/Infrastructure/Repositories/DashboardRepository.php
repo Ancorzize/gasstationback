@@ -760,7 +760,7 @@ class DashboardRepository implements DashboardRepositoryInterface
 
                     'estado' => $caja->estado,
 
-                    'saldo' => $ingresos - $egresos,
+                    'saldo' => $this->formatoPeso($ingresos - $egresos),
 
                 ];
 
@@ -842,7 +842,7 @@ class DashboardRepository implements DashboardRepositoryInterface
 
                     'estacion' => $turno->estacion?->nombre,
 
-                    'fecha_apertura' => $turno->fecha_apertura,
+                    'fecha_apertura' => $this->formatoFecha($turno->fecha_apertura),
 
                     'horas_abierto' => round(
                         $turno->fecha_apertura
@@ -912,9 +912,9 @@ class DashboardRepository implements DashboardRepositoryInterface
                     'cliente' => optional($venta->cliente)->nombre
                         ?? 'Consumidor Final',
 
-                    'total' => (float) $venta->total,
+                    'total' => $this->formatoPeso((float) $venta->total),
 
-                    'fecha' => $venta->fecha_venta,
+                    'fecha' => $this->formatoFecha($venta->fecha_venta),
 
                 ];
 
@@ -1055,10 +1055,10 @@ class DashboardRepository implements DashboardRepositoryInterface
                         optional($compra->proveedor)->nombre,
 
                     'total' =>
-                        (float) $compra->total,
+                        $this->formatoPeso((float) $compra->total),
 
                     'fecha' =>
-                        $compra->fecha_compra,
+                        $this->formatoFecha($compra->fecha_compra),
 
                 ];
 
@@ -1429,9 +1429,9 @@ class DashboardRepository implements DashboardRepositoryInterface
 
                         'label' => $item->fecha,
 
-                        'ingresos' => (float) $item->ingresos,
+                        'ingresos' => ((float) $item->ingresos),
 
-                        'egresos' => (float) $item->egresos,
+                        'egresos' => ((float) $item->egresos),
 
                     ])
 
@@ -1921,5 +1921,15 @@ class DashboardRepository implements DashboardRepositoryInterface
         }
 
         return (float) $query->sum('saldo_pendiente');
+    }
+
+    function formatoPeso($numero): string
+    {
+        return number_format($numero, 0, ',', '.');
+    }
+
+    function formatoFecha($fecha): string
+    {
+        return \Carbon\Carbon::parse($fecha)->format('Y-m-d H:i');
     }
 }

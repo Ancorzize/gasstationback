@@ -21,7 +21,7 @@ class ProductoService
     {
         return $this->productoRepository->paginate(
             $filters,
-            1000,
+            5000,
             $bodegaId
         );
     }
