@@ -76,4 +76,6 @@ interface TurnoIsleroRepositoryInterface
     public function getResumenDestinosTurno( int $turnoId): Collection;
 
     public function getDestinosConCajaAbierta();
+
+    public function findTurnoDevueltoByUser(int $userId): ?TurnoIslero;
 }

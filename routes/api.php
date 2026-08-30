@@ -122,6 +122,7 @@ Route::middleware(['auth:sanctum'])->prefix('productos')->group(function () {
     Route::get('/{id}', [ProductoController::class, 'show']);
     Route::post('/', [ProductoController::class, 'store']);
     Route::put('/{id}', [ProductoController::class, 'update']);
+     Route::post('/{id}/codigo-barras', [ProductoController::class, 'asociarCodigoBarras']);
     Route::patch('/{id}/status', [ProductoController::class, 'changeStatus']);
     Route::delete('/{id}', [ProductoController::class, 'destroy']);
 });
@@ -271,9 +272,16 @@ Route::middleware(['auth:sanctum'])->prefix('turnos-islero')->group(function () 
     Route::get('/', [TurnoIsleroController::class, 'index']);
     Route::get('/actual', [TurnoIsleroController::class, 'actual']);
     Route::get('/mangueras-disponibles', [TurnoIsleroController::class, 'manguerasDisponibles']);
+    Route::get('/pendientes-cierre', [ TurnoIsleroController::class, 'pendientesCierre']);
+    Route::get('/devueltos', [TurnoIsleroController::class, 'devueltos']);
     Route::get('/{id}/resumen-cierre', [TurnoIsleroController::class, 'resumenCierre']);
+    Route::get('/{id}/revision-cierre', [ TurnoIsleroController::class, 'revisionCierre' ]);
+    Route::get('/{id}/editar-cierre', [TurnoIsleroController::class, 'editarCierre']);
     Route::get('/{id}', [TurnoIsleroController::class, 'show']);
     Route::post('/abrir', [TurnoIsleroController::class, 'abrir']);
+    Route::post('/{id}/solicitar-cierre', [TurnoIsleroController::class, 'solicitarCierre']);
+    Route::post('/{id}/aprobar-cierre', [TurnoIsleroController::class, 'aprobarCierre']);
+    Route::post('/{id}/devolver-cierre', [ TurnoIsleroController::class, 'devolverCierre']);
     Route::post('/{id}/cerrar', [TurnoIsleroController::class, 'cerrar']);
 });
 

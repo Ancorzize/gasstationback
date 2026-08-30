@@ -11,6 +11,10 @@ use App\Modules\TurnosIslero\Infrastructure\Mappers\TurnoIsleroMapper;
 use App\Modules\TurnosIslero\Presentation\Requests\AbrirTurnoIsleroRequest;
 use App\Modules\TurnosIslero\Presentation\Requests\CerrarTurnoIsleroRequest;
 use App\Modules\TurnosIslero\Presentation\Resources\TurnoIsleroResource;
+use App\Modules\TurnosIslero\Presentation\Requests\SolicitarCierreTurnoIsleroRequest;
+use App\Modules\TurnosIslero\Presentation\Requests\AprobarCierreTurnoIsleroRequest;
+use App\Modules\TurnosIslero\Presentation\Requests\DevolverTurnoIsleroRequest;
+use App\Modules\TurnosIslero\Presentation\Resources\EditarCierreTurnoIsleroResource;
 use Illuminate\Validation\ValidationException;
 class TurnoIsleroController extends Controller
 {
@@ -187,4 +191,277 @@ class TurnoIsleroController extends Controller
             return ApiResponse::error('Error interno del servidor.', 500);
         }
     }
+
+    public function solicitarCierre(
+        SolicitarCierreTurnoIsleroRequest $request,
+        int $id
+    ) {
+        try {
+
+            if (!$request->user()->can('cerrar_turnos_islero')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $dto = TurnoIsleroMapper::fromArrayToSolicitarCierreDTO(
+                $request->validated(),
+                $id,
+                $request->user()->id
+            );
+
+            $turno = $this->turnoService->solicitarCierre($dto);
+
+            return ApiResponse::success(
+                new TurnoIsleroResource($turno),
+                'Cierre enviado a revisión correctamente.'
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+        }
+    }
+
+    public function aprobarCierre(
+        AprobarCierreTurnoIsleroRequest $request,
+        int $id
+    ) {
+        try {
+
+            if (!$request->user()->can('aprobar_cierres_turnos_islero')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $dto = TurnoIsleroMapper::fromArrayToAprobarCierreDTO(
+                $id,
+                $request->user()->id
+            );
+
+            $turno = $this->turnoService->aprobarCierre($dto);
+
+            return ApiResponse::success(
+                new TurnoIsleroResource($turno),
+                'Cierre de turno aprobado correctamente.'
+            );
+
+        } catch (ValidationException $e) {
+
+            return ApiResponse::error(
+                'Datos inválidos.',
+                422,
+                $e->errors()
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+        }
+    }
+
+    public function devolverCierre(
+        DevolverTurnoIsleroRequest $request,
+        int $id
+    )
+    {
+        try {
+
+            if (!$request->user()->can('devolver_cierres_turnos_islero')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $dto = TurnoIsleroMapper::fromArrayToDevolverDTO(
+                $request->validated(),
+                $id,
+                $request->user()->id
+            );
+
+            $turno = $this->turnoService->devolverTurno($dto);
+
+            return ApiResponse::success(
+                new TurnoIsleroResource($turno),
+                'Turno devuelto al islero correctamente.'
+            );
+
+        } catch (ValidationException $e) {
+
+            return ApiResponse::error(
+                'Datos inválidos.',
+                422,
+                $e->errors()
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+        }
+    }
+
+
+    public function pendientesCierre(Request $request)
+    {
+        try {
+
+            if (!$request->user()->can('aprobar_cierres_turnos_islero')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $turnos = $this->turnoService->getAll([
+                'estado' => 'pendiente_cierre',
+            ]);
+
+            return ApiResponse::success([
+                'items' => TurnoIsleroResource::collection($turnos),
+            ], 'Turnos pendientes por aprobar.');
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+        }
+    }
+
+    public function devueltos(Request $request)
+    {
+        try {
+
+            if (!$request->user()->can('ver_turnos_islero')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $turnos = $this->turnoService->getAll([
+                'user_id' => $request->user()->id,
+                'estado' => 'devuelto',
+            ]);
+
+            return ApiResponse::success([
+                'items' => TurnoIsleroResource::collection($turnos),
+            ], 'Turnos devueltos.');
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+        }
+    }
+
+    public function revisionCierre(Request $request, int $id)
+    {
+        try {
+
+            if (!$request->user()->can('aprobar_cierres_turnos_islero')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $revision = $this->turnoService->revisionCierre($id);
+
+            return ApiResponse::success(
+                $revision,
+                'Información del cierre para revisión.'
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+        }
+    }
+
+    public function editarCierre(Request $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('cerrar_turnos_islero')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $turno = $this->turnoService->editarCierre(
+                $id,
+                $request->user()->id
+            );
+
+            return ApiResponse::success(
+                new EditarCierreTurnoIsleroResource($turno),
+                'Información del cierre disponible para edición.'
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+        }
+    }
+
+    
+
+    
+
+    
 }

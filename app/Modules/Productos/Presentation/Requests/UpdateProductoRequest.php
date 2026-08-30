@@ -25,6 +25,7 @@ class UpdateProductoRequest extends FormRequest
             'precio_compra' => ['nullable', 'numeric', 'min:0'],
             'precio_venta' => ['required', 'numeric', 'min:0'],
             'permite_decimal' => ['required', 'boolean'],
+            'codigo_barras' => [ 'nullable', 'string', 'max:50', 'unique:productos,codigo_barras,' . $id,],
         ];
     }
 

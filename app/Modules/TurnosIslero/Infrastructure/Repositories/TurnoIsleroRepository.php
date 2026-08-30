@@ -202,7 +202,7 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
                 $q->where('estacion_id', $estacionId);
             })
             ->whereHas('turnosIslero', function ($q) {
-                $q->where('estado', 'abierto');
+                $q->whereIn('estado', ['devuelto', 'pendiente_cierre']);
             })
             ->pluck('id');
     }
@@ -543,5 +543,14 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             ->orderBy('destinos_recaudo.nombre')
 
             ->get();
+    }
+
+    public function findTurnoDevueltoByUser(int $userId): ?TurnoIslero
+    {
+        return TurnoIslero::query()
+            ->where('user_id', $userId)
+            ->whereIn('estado', ['devuelto', 'pendiente_cierre'])
+            ->orderByDesc('id')
+            ->first();
     }
 }

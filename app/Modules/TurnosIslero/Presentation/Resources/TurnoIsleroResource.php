@@ -53,7 +53,7 @@ class TurnoIsleroResource extends JsonResource
             'lecturas' => LecturaMangueraResource::collection(
                 $this->whenLoaded('lecturas')
             ),
-
+            'datos_cierre_pendiente' => $this->datos_cierre_pendiente,    
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

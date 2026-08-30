@@ -23,6 +23,7 @@ class StoreProductoRequest extends FormRequest
             'precio_compra' => ['nullable', 'numeric', 'min:0'],
             'precio_venta' => ['required', 'numeric', 'min:0'],
             'permite_decimal' => ['required', 'boolean'],
+            'codigo_barras' => [ 'nullable', 'string', 'max:50', 'unique:productos,codigo_barras',],
         ];
     }
 
@@ -44,6 +45,7 @@ class StoreProductoRequest extends FormRequest
             'precio_venta.min' => 'El precio de venta no puede ser negativo.',
             'permite_decimal.required' => 'Debe indicar si el producto permite decimales.',
             'permite_decimal.boolean' => 'El campo permite_decimal debe ser verdadero o falso.',
+            'codigo_barras.unique' => 'El código de barras ya está asociado a otro producto.',
         ];
     }
 }

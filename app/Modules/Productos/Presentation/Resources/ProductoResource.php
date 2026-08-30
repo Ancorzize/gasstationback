@@ -50,6 +50,7 @@ class ProductoResource extends JsonResource
                             : 0;
                     },
             ),
+            'codigo_barras' => $this->codigo_barras,
         ];
     }
 }

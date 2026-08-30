@@ -21,6 +21,7 @@ class Producto extends Model
         'precio_venta',
         'permite_decimal',
         'is_active',
+        'codigo_barras',
     ];
 
     protected $casts = [

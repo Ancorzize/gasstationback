@@ -32,6 +32,8 @@ class TurnoIslero extends Model
         'balance_final',
         'observacion_apertura',
         'observacion_cierre',
+        'datos_cierre_pendiente',
+        'observacion_devolucion',
     ];
 
     protected $casts = [
@@ -50,6 +52,7 @@ class TurnoIslero extends Model
         'total_reportado' => 'decimal:2',
         'total_sistema' => 'decimal:2',
         'balance_final' => 'decimal:2',
+        'datos_cierre_pendiente' => 'array',
     ];
 
     public function estacion(): BelongsTo

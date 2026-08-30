@@ -14,5 +14,6 @@ class CreateProductoDTO
         public ?float $precio_compra,
         public float $precio_venta,
         public bool $permite_decimal,
+        public ?string $codigo_barras,
     ) {}
 }

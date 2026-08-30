@@ -63,7 +63,10 @@ class MovimientoInventarioService
                 $dto->cantidad
             );
 
+            $codigoLote = $this->repository->nextCodigoLote();
+
             return $this->repository->createMovimiento([
+                'codigo_lote' => $codigoLote,
                 'tipo_movimiento' => 'traslado',
                 'producto_id' => $dto->producto_id,
                 'bodega_origen_id' => $dto->bodega_origen_id,

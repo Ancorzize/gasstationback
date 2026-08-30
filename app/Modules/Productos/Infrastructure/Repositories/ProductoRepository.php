@@ -32,6 +32,10 @@ class ProductoRepository implements ProductoRepositoryInterface
                     ["%{$search}%"]
                 )
                 ->orWhereRaw(
+                    'LOWER(codigo_barras) ILIKE ?',
+                    ["%{$search}%"]
+                )
+                ->orWhereRaw(
                     'LOWER(nombre) ILIKE ?',
                     ["%{$search}%"]
                 );

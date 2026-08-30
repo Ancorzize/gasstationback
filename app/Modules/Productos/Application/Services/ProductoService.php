@@ -50,6 +50,7 @@ class ProductoService
             'precio_venta' => $dto->precio_venta,
             'permite_decimal' => $dto->permite_decimal,
             'is_active' => true,
+            'codigo_barras' => $dto->codigo_barras,
         ]);
     }
 
@@ -59,6 +60,7 @@ class ProductoService
 
         return $this->productoRepository->update($producto, [
             'codigo' => $dto->codigo,
+            'codigo_barras' => $dto->codigo_barras,
             'nombre' => $dto->nombre,
             'descripcion' => $dto->descripcion,
             'marca_id' => $dto->marca_id,
