@@ -408,7 +408,7 @@ class VentaService
                     );
                 }
 
-                if ($turno->estado !== 'abierto') {
+                if ($turno->estado === 'cerrado') {
                     throw new HttpException(
                         422,
                         'No se puede anular la venta porque el turno donde fue realizada ya se encuentra cerrado.'
