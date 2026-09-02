@@ -14,7 +14,7 @@ class ClienteService
         protected ClienteRepositoryInterface $clienteRepository
     ) {}
 
-    public function paginate(array $filters = [], int $perPage = 10)
+    public function paginate(array $filters = [], int $perPage = 1000)
     {
         return $this->clienteRepository->paginate($filters, $perPage);
     }
