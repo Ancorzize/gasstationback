@@ -11,6 +11,7 @@ use App\Modules\Compras\Application\DTOs\CreatePagoCompraDTO;
 use App\Modules\Compras\Application\Interfaces\CompraRepositoryInterface;
 use App\Modules\Caja\Application\Interfaces\CajaRepositoryInterface;
 use App\Modules\Compras\Application\DTOs\ConfirmarCompraDTO;
+use App\Modules\Compras\Application\DTOs\CreatePagoProveedorDTO;
 
 class CompraService
 {
@@ -449,6 +450,217 @@ class CompraService
 
             return $this->findById($compra->id);
 
+        });
+    }
+
+    public function registrarPagoProveedor(
+        CreatePagoProveedorDTO $dto
+    ): array {
+        return DB::transaction(function () use ($dto) {
+
+            $montoAbono = round($dto->monto, 2);
+
+            $caja = $this->compraRepository
+                ->findCajaById($dto->caja_id);
+
+            if (!$caja) {
+                throw new HttpException(
+                    422,
+                    'La caja seleccionada no existe.'
+                );
+            }
+
+            if ($caja->estado !== 'abierta') {
+                throw new HttpException(
+                    422,
+                    'La caja seleccionada se encuentra cerrada.'
+                );
+            }
+
+            $tipoCaja = in_array(
+                $dto->metodo_pago,
+                ['efectivo', 'consignacion']
+            )
+                ? 'efectivo'
+                : 'digital';
+
+            if ($caja->tipo_caja !== $tipoCaja) {
+                throw new HttpException(
+                    422,
+                    'La caja seleccionada no corresponde al método de pago.'
+                );
+            }
+
+            $saldoCaja =
+                $this->cajaRepository
+                    ->sumMovimientosByTipo(
+                        $caja->id,
+                        'ingreso'
+                    )
+                -
+                $this->cajaRepository
+                    ->sumMovimientosByTipo(
+                        $caja->id,
+                        'egreso'
+                    );
+
+            if ($montoAbono > $saldoCaja) {
+                throw new HttpException(
+                    422,
+                    'No hay saldo suficiente en la caja.'
+                );
+            }
+
+            $compras = $this->compraRepository
+                ->getComprasPendientesByProveedor(
+                    $dto->proveedor_id
+                );
+
+            if ($compras->isEmpty()) {
+                throw new HttpException(
+                    422,
+                    'El proveedor no tiene compras pendientes de pago.'
+                );
+            }
+
+            $deudaTotal = round(
+                $compras->sum(
+                    fn ($compra) =>
+                        (float) $compra->saldo_pendiente
+                ),
+                2
+            );
+
+            if ($montoAbono > $deudaTotal) {
+                throw new HttpException(
+                    422,
+                    'El monto del abono no puede superar la deuda total pendiente del proveedor.'
+                );
+            }
+
+            $montoRestante = $montoAbono;
+
+            $distribucion = [];
+
+            foreach ($compras as $compra) {
+
+                if ($montoRestante <= 0) {
+                    break;
+                }
+
+                $saldoAnterior = round(
+                    (float) $compra->saldo_pendiente,
+                    2
+                );
+
+                $montoAplicado = round(
+                    min(
+                        $montoRestante,
+                        $saldoAnterior
+                    ),
+                    2
+                );
+
+                if ($montoAplicado <= 0) {
+                    continue;
+                }
+
+                $nuevoTotalPagado = round(
+                    (float) $compra->total_pagado
+                    + $montoAplicado,
+                    2
+                );
+
+                $nuevoSaldoPendiente = round(
+                    (float) $compra->total
+                    - $nuevoTotalPagado,
+                    2
+                );
+
+                if ($nuevoSaldoPendiente < 0) {
+                    $nuevoSaldoPendiente = 0;
+                }
+
+                $nuevoEstadoPago =
+                    $nuevoSaldoPendiente <= 0
+                        ? 'pagado'
+                        : 'pendiente';
+
+                $this->compraRepository->createPago([
+                    'compra_id' => $compra->id,
+                    'user_id' => $dto->user_id,
+                    'fecha_pago' => $dto->fecha_pago,
+                    'monto' => $montoAplicado,
+                    'metodo_pago' => $dto->metodo_pago,
+                    'observacion' => $dto->observacion
+                        ?? 'Abono general al proveedor.',
+                ]);
+
+                $this->compraRepository->update(
+                    $compra,
+                    [
+                        'total_pagado' =>
+                            $nuevoTotalPagado,
+
+                        'saldo_pendiente' =>
+                            $nuevoSaldoPendiente,
+
+                        'estado_pago' =>
+                            $nuevoEstadoPago,
+                    ]
+                );
+
+                $this->compraRepository
+                    ->createMovimientoCaja([
+                        'caja_id' => $caja->id,
+                        'tipo_movimiento' => 'egreso',
+                        'categoria_movimiento' => 'pago_proveedor',
+                        'origen_modulo' => 'compras',
+                        'origen_id' => $compra->id,
+                        'medio_pago' => $dto->metodo_pago,
+                        'monto' => $montoAplicado,
+                        'descripcion' =>
+                            "Abono proveedor - Compra #{$compra->id}",
+                        'user_id' => $dto->user_id,
+                        'fecha_movimiento' => now(),
+                    ]);
+
+                $distribucion[] = [
+                    'compra_id' => $compra->id,
+                    'numero_documento' =>
+                        $compra->numero_documento,
+
+                    'saldo_anterior' =>
+                        $saldoAnterior,
+
+                    'monto_aplicado' =>
+                        $montoAplicado,
+
+                    'saldo_nuevo' =>
+                        $nuevoSaldoPendiente,
+
+                    'estado_pago' =>
+                        $nuevoEstadoPago,
+                ];
+
+                $montoRestante = round(
+                    $montoRestante - $montoAplicado,
+                    2
+                );
+            }
+
+            $totalAplicado = round(
+                $montoAbono - $montoRestante,
+                2
+            );
+
+            return [
+                'proveedor_id' => $dto->proveedor_id,
+                'monto_abono' => $montoAbono,
+                'total_aplicado' => $totalAplicado,
+                'saldo_sobrante' => $montoRestante,
+                'distribucion' => $distribucion,
+            ];
         });
     }
 }

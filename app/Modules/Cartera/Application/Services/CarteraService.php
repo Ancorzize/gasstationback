@@ -358,29 +358,20 @@ class CarteraService
 
             ]);
 
-            $this->carteraRepository->createMovimientoCaja([
-
-                'caja_id' => $caja->id,
-
-                'tipo_movimiento' => 'ingreso',
-
-                'categoria_movimiento' => 'abono_cartera',
-
-                'origen_modulo' => 'cartera',
-
-                'origen_id' => $abono->id,
-
-                'medio_pago' => $dto->medio_pago,
-
-                'monto' => $dto->valor,
-
-                'descripcion' => 'Abono cartera cliente #' . $cliente->id,
-
-                'user_id' => $dto->user_id,
-
-                'fecha_movimiento' => now(),
-
-            ]);
+            if (!$turnoAbierto) {
+                $this->carteraRepository->createMovimientoCaja([
+                    'caja_id' => $caja->id,
+                    'tipo_movimiento' => 'ingreso',
+                    'categoria_movimiento' => 'abono_cartera',
+                    'origen_modulo' => 'cartera',
+                    'origen_id' => $abono->id,
+                    'medio_pago' => $dto->medio_pago,
+                    'monto' => $dto->valor,
+                    'descripcion' => 'Abono cartera cliente #' . $cliente->id,
+                    'user_id' => $dto->user_id,
+                    'fecha_movimiento' => now(),
+                ]);
+            }
 
             return $abono
                 ->fresh()

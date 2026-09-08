@@ -77,5 +77,22 @@ interface TurnoIsleroRepositoryInterface
 
     public function getDestinosConCajaAbierta();
 
-    public function findTurnoDevueltoByUser(int $userId): ?TurnoIslero;
+     public function findMovimientoCajaByOrigenMedioPagoAndDestino( string $origenModulo,  int $origenId, string $medioPago, int $destinoRecaudoId ): ?MovimientoCaja;
+
+    public function getUltimaLecturaFinalByManguera( int $mangueraId): ?LecturaManguera;
+
+    public function recalcularTotalesTurno(int $turnoId): array;
+
+    public function getAbonosCarteraByTurno(int $turnoId): Collection;
+
+    public function findMovimientoCajaByOrigenAndOrigenId(
+        string $origenModulo,
+        int $origenId,
+        string $categoriaMovimiento
+    ): ?MovimientoCaja;
+
+    public function getTurnoAnteriorSinCerrar(
+        int $turnoId,
+        array $mangueraIds
+    ): ?TurnoIslero;
 }

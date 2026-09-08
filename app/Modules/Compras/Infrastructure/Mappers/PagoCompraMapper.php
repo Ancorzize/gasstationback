@@ -3,6 +3,7 @@
 namespace App\Modules\Compras\Infrastructure\Mappers;
 
 use App\Modules\Compras\Application\DTOs\CreatePagoCompraDTO;
+use App\Modules\Compras\Application\DTOs\CreatePagoProveedorDTO;
 
 class PagoCompraMapper
 {
@@ -10,6 +11,21 @@ class PagoCompraMapper
     {
         return new CreatePagoCompraDTO(
             compra_id: $compraId,
+            user_id: $userId,
+            fecha_pago: $data['fecha_pago'],
+            monto: (float) $data['monto'],
+            metodo_pago: $data['metodo_pago'],
+            caja_id: (int) $data['caja_id'],
+            observacion: $data['observacion'] ?? null,
+        );
+    }
+
+    public static function fromArrayToCreatePagoProveedorDTO(
+        array $data,
+        int $userId
+    ): CreatePagoProveedorDTO {
+        return new CreatePagoProveedorDTO(
+            proveedor_id: (int) $data['proveedor_id'],
             user_id: $userId,
             fecha_pago: $data['fecha_pago'],
             monto: (float) $data['monto'],

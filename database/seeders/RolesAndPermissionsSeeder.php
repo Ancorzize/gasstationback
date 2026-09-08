@@ -172,9 +172,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'ingreso_manual_caja',
             'retiro_manual_caja',
             'transferencia_caja',
-            'crear_saldos_iniciales_cartera',
-             'aprobar_cierres_turnos_islero',
-            'devolver_cierres_turnos_islero',
+            'crear_saldos_iniciales_cartera'
         ];
 
         foreach ($permissions as $perm) {

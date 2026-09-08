@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
 class TurnoIslero extends Model
 {
     protected $table = 'turnos_islero';
@@ -17,6 +18,9 @@ class TurnoIslero extends Model
         'fecha_cierre',
         'estado',
         'total_ventas_combustible',
+        'total_ventas_combustible_sistema',
+        'total_ventas_combustible_fisica',
+        'diferencia_combustible',
         'total_ventas_lubricantes',
         'total_creditos',
         'total_abonos',
@@ -28,18 +32,20 @@ class TurnoIslero extends Model
         'otros_movimientos',
         'otros_movimientos_detalle',
         'total_reportado',
+        'total_recaudo_esperado',
         'total_sistema',
         'balance_final',
         'observacion_apertura',
         'observacion_cierre',
-        'datos_cierre_pendiente',
-        'observacion_devolucion',
     ];
 
     protected $casts = [
         'fecha_apertura' => 'datetime',
         'fecha_cierre' => 'datetime',
         'total_ventas_combustible' => 'decimal:2',
+        'total_ventas_combustible_sistema' => 'decimal:2',
+        'total_ventas_combustible_fisica' => 'decimal:2',
+        'diferencia_combustible' => 'decimal:2',
         'total_ventas_lubricantes' => 'decimal:2',
         'total_creditos' => 'decimal:2',
         'total_abonos' => 'decimal:2',
@@ -50,9 +56,9 @@ class TurnoIslero extends Model
         'pagos_efectivo' => 'decimal:2',
         'otros_movimientos' => 'decimal:2',
         'total_reportado' => 'decimal:2',
+        'total_recaudo_esperado' => 'decimal:2',
         'total_sistema' => 'decimal:2',
         'balance_final' => 'decimal:2',
-        'datos_cierre_pendiente' => 'array',
     ];
 
     public function estacion(): BelongsTo
@@ -78,5 +84,13 @@ class TurnoIslero extends Model
             'turno_islero_id',
             'manguera_id'
         )->withTimestamps();
+    }
+
+    public function recaudos(): HasMany
+    {
+        return $this->hasMany(
+            TurnoIsleroRecaudo::class,
+            'turno_islero_id'
+        );
     }
 }

@@ -19,8 +19,13 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 {
     public function getAll(array $filters = []): Collection
     {
-        $query = TurnoIslero::query()
-            ->with(['estacion', 'usuario']);
+       $query = TurnoIslero::query()
+            ->with([
+                'estacion',
+                'usuario',
+                'lecturas.manguera.producto',
+                'recaudos.destinoRecaudo',
+            ]);
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -45,6 +50,7 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
         if (isset($filters['user_id']) && $filters['user_id'] !== '') {
             $query->where('user_id', $filters['user_id']);
         }
+        
 
         if (!empty($filters['estado'])) {
             $query->where('estado', $filters['estado']);
@@ -80,6 +86,7 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             'lecturas.manguera.producto.marca',
             'lecturas.manguera.producto.categoriaProducto',
             'lecturas.manguera.producto.unidadMedida',
+            'recaudos.destinoRecaudo',
         ])->find($id);
     }
 
@@ -129,6 +136,21 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
         return LecturaManguera::query()
             ->where('manguera_id', $mangueraId)
             ->whereNotNull('lectura_final')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    public function getUltimaLecturaFinalByManguera(int $mangueraId): ?LecturaManguera
+    {
+        return LecturaManguera::query()
+            ->where('manguera_id', $mangueraId)
+            ->whereNotNull('lectura_final')
+            ->whereHas('turno', function ($query) {
+                $query->whereIn('estado', [
+                    'pendiente_cierre',
+                    'cerrado',
+                ]);
+            })
             ->orderByDesc('id')
             ->first();
     }
@@ -202,7 +224,7 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
                 $q->where('estacion_id', $estacionId);
             })
             ->whereHas('turnosIslero', function ($q) {
-                $q->whereIn('estado', ['devuelto', 'pendiente_cierre']);
+                $q->where('estado', 'abierto');
             })
             ->pluck('id');
     }
@@ -486,6 +508,35 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
         return MovimientoCaja::create($data);
     }
 
+    public function findMovimientoCajaByOrigenMedioPagoAndDestino(
+        string $origenModulo,
+        int $origenId,
+        string $medioPago,
+        int $destinoRecaudoId
+    ): ?MovimientoCaja {
+        return MovimientoCaja::query()
+            ->where('origen_modulo', $origenModulo)
+            ->where('origen_id', $origenId)
+            ->where('medio_pago', $medioPago)
+            ->where('categoria_movimiento', 'cierre_turno')
+            ->whereHas('caja', function ($query) use ($destinoRecaudoId) {
+                $query->where('destino_recaudo_id', $destinoRecaudoId);
+            })
+            ->first();
+    }
+
+    public function findMovimientoCajaByOrigenAndOrigenId(
+        string $origenModulo,
+        int $origenId,
+        string $categoriaMovimiento
+    ): ?MovimientoCaja {
+        return MovimientoCaja::query()
+            ->where('origen_modulo', $origenModulo)
+            ->where('origen_id', $origenId)
+            ->where('categoria_movimiento', $categoriaMovimiento)
+            ->first();
+    }
+
     public function getResumenDestinosTurno(int $turnoId): Collection
     {
         return DetalleVenta::query()
@@ -545,12 +596,65 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             ->get();
     }
 
-    public function findTurnoDevueltoByUser(int $userId): ?TurnoIslero
+    public function recalcularTotalesTurno(int $turnoId): array
     {
+        $totalVentasCombustible = $this->sumVentasCombustibleByTurno($turnoId);
+
+        $totalVentasLubricantes = $this->sumVentasLubricantesByTurno($turnoId);
+
+        $totalCreditos = $this->sumVentasCreditoByTurno($turnoId);
+
+        $totalAbonos = $this->sumAbonosByTurno($turnoId);
+
+        $totalSistema = round(
+            $totalVentasCombustible
+            + $totalVentasLubricantes
+            - $totalCreditos,
+            2
+        );
+
+        $totalRecaudoEsperado = round(
+            $totalSistema
+            + $totalAbonos,
+            2
+        );
+
+        return [
+            'total_ventas_combustible_sistema' => round($totalVentasCombustible, 2),
+            'total_ventas_lubricantes' => round($totalVentasLubricantes, 2),
+            'total_creditos' => round($totalCreditos, 2),
+            'total_abonos' => round($totalAbonos, 2),
+            'total_sistema' => $totalSistema,
+            'total_recaudo_esperado' => $totalRecaudoEsperado,
+        ];
+    }
+
+    public function getAbonosCarteraByTurno(int $turnoId): Collection
+    {
+        return AbonoCartera::query()
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'registrado')
+            ->get();
+    }
+
+    public function getTurnoAnteriorSinCerrar(
+        int $turnoId,
+        array $mangueraIds
+    ): ?TurnoIslero {
+        $turno = TurnoIslero::query()->find($turnoId);
+
+        if (!$turno) {
+            return null;
+        }
+
         return TurnoIslero::query()
-            ->where('user_id', $userId)
-            ->whereIn('estado', ['devuelto', 'pendiente_cierre'])
-            ->orderByDesc('id')
+            ->where('id', '!=', $turnoId)
+            ->whereIn('estado', ['abierto', 'pendiente_cierre'])
+            ->where('fecha_apertura', '<', $turno->fecha_apertura)
+            ->whereHas('lecturas', function ($query) use ($mangueraIds) {
+                $query->whereIn('manguera_id', $mangueraIds);
+            })
+            ->orderBy('fecha_apertura')
             ->first();
     }
 }

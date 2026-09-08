@@ -5,8 +5,6 @@ namespace App\Modules\TurnosIslero\Infrastructure\Mappers;
 use App\Modules\TurnosIslero\Application\DTOs\AbrirTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\DTOs\CerrarTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\DTOs\SolicitarCierreTurnoIsleroDTO;
-use App\Modules\TurnosIslero\Application\DTOs\AprobarCierreTurnoIsleroDTO;
-use App\Modules\TurnosIslero\Application\DTOs\DevolverTurnoIsleroDTO;
 class TurnoIsleroMapper
 {
     public static function fromArrayToAbrirDTO(array $data, int $userId): AbrirTurnoIsleroDTO
@@ -71,30 +69,6 @@ class TurnoIsleroMapper
 
             observacion_cierre:
                 $data['observacion_cierre'] ?? null,
-        );
-    }
-
-    public static function fromArrayToAprobarCierreDTO(
-        int $turnoId,
-        int $userId
-    ): AprobarCierreTurnoIsleroDTO {
-
-        return new AprobarCierreTurnoIsleroDTO(
-            turno_id: $turnoId,
-            user_id: $userId
-        );
-    }
-
-    public static function fromArrayToDevolverDTO(
-        array $data,
-        int $turnoId,
-        int $userId
-    ): DevolverTurnoIsleroDTO {
-
-        return new DevolverTurnoIsleroDTO(
-            turno_id: $turnoId,
-            user_id: $userId,
-            observacion_devolucion: $data['observacion_devolucion']
         );
     }
 }

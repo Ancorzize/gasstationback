@@ -17,6 +17,7 @@ use App\Modules\PagosCompra\Presentation\Resources\PagoCompraResource;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ConfiguracionEmpresa;
 use App\Modules\Compras\Presentation\Requests\ConfirmarCompraRequest;
+use App\Modules\Compras\Presentation\Requests\StorePagoProveedorRequest;
 class CompraController extends Controller
 {
     public function __construct(
@@ -220,6 +221,49 @@ class CompraController extends Controller
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
             return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function registrarPagoProveedor(
+        StorePagoProveedorRequest $request
+    ) {
+        try {
+
+            if (!$request->user()->can('registrar_pagos_compra')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $dto =
+                PagoCompraMapper::fromArrayToCreatePagoProveedorDTO(
+                    $request->validated(),
+                    $request->user()->id
+                );
+
+            $resultado =
+                $this->compraService
+                    ->registrarPagoProveedor($dto);
+
+            return ApiResponse::success(
+                $resultado,
+                'Abono al proveedor registrado correctamente.'
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
         }
     }
     

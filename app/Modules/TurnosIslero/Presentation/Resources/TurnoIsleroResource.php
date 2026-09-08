@@ -52,10 +52,36 @@ class TurnoIsleroResource extends JsonResource
 
             'lecturas' => LecturaMangueraResource::collection(
                 $this->whenLoaded('lecturas')
-            ),
-            'datos_cierre_pendiente' => $this->datos_cierre_pendiente,    
+            ),   
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'recaudos' => $this->whenLoaded(
+            'recaudos',
+            function () {
+                return $this->recaudos->map(function ($recaudo) {
+                    return [
+                        'id' => $recaudo->id,
+                        'destino_recaudo_id' => $recaudo->destino_recaudo_id,
+
+                        'destino_recaudo' => $recaudo->destinoRecaudo ? [
+                            'id' => $recaudo->destinoRecaudo->id,
+                            'nombre' => $recaudo->destinoRecaudo->nombre,
+                            'codigo' => $recaudo->destinoRecaudo->codigo,
+                        ] : null,
+
+                        'efectivo' => $recaudo->efectivo,
+                        'qr' => $recaudo->qr,
+                        'datafono' => $recaudo->datafono,
+                        'transferencia' => $recaudo->transferencia,
+                        'consignacion' => $recaudo->consignacion,
+                        'total' => $recaudo->total,
+
+                        'created_at' => $recaudo->created_at,
+                        'updated_at' => $recaudo->updated_at,
+                    ];
+                });
+            }
+        ),
         ];
     }
 }

@@ -42,5 +42,7 @@ interface CompraRepositoryInterface
     public function createMovimientoCaja(array $data): MovimientoCaja;
 
     public function findCajaById(int $id): ?Caja;
+
+    public function getComprasPendientesByProveedor(int $proveedorId): Collection;
     
 }

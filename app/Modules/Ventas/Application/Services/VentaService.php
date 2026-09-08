@@ -7,6 +7,7 @@ use App\Models\Venta;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\Ventas\Application\DTOs\CreateVentaDTO;
 use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
+use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterface;
 use App\Modules\Ventas\Application\DTOs\CreateVentaCombustibleDTO;
 use App\Models\TurnoIslero;
 use Illuminate\Support\Collection;
@@ -14,7 +15,8 @@ use App\Models\User;
 class VentaService
 {
     public function __construct(
-        protected VentaRepositoryInterface $ventaRepository
+        protected VentaRepositoryInterface $ventaRepository,
+        protected TurnoIsleroRepositoryInterface $turnoRepository
     ) {
     }
 
@@ -535,6 +537,14 @@ class VentaService
                     'fecha_anulacion' => now(),
                 ]
             );
+
+            if ($esIslero && $turno) {
+                $totalesTurno = $this->turnoRepository->recalcularTotalesTurno(
+                    $turno->id
+                );
+
+                $turno->update($totalesTurno);
+            }
 
 
             return $this->findById($venta->id);

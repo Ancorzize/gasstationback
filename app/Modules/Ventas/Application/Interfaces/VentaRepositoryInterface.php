@@ -64,4 +64,5 @@ interface VentaRepositoryInterface
     public function sumGalonesCombustibleByTurnoAndManguera(int $turnoId,int $mangueraId);
 
     public function sumTotalCombustibleByTurnoAndManguera(int $turnoId, int $mangueraId);
+    
 }

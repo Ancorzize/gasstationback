@@ -202,4 +202,17 @@ class CompraRepository implements CompraRepositoryInterface
             ->first();
     }
 
+    public function getComprasPendientesByProveedor(
+        int $proveedorId
+    ): Collection {
+        return Compra::query()
+            ->where('proveedor_id', $proveedorId)
+            ->where('estado', 'confirmada')
+            ->where('saldo_pendiente', '>', 0)
+            ->orderBy('fecha_compra')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+    }
+
 }
