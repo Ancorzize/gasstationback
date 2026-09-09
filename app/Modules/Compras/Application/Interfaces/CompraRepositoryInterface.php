@@ -45,4 +45,5 @@ interface CompraRepositoryInterface
 
     public function getComprasPendientesByProveedor(int $proveedorId): Collection;
     
+    public function getDeudaByProveedor(int $proveedorId): array;
 }

@@ -266,5 +266,41 @@ class CompraController extends Controller
             );
         }
     }
+
+    public function deudaProveedor(
+        Request $request,
+        int $proveedorId
+    ) {
+        try {
+            if (!$request->user()->can('ver_compras')) {
+                return ApiResponse::error(
+                    'Sin permisos.',
+                    403
+                );
+            }
+
+            $resultado = $this->compraService
+                ->getDeudaByProveedor($proveedorId);
+
+            return ApiResponse::success(
+                $resultado,
+                'Deuda del proveedor.'
+            );
+
+        } catch (HttpException $e) {
+
+            return ApiResponse::error(
+                $e->getMessage(),
+                $e->getStatusCode()
+            );
+
+        } catch (\Throwable $e) {
+
+            return ApiResponse::error(
+                'Error interno del servidor.',
+                500
+            );
+        }
+    }
     
 }

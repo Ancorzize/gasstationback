@@ -181,6 +181,7 @@ Route::middleware(['auth:sanctum'])->prefix('movimientos-inventario')->group(fun
 Route::middleware(['auth:sanctum'])->prefix('compras')->group(function () {
     Route::get('/', [CompraController::class, 'index']);
     Route::post('/pagos-general',  [CompraController::class, 'registrarPagoProveedor'] );
+     Route::get('/proveedores/{proveedorId}/deuda',  [CompraController::class, 'deudaProveedor']);
     Route::get('/{id}', [CompraController::class, 'show']);
     Route::post('/', [CompraController::class, 'store']);
     Route::put('/{id}', [CompraController::class, 'update']);

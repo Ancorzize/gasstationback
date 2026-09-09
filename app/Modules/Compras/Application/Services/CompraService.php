@@ -288,6 +288,12 @@ class CompraService
         return $this->compraRepository->getPagosByCompra($compra->id);
     }
 
+    public function getDeudaByProveedor(int $proveedorId): array
+    {
+        return $this->compraRepository
+            ->getDeudaByProveedor($proveedorId);
+    }
+
     public function registrarPago(CreatePagoCompraDTO $dto): Compra
     {
         return DB::transaction(function () use ($dto) {

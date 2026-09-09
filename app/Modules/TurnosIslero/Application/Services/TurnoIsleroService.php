@@ -760,10 +760,17 @@ class TurnoIsleroService
             );
         }
 
-        $totalVentasCombustible = $this->turnoRepository->sumVentasCombustibleByTurno($turno->id);
-        $totalVentasLubricantes = $this->turnoRepository->sumVentasLubricantesByTurno($turno->id);
-        $totalCreditos = $this->turnoRepository->sumVentasCreditoByTurno($turno->id);
-        $totalAbonos = $this->turnoRepository->sumAbonosByTurno($turno->id);
+        $totalVentasCombustible = $this->turnoRepository
+            ->sumVentasCombustibleByTurno($turno->id);
+
+        $totalVentasLubricantes = $this->turnoRepository
+            ->sumVentasLubricantesByTurno($turno->id);
+
+        $totalCreditos = $this->turnoRepository
+            ->sumVentasCreditoByTurno($turno->id);
+
+        $totalAbonos = $this->turnoRepository
+            ->sumAbonosByTurno($turno->id);
 
         $ventasLubricantesDetalle = $this->turnoRepository
             ->getVentasLubricantesDetalleByTurno($turno->id);
@@ -771,149 +778,182 @@ class TurnoIsleroService
         $abonosDetalle = $this->turnoRepository
             ->getAbonosDetalleByTurno($turno->id);
 
-        $ventasProductos = $ventasLubricantesDetalle->map(function ($detalle) {
+        $ventasProductos = $ventasLubricantesDetalle
+            ->map(function ($detalle) {
                 return [
                     'id' => $detalle['id'],
                     'nombre' => $detalle['nombre'],
-                    'cantidad' => (float) $detalle['cantidad'],
-                    'precio_unitario' => (float) $detalle['precio_unitario'],
-                    'total' => (float) $detalle['total'],
+                    'cantidad' => round((float) $detalle['cantidad'], 2),
+                    'precio_unitario' => round((float) $detalle['precio_unitario'], 2),
+                    'total' => round((float) $detalle['total'], 2),
                 ];
-            })->values();
+            })
+            ->values();
 
         $abonosRecibidos = $abonosDetalle
             ->map(function ($abono) {
-
                 return [
                     'id' => $abono['id'],
                     'cliente' => $abono['cliente'],
-                    'monto' => (float) $abono['monto'],
-                    'fecha' => $abono['fecha']->toDateString()
+                    'monto' => round((float) $abono['monto'], 2),
+                    'fecha' => $abono['fecha']->toDateString(),
                 ];
-            })->values();
+            })
+            ->values();
 
-        $resumen = $this->turnoRepository->getResumenDestinosTurno($turno->id);
+        $resumen = $this->turnoRepository
+            ->getResumenDestinosTurno($turno->id);
 
-        $destinos = $this->turnoRepository->getDestinosConCajaAbierta();
+        $destinos = $this->turnoRepository
+            ->getDestinosConCajaAbierta();
 
         $destinosRecaudo = [];
 
         foreach ($destinos as $destino) {
-
             $destinosRecaudo[$destino->id] = [
-
                 'destino_recaudo_id' => $destino->id,
-
                 'codigo' => $destino->codigo,
-
                 'nombre' => $destino->nombre,
-
                 'pagos' => [
-
                     'efectivo' => 0,
-
                     'qr' => 0,
-
                     'datafono' => 0,
-
                     'transferencia' => 0,
-
                     'consignacion' => 0,
-
                 ],
-
                 'total' => 0,
-
             ];
         }
 
         foreach ($resumen as $item) {
-
             if (!isset($destinosRecaudo[$item->destino_recaudo_id])) {
                 continue;
             }
 
             $destinosRecaudo[$item->destino_recaudo_id]['pagos'][$item->metodo_pago] =
-                (float) $item->total;
+                round((float) $item->total, 2);
 
-            $destinosRecaudo[$item->destino_recaudo_id]['total'] +=
-                (float) $item->total;
+            $destinosRecaudo[$item->destino_recaudo_id]['total'] = round(
+                $destinosRecaudo[$item->destino_recaudo_id]['total']
+                + (float) $item->total,
+                2
+            );
         }
 
         $destinosRecaudo = array_values($destinosRecaudo);
 
-        $totalReportadoSugerido = collect($destinosRecaudo)->sum('total');
+        $totalReportadoSugerido = round(
+            collect($destinosRecaudo)->sum('total'),
+            2
+        );
 
+        $totalSistema = round(
+            (float) $totalVentasCombustible
+            + (float) $totalVentasLubricantes
+            - (float) $totalCreditos,
+            2
+        );
 
-        $totalSistema =
-            $totalVentasCombustible +
-            $totalVentasLubricantes -
-            $totalCreditos;
+        $lecturas = $turno->lecturas
+            ->map(function ($lectura) use ($turno) {
 
-        $lecturas = $turno->lecturas->map(function ($lectura) use ($turno) {
-            $precioGalon = (float) $lectura->precio_galon;
-
-            $galonesVendidosSistema = $this->turnoRepository
-                ->sumGalonesCombustibleByTurnoAndManguera(
-                    $turno->id,
-                    $lectura->manguera_id
+                $precioGalon = round(
+                    (float) $lectura->precio_galon,
+                    2
                 );
 
-            $totalVentaSistema = $this->turnoRepository
-                ->sumTotalCombustibleByTurnoAndManguera(
-                    $turno->id,
-                    $lectura->manguera_id
+                $galonesVendidosSistema = $this->turnoRepository
+                    ->sumGalonesCombustibleByTurnoAndManguera(
+                        $turno->id,
+                        $lectura->manguera_id
+                    );
+
+                $totalVentaSistema = $this->turnoRepository
+                    ->sumTotalCombustibleByTurnoAndManguera(
+                        $turno->id,
+                        $lectura->manguera_id
+                    );
+
+                $lecturaSugerida = round(
+                    (float) $lectura->lectura_inicial
+                    + (float) $galonesVendidosSistema,
+                    2
                 );
 
-            $lecturaSugerida = (float) $lectura->lectura_inicial + $galonesVendidosSistema;
+                return [
+                    'id' => $lectura->id,
 
-            return [
-                'id' => $lectura->id,
-                'manguera_id' => $lectura->manguera_id,
+                    'manguera_id' => $lectura->manguera_id,
 
-                'manguera' => $lectura->manguera ? [
-                    'id' => $lectura->manguera->id,
-                    'nombre' => $lectura->manguera->nombre,
-                    'codigo' => $lectura->manguera->codigo,
-                    'bomba' => $lectura->manguera->bomba ? [
-                        'id' => $lectura->manguera->bomba->id,
-                        'nombre' => $lectura->manguera->bomba->nombre,
-                        'codigo' => $lectura->manguera->bomba->codigo,
+                    'manguera' => $lectura->manguera ? [
+                        'id' => $lectura->manguera->id,
+                        'nombre' => $lectura->manguera->nombre,
+                        'codigo' => $lectura->manguera->codigo,
+
+                        'bomba' => $lectura->manguera->bomba ? [
+                            'id' => $lectura->manguera->bomba->id,
+                            'nombre' => $lectura->manguera->bomba->nombre,
+                            'codigo' => $lectura->manguera->bomba->codigo,
+                        ] : null,
+
+                        'producto' => $lectura->manguera->producto ? [
+                            'id' => $lectura->manguera->producto->id,
+                            'codigo' => $lectura->manguera->producto->codigo,
+                            'nombre' => $lectura->manguera->producto->nombre,
+                        ] : null,
                     ] : null,
-                    'producto' => $lectura->manguera->producto ? [
-                        'id' => $lectura->manguera->producto->id,
-                        'codigo' => $lectura->manguera->producto->codigo,
-                        'nombre' => $lectura->manguera->producto->nombre,
-                    ] : null,
-                ] : null,
 
-                'lectura_inicial' => (float) $lectura->lectura_inicial,
-                'lectura_final' => $lectura->lectura_final !== null
-                    ? (float) $lectura->lectura_final
-                    : null,
+                    'lectura_inicial' => round(
+                        (float) $lectura->lectura_inicial,
+                        2
+                    ),
 
-                'precio_galon' => $precioGalon,
+                    'lectura_final' => $lectura->lectura_final !== null
+                        ? round((float) $lectura->lectura_final, 2)
+                        : null,
 
-                'galones_vendidos_sistema' => round($galonesVendidosSistema, 3),
-                'total_venta_sistema' => round($totalVentaSistema, 2),
-                'lectura_sugerida' => round($lecturaSugerida, 3),
+                    'precio_galon' => $precioGalon,
 
-                'galones_vendidos' => (float) $lectura->galones_vendidos,
-                'total_venta' => (float) $lectura->total_venta,
-            ];
-        })->values();
+                    'galones_vendidos_sistema' => round(
+                        (float) $galonesVendidosSistema,
+                        2
+                    ),
 
+                    'total_venta_sistema' => round(
+                        (float) $totalVentaSistema,
+                        2
+                    ),
+
+                    'lectura_sugerida' => round(
+                        (float) $lecturaSugerida,
+                        2
+                    ),
+
+                    'galones_vendidos' => round(
+                        (float) $lectura->galones_vendidos,
+                        2
+                    ),
+
+                    'total_venta' => round(
+                        (float) $lectura->total_venta,
+                        2
+                    ),
+                ];
+            })
+            ->values();
 
         return [
             'turno' => [
                 'id' => $turno->id,
                 'estado' => $turno->estado,
                 'fecha_apertura' => $turno->fecha_apertura,
+
                 'estacion' => $turno->estacion ? [
                     'id' => $turno->estacion->id,
                     'nombre' => $turno->estacion->nombre,
                     'codigo' => $turno->estacion->codigo,
                 ] : null,
+
                 'usuario' => $turno->usuario ? [
                     'id' => $turno->usuario->id,
                     'name' => $turno->usuario->name,
@@ -922,23 +962,52 @@ class TurnoIsleroService
             ],
 
             'lecturas' => $lecturas,
+
             'ventas_productos' => $ventasProductos,
+
             'abonos_recibidos' => $abonosRecibidos,
+
             'destinos_recaudo' => $destinosRecaudo,
+
             'totales_pago_sugeridos' => [
-                'creditos' => $totalCreditos,
-                'total_reportado_sugerido' => $totalReportadoSugerido, 
+                'creditos' => round((float) $totalCreditos, 2),
+                'total_reportado_sugerido' => $totalReportadoSugerido,
             ],
-            'total_por_destinos' => collect($destinosRecaudo)->sum('total'),
+
+            'total_por_destinos' => round(
+                collect($destinosRecaudo)->sum('total'),
+                2
+            ),
+
             'totales_sistema' => [
-                'ventas_combustible' => $totalVentasCombustible,
-                'ventas_lubricantes' => $totalVentasLubricantes,
-                'creditos' => $totalCreditos,
-                'abonos' => $totalAbonos,
+                'ventas_combustible' => round(
+                    (float) $totalVentasCombustible,
+                    2
+                ),
+
+                'ventas_lubricantes' => round(
+                    (float) $totalVentasLubricantes,
+                    2
+                ),
+
+                'creditos' => round(
+                    (float) $totalCreditos,
+                    2
+                ),
+
+                'abonos' => round(
+                    (float) $totalAbonos,
+                    2
+                ),
+
                 'total_sistema' => $totalSistema,
             ],
 
-            'balance_preliminar' => $totalSistema - $totalReportadoSugerido,
+            'balance_preliminar' => round(
+                $totalSistema - $totalReportadoSugerido,
+                2
+            ),
+
             'nota' => 'La lectura sugerida se calcula con las ventas de combustible registradas por manguera. El islero debe confirmarla o corregirla con la lectura física real.',
         ];
     }
@@ -1415,10 +1484,6 @@ class TurnoIsleroService
 
         /*
         * Recalcular información actual del turno.
-        *
-        * Estos valores se obtienen directamente de las ventas
-        * y abonos actuales, ya que el turno puede haber sido
-        * modificado mientras permanece pendiente de cierre.
         */
         $totalVentasCombustibleSistema =
             $this->turnoRepository
@@ -1478,6 +1543,7 @@ class TurnoIsleroService
                     'transferencia' => 0,
                     'consignacion' => 0,
                 ],
+                'total' => 0,
             ];
         }
 
@@ -1494,8 +1560,15 @@ class TurnoIsleroService
                     $destinos[$item->destino_recaudo_id]['pagos']
                 )
             ) {
+                $monto = round((float) $item->total, 2);
+
                 $destinos[$item->destino_recaudo_id]['pagos'][$metodo] =
-                    round((float) $item->total, 2);
+                    $monto;
+
+                $destinos[$item->destino_recaudo_id]['total'] = round(
+                    $destinos[$item->destino_recaudo_id]['total'] + $monto,
+                    2
+                );
             }
         }
 
@@ -1503,13 +1576,129 @@ class TurnoIsleroService
         * Información de ventas de lubricantes.
         */
         $lubricantes = $this->turnoRepository
-            ->getVentasLubricantesDetalleByTurno($turno->id);
+            ->getVentasLubricantesDetalleByTurno($turno->id)
+            ->map(function ($lubricante) {
+                return [
+                    'id' => $lubricante['id'],
+                    'nombre' => $lubricante['nombre'],
+                    'cantidad' => round((float) $lubricante['cantidad'], 2),
+                    'precio_unitario' => round(
+                        (float) $lubricante['precio_unitario'],
+                        2
+                    ),
+                    'total' => round((float) $lubricante['total'], 2),
+                ];
+            })
+            ->values();
 
         /*
         * Información de abonos.
         */
         $abonos = $this->turnoRepository
-            ->getAbonosDetalleByTurno($turno->id);
+            ->getAbonosDetalleByTurno($turno->id)
+            ->map(function ($abono) {
+                return [
+                    'id' => $abono['id'],
+                    'cliente' => $abono['cliente'],
+                    'monto' => round((float) $abono['monto'], 2),
+                    'fecha' => $abono['fecha']->toDateString(),
+                ];
+            })
+            ->values();
+
+        /*
+        * Lecturas de mangueras con máximo 2 decimales.
+        */
+        $lecturas = $turno->lecturas
+            ->map(function ($lectura) use ($turno) {
+
+                $precioGalon = round(
+                    (float) $lectura->precio_galon,
+                    2
+                );
+
+                $galonesVendidosSistema = $this->turnoRepository
+                    ->sumGalonesCombustibleByTurnoAndManguera(
+                        $turno->id,
+                        $lectura->manguera_id
+                    );
+
+                $totalVentaSistema = $this->turnoRepository
+                    ->sumTotalCombustibleByTurnoAndManguera(
+                        $turno->id,
+                        $lectura->manguera_id
+                    );
+
+                $lecturaSugerida = round(
+                    (float) $lectura->lectura_inicial
+                    + (float) $galonesVendidosSistema,
+                    2
+                );
+
+                return [
+                    'id' => $lectura->id,
+
+                    'manguera_id' => $lectura->manguera_id,
+
+                    'manguera' => $lectura->manguera ? [
+                        'id' => $lectura->manguera->id,
+                        'nombre' => $lectura->manguera->nombre,
+                        'codigo' => $lectura->manguera->codigo,
+
+                        'bomba' => $lectura->manguera->bomba ? [
+                            'id' => $lectura->manguera->bomba->id,
+                            'nombre' => $lectura->manguera->bomba->nombre,
+                            'codigo' => $lectura->manguera->bomba->codigo,
+                        ] : null,
+
+                        'producto' => $lectura->manguera->producto ? [
+                            'id' => $lectura->manguera->producto->id,
+                            'codigo' => $lectura->manguera->producto->codigo,
+                            'nombre' => $lectura->manguera->producto->nombre,
+                        ] : null,
+                    ] : null,
+
+                    'lectura_inicial' => round(
+                        (float) $lectura->lectura_inicial,
+                        2
+                    ),
+
+                    'lectura_final' => $lectura->lectura_final !== null
+                        ? round(
+                            (float) $lectura->lectura_final,
+                            2
+                        )
+                        : null,
+
+                    'precio_galon' => $precioGalon,
+
+                    'galones_vendidos_sistema' => round(
+                        (float) $galonesVendidosSistema,
+                        2
+                    ),
+
+                    'total_venta_sistema' => round(
+                        (float) $totalVentaSistema,
+                        2
+                    ),
+
+                    'lectura_sugerida' => round(
+                        (float) $lecturaSugerida,
+                        2
+                    ),
+
+                    'galones_vendidos' => round(
+                        (float) $lectura->galones_vendidos,
+                        2
+                    ),
+
+                    'total_venta' => round(
+                        (float) $lectura->total_venta,
+                        2
+                    ),
+                ];
+            })
+            ->values();
 
         /*
         * Devolver información actual para la revisión administrativa.
@@ -1554,6 +1743,9 @@ class TurnoIsleroService
 
             'abonos' =>
                 $abonos,
+
+            'lecturas' =>
+                $lecturas,
         ];
     }
 

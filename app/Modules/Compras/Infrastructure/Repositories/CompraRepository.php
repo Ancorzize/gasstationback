@@ -215,4 +215,23 @@ class CompraRepository implements CompraRepositoryInterface
             ->get();
     }
 
+    public function getDeudaByProveedor(int $proveedorId): array
+    {
+        $compras = $this->getComprasPendientesByProveedor($proveedorId);
+
+        $totalDeuda = round(
+            $compras->sum(
+                fn ($compra) => (float) $compra->saldo_pendiente
+            ),
+            2
+        );
+
+        return [
+            'proveedor_id' => $proveedorId,
+            'total_deuda' => $totalDeuda,
+            'total_compras_pendientes' => $compras->count(),
+            'compras' => $compras,
+        ];
+    }
+
 }
