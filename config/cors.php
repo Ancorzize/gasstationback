@@ -9,7 +9,7 @@ return [
     'allowed_origins' => [
         'http://localhost:5173',
         'https://gasstationfront-production.up.railway.app',
-        'http://192.168.40.2:5173',
+        'http://192.168.40.4:5173',
     ],
 
     'allowed_origins_patterns' => [],

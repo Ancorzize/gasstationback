@@ -877,7 +877,7 @@ class TurnoIsleroService
                 $lecturaSugerida = round(
                     (float) $lectura->lectura_inicial
                     + (float) $galonesVendidosSistema,
-                    2
+                    3
                 );
 
                 return [
@@ -905,11 +905,11 @@ class TurnoIsleroService
 
                     'lectura_inicial' => round(
                         (float) $lectura->lectura_inicial,
-                        2
+                        3
                     ),
 
                     'lectura_final' => $lectura->lectura_final !== null
-                        ? round((float) $lectura->lectura_final, 2)
+                        ? round((float) $lectura->lectura_final, 3)
                         : null,
 
                     'precio_galon' => $precioGalon,
@@ -926,7 +926,7 @@ class TurnoIsleroService
 
                     'lectura_sugerida' => round(
                         (float) $lecturaSugerida,
-                        2
+                        3
                     ),
 
                     'galones_vendidos' => round(
@@ -1632,7 +1632,7 @@ class TurnoIsleroService
                 $lecturaSugerida = round(
                     (float) $lectura->lectura_inicial
                     + (float) $galonesVendidosSistema,
-                    2
+                    3
                 );
 
                 return [
@@ -1660,13 +1660,13 @@ class TurnoIsleroService
 
                     'lectura_inicial' => round(
                         (float) $lectura->lectura_inicial,
-                        2
+                        3
                     ),
 
                     'lectura_final' => $lectura->lectura_final !== null
                         ? round(
                             (float) $lectura->lectura_final,
-                            2
+                            3
                         )
                         : null,
 
@@ -1684,7 +1684,7 @@ class TurnoIsleroService
 
                     'lectura_sugerida' => round(
                         (float) $lecturaSugerida,
-                        2
+                        3
                     ),
 
                     'galones_vendidos' => round(
