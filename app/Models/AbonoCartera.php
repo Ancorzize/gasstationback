@@ -20,11 +20,14 @@ class AbonoCartera extends Model
         'estado',
         'user_id',
         'turno_islero_id',
+        'fecha_aplicacion',
+        'user_aplicacion_id',
     ];
 
     protected $casts = [
         'fecha_abono' => 'date',
         'valor' => 'decimal:2',
+        'fecha_aplicacion' => 'datetime',
     ];
 
     public function cliente(): BelongsTo
@@ -42,6 +45,11 @@ class AbonoCartera extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function userAplicacion(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_aplicacion_id');
+    }
+
     public function turnoIslero(): BelongsTo
     {
         return $this->belongsTo(TurnoIslero::class, 'turno_islero_id');
@@ -51,6 +59,14 @@ class AbonoCartera extends Model
     {
         return $this->hasMany(
             AbonoCarteraDetalle::class
+        );
+    }
+
+    public function aplicacionesSaldoInicial(): HasMany
+    {
+        return $this->hasMany(
+            AplicacionAbonoSaldoInicial::class,
+            'abono_cartera_id'
         );
     }
 }

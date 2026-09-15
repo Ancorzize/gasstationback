@@ -13,6 +13,9 @@ use App\Modules\TurnosIslero\Presentation\Requests\CerrarTurnoIsleroRequest;
 use App\Modules\TurnosIslero\Presentation\Resources\TurnoIsleroResource;
 use App\Modules\TurnosIslero\Presentation\Requests\SolicitarCierreTurnoIsleroRequest;
 use Illuminate\Validation\ValidationException;
+use App\Modules\Ventas\Presentation\Resources\VentaResource;
+use App\Modules\Cartera\Presentation\Resources\AbonoCarteraResource;
+
 class TurnoIsleroController extends Controller
 {
     public function __construct(
@@ -279,7 +282,50 @@ class TurnoIsleroController extends Controller
                 500
             );
         }
-    }   
+    }
 
-    
+    public function resumenOperaciones(Request $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('ver_turnos_islero')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            return ApiResponse::success(
+                $this->turnoService->obtenerResumenOperaciones($id),
+                'Resumen de operaciones del turno.'
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function listarOperacionesPorTipo(Request $request, int $id, string $tipo)
+    {
+        try {
+            if (!$request->user()->can('ver_turnos_islero')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $operaciones = $this->turnoService->obtenerOperacionesPorTipo($id, $tipo);
+
+            if ($tipo === 'abonos') {
+                $items = AbonoCarteraResource::collection($operaciones);
+            } else {
+                $items = VentaResource::collection($operaciones);
+            }
+
+            return ApiResponse::success([
+                'tipo' => $tipo,
+                'items' => $items,
+            ], "Listado de operaciones de tipo '{$tipo}'.");
+
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
 }

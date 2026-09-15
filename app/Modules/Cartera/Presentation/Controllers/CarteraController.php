@@ -12,6 +12,8 @@ use App\Modules\Cartera\Presentation\Requests\StoreAbonoCarteraRequest;
 use App\Modules\Cartera\Presentation\Resources\AbonoCarteraResource;
 use App\Modules\Cartera\Presentation\Resources\MovimientoCarteraResource;
 use App\Modules\Cartera\Presentation\Requests\StoreSaldoInicialCarteraRequest;
+use App\Modules\Cartera\Presentation\Requests\AnularAbonoCarteraRequest;
+use App\Modules\Cartera\Presentation\Requests\UpdateAbonoCarteraRequest;
 
 class CarteraController extends Controller
 {
@@ -136,6 +138,54 @@ class CarteraController extends Controller
                 'Error interno del servidor.',
                 500
             );
+        }
+    }
+
+    public function anularAbono(AnularAbonoCarteraRequest $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('anular_abonos_cartera') && !$request->user()->can('registrar_abonos_cartera')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $abono = $this->carteraService->anularAbono(
+                $id,
+                $request->validated()['motivo_anulacion'],
+                $request->user()->id
+            );
+
+            return ApiResponse::success(
+                new AbonoCarteraResource($abono),
+                'Abono de cartera anulado correctamente.'
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function updateAbono(UpdateAbonoCarteraRequest $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('editar_abonos_cartera') && !$request->user()->can('registrar_abonos_cartera')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $abono = $this->carteraService->updateAbono(
+                $id,
+                $request->validated(),
+                $request->user()->id
+            );
+
+            return ApiResponse::success(
+                new AbonoCarteraResource($abono),
+                'Abono de cartera actualizado correctamente.'
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
         }
     }
 }

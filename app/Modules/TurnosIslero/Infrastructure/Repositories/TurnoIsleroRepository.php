@@ -197,7 +197,7 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
     {
         return (float) AbonoCartera::query()
             ->where('turno_islero_id', $turnoId)
-            ->where('estado', 'registrado')
+            ->whereIn('estado', ['registrado', 'pendiente', 'aplicado'])
             ->sum('valor');
     }
 
@@ -280,7 +280,7 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
     {
         return (float) AbonoCartera::query()
             ->where('turno_islero_id', $turnoId)
-            ->where('estado', 'registrado')
+            ->whereIn('estado', ['registrado', 'pendiente', 'aplicado'])
             ->where('medio_pago', $metodoPago)
             ->sum('valor');
     }
@@ -335,7 +335,7 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
         return AbonoCartera::query()
             ->with('cliente')
             ->where('turno_islero_id', $turnoId)
-            ->where('estado', 'registrado')
+            ->whereIn('estado', ['registrado', 'pendiente', 'aplicado'])
             ->get()
             ->map(function ($abono) {
                 return [
@@ -633,7 +633,7 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
     {
         return AbonoCartera::query()
             ->where('turno_islero_id', $turnoId)
-            ->where('estado', 'registrado')
+            ->whereIn('estado', ['registrado', 'pendiente', 'aplicado'])
             ->get();
     }
 
@@ -656,5 +656,109 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             })
             ->orderBy('fecha_apertura')
             ->first();
+    }
+
+    public function getResumenOperacionesByTurno(int $turnoId): array
+    {
+        $combustibleQuery = Venta::query()
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'confirmada')
+            ->where('tipo_origen', 'combustible');
+
+        $lubricantesQuery = Venta::query()
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'confirmada')
+            ->where('tipo_origen', 'pos');
+
+        $creditosQuery = Venta::query()
+            ->where('turno_islero_id', $turnoId)
+            ->where('estado', 'confirmada')
+            ->where('saldo_pendiente', '>', 0);
+
+        $abonosQuery = AbonoCartera::query()
+            ->where('turno_islero_id', $turnoId)
+            ->whereIn('estado', ['registrado', 'pendiente', 'aplicado']);
+
+        return [
+            'combustible' => [
+                'cantidad' => $combustibleQuery->count(),
+                'total' => round((float) $combustibleQuery->sum('total'), 2),
+            ],
+            'lubricantes' => [
+                'cantidad' => $lubricantesQuery->count(),
+                'total' => round((float) $lubricantesQuery->sum('total'), 2),
+            ],
+            'creditos' => [
+                'cantidad' => $creditosQuery->count(),
+                'total' => round((float) $creditosQuery->sum('saldo_pendiente'), 2),
+            ],
+            'abonos' => [
+                'cantidad' => $abonosQuery->count(),
+                'total' => round((float) $abonosQuery->sum('valor'), 2),
+            ],
+        ];
+    }
+
+    public function getOperacionesByTurnoAndTipo(int $turnoId, string $tipo): Collection
+    {
+        return match ($tipo) {
+            'combustible' => Venta::query()
+                ->with([
+                    'cliente',
+                    'usuario',
+                    'detalles.producto',
+                    'detalles.manguera.bomba',
+                    'pagos',
+                    'usuarioAnulacion',
+                    'turnoIslero.estacion',
+                ])
+                ->where('turno_islero_id', $turnoId)
+                ->where('tipo_origen', 'combustible')
+                ->orderByDesc('id')
+                ->get(),
+
+            'lubricantes' => Venta::query()
+                ->with([
+                    'cliente',
+                    'usuario',
+                    'detalles.producto',
+                    'pagos',
+                    'usuarioAnulacion',
+                    'turnoIslero.estacion',
+                ])
+                ->where('turno_islero_id', $turnoId)
+                ->where('tipo_origen', 'pos')
+                ->orderByDesc('id')
+                ->get(),
+
+            'creditos' => Venta::query()
+                ->with([
+                    'cliente',
+                    'usuario',
+                    'detalles.producto',
+                    'pagos',
+                    'usuarioAnulacion',
+                    'turnoIslero.estacion',
+                ])
+                ->where('turno_islero_id', $turnoId)
+                ->where('estado', 'confirmada')
+                ->where('saldo_pendiente', '>', 0)
+                ->orderByDesc('id')
+                ->get(),
+
+            'abonos' => AbonoCartera::query()
+                ->with([
+                    'cliente',
+                    'usuario',
+                    'caja',
+                    'turnoIslero.estacion',
+                    'detalles.venta',
+                ])
+                ->where('turno_islero_id', $turnoId)
+                ->orderByDesc('id')
+                ->get(),
+
+            default => collect(),
+        };
     }
 }

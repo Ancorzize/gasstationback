@@ -24,6 +24,16 @@ class TurnoIsleroResource extends JsonResource
                 'id' => $this->usuario->id,
                 'name' => $this->usuario->name,
                 'email' => $this->usuario->email,
+                'bodega_id' => $this->usuario->bodega_id,
+                'bodega' => $this->usuario->bodega ? [
+                    'id' => $this->usuario->bodega->id,
+                    'nombre' => $this->usuario->bodega->nombre,
+                ] : null,
+            ] : null,
+            'bodega_id' => $this->usuario?->bodega_id,
+            'bodega' => $this->usuario?->bodega ? [
+                'id' => $this->usuario->bodega->id,
+                'nombre' => $this->usuario->bodega->nombre,
             ] : null,
 
             'fecha_apertura' => $this->fecha_apertura,

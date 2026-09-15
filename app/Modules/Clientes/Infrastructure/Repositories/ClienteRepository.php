@@ -12,12 +12,26 @@ class ClienteRepository implements ClienteRepositoryInterface
         $query = Cliente::query();
 
         if (!empty($filters['search'])) {
-            $search = $filters['search'];
+            $search = trim($filters['search']);
+            $words = array_filter(explode(' ', $search));
 
-            $query->where(function ($q) use ($search) {
+            $query->where(function ($q) use ($search, $words) {
                 $q->where('nombre', 'ilike', "%{$search}%")
-                ->orWhere('apellidos', 'ilike', "%{$search}%")
-                  ->orWhere('documento', 'ilike', "%{$search}%");
+                  ->orWhere('apellidos', 'ilike', "%{$search}%")
+                  ->orWhere('documento', 'ilike', "%{$search}%")
+                  ->orWhereRaw("CONCAT(COALESCE(nombre, ''), ' ', COALESCE(apellidos, '')) LIKE ?", ["%{$search}%"]);
+
+                if (count($words) > 1) {
+                    $q->orWhere(function ($subQ) use ($words) {
+                        foreach ($words as $word) {
+                            $subQ->where(function ($wQ) use ($word) {
+                                $wQ->where('nombre', 'ilike', "%{$word}%")
+                                   ->orWhere('apellidos', 'ilike', "%{$word}%")
+                                   ->orWhere('documento', 'ilike', "%{$word}%");
+                            });
+                        }
+                    });
+                }
             });
         }
 

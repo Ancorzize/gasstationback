@@ -11,7 +11,9 @@ use App\Modules\TurnosIslero\Application\DTOs\CerrarTurnoIsleroDTO;
 use App\Modules\TurnosIslero\Application\Interfaces\TurnoIsleroRepositoryInterface;
 use App\Modules\Ventas\Application\Interfaces\VentaRepositoryInterface;
 use App\Modules\Ventas\Application\Services\VentaService;
+use App\Modules\Cartera\Application\Services\CarteraService;
 use App\Modules\TurnosIslero\Application\DTOs\SolicitarCierreTurnoIsleroDTO;
+use Illuminate\Support\Collection;
 
 class TurnoIsleroService
 {
@@ -19,7 +21,8 @@ class TurnoIsleroService
     public function __construct(
         protected TurnoIsleroRepositoryInterface $turnoRepository,
         protected VentaRepositoryInterface $ventaRepository,
-        protected VentaService $ventaService
+        protected VentaService $ventaService,
+        protected CarteraService $carteraService
     ) {}
 
     public function getAll(array $filters = [])
@@ -361,6 +364,14 @@ class TurnoIsleroService
                 $turno->lecturas()
                     ->with('manguera.producto.categoriaProducto')
                     ->get(),
+                $dto->user_id
+            );
+
+            /*
+            * Procesar abonos pendientes de cartera del turno.
+            */
+            $this->carteraService->procesarAbonosPendientesTurno(
+                $turno->id,
                 $dto->user_id
             );
 
@@ -1749,7 +1760,79 @@ class TurnoIsleroService
         ];
     }
 
-    
+    public function obtenerResumenOperaciones(int $turnoId): array
+    {
+        $turno = $this->findById($turnoId);
 
-    
+        if (!in_array($turno->estado, ['abierto', 'pendiente_cierre', 'cerrado'], true)) {
+            throw new HttpException(
+                422,
+                'Las operaciones no están disponibles para este estado del turno.'
+            );
+        }
+
+        $resumen = $this->turnoRepository->getResumenOperacionesByTurno($turno->id);
+
+        $totalGeneral = round(
+            (float) $resumen['combustible']['total'] +
+            (float) $resumen['lubricantes']['total'] +
+            (float) $resumen['abonos']['total'] -
+            (float) $resumen['creditos']['total'],
+            2
+        );
+
+        return [
+            'turno' => [
+                'id' => $turno->id,
+                'estado' => $turno->estado,
+                'fecha_apertura' => $turno->fecha_apertura,
+                'fecha_cierre' => $turno->fecha_cierre,
+                'estacion' => $turno->estacion ? [
+                    'id' => $turno->estacion->id,
+                    'nombre' => $turno->estacion->nombre,
+                    'codigo' => $turno->estacion->codigo,
+                ] : null,
+                'usuario' => $turno->usuario ? [
+                    'id' => $turno->usuario->id,
+                    'name' => $turno->usuario->name,
+                    'email' => $turno->usuario->email,
+                    'bodega_id' => $turno->usuario->bodega_id,
+                    'bodega' => $turno->usuario->bodega ? [
+                        'id' => $turno->usuario->bodega->id,
+                        'nombre' => $turno->usuario->bodega->nombre,
+                    ] : null,
+                ] : null,
+                'bodega_id' => $turno->usuario?->bodega_id,
+                'bodega' => $turno->usuario?->bodega ? [
+                    'id' => $turno->usuario->bodega->id,
+                    'nombre' => $turno->usuario->bodega->nombre,
+                ] : null,
+            ],
+            'resumen' => $resumen,
+            'total_general' => $totalGeneral,
+        ];
+    }
+
+    public function obtenerOperacionesPorTipo(int $turnoId, string $tipo): Collection
+    {
+        $turno = $this->findById($turnoId);
+
+        if (!in_array($turno->estado, ['abierto', 'pendiente_cierre', 'cerrado'], true)) {
+            throw new HttpException(
+                422,
+                'Las operaciones no están disponibles para este estado del turno.'
+            );
+        }
+
+        $tiposPermitidos = ['combustible', 'lubricantes', 'creditos', 'abonos'];
+
+        if (!in_array($tipo, $tiposPermitidos, true)) {
+            throw new HttpException(
+                422,
+                "Tipo de operación '{$tipo}' inválido. Tipos permitidos: " . implode(', ', $tiposPermitidos) . '.'
+            );
+        }
+
+        return $this->turnoRepository->getOperacionesByTurnoAndTipo($turno->id, $tipo);
+    }
 }

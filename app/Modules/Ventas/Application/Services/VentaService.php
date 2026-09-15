@@ -391,16 +391,9 @@ class VentaService
                 $usuarioVenta = User::find($venta->user_id);
             }
 
-            $esIslero = $usuarioVenta?->hasRole('islero') ?? false;
+            $turno = null;
 
-            if ($esIslero) {
-                if (!$venta->turno_islero_id) {
-                    throw new HttpException(
-                        422,
-                        'La venta del islero no tiene un turno asociado.'
-                    );
-                }
-
+            if ($venta->turno_islero_id) {
                 $turno = TurnoIslero::find($venta->turno_islero_id);
 
                 if (!$turno) {
@@ -451,6 +444,8 @@ class VentaService
                 ]);
             }
 
+
+            $esIslero = !empty($venta->turno_islero_id) || ($usuarioVenta && $usuarioVenta->hasRole('islero'));
 
             if (!$esIslero) {
 
@@ -532,13 +527,14 @@ class VentaService
                 $venta,
                 [
                     'estado' => 'anulada',
+                    'estado_pago' => 'anulada',
                     'motivo_anulacion' => $motivoAnulacion,
                     'user_anulacion_id' => $userId,
                     'fecha_anulacion' => now(),
                 ]
             );
 
-            if ($esIslero && $turno) {
+            if ($turno) {
                 $totalesTurno = $this->turnoRepository->recalcularTotalesTurno(
                     $turno->id
                 );
@@ -903,5 +899,408 @@ class VentaService
         }
 
         return $venta;
+    }
+
+    public function update(int $id, array $data, int $userId): Venta
+    {
+        return DB::transaction(function () use ($id, $data, $userId) {
+            $venta = $this->findById($id);
+
+            if ($venta->estado === 'anulada') {
+                throw new HttpException(422, 'No se puede editar una venta anulada.');
+            }
+
+            if ($venta->tipo_origen === 'combustible') {
+                throw new HttpException(
+                    422,
+                    'Las ventas de combustible no se editan individualmente. Deben ajustarse mediante lecturas de manguera.'
+                );
+            }
+
+            // Capturar cliente y saldo pendiente previa a cualquier modificación
+            $oldClienteId = $venta->cliente_id;
+            $oldSaldoPendiente = (float) $venta->saldo_pendiente;
+
+            $turno = null;
+            if ($venta->turno_islero_id) {
+                $turno = TurnoIslero::find($venta->turno_islero_id);
+                if ($turno && $turno->estado === 'cerrado') {
+                    throw new HttpException(
+                        422,
+                        'No se puede editar la venta porque el turno donde fue realizada ya se encuentra cerrado.'
+                    );
+                }
+            }
+
+            if ($oldSaldoPendiente > 0 || $venta->tipo_venta === 'credito') {
+                $tieneAbonos = DB::table('abonos_cartera_detalle')
+                    ->where('venta_id', $venta->id)
+                    ->exists();
+
+                if ($tieneAbonos) {
+                    throw new HttpException(
+                        422,
+                        'No se puede editar una venta a crédito que ya tiene abonos de cartera aplicados. Debe anular o editar primero los abonos correspondientes.'
+                    );
+                }
+            }
+
+            $bodegaId = (int) $venta->bodega_id;
+
+            foreach ($venta->detalles as $detalleAntiguo) {
+                $this->ventaRepository->incrementInventario(
+                    $detalleAntiguo->producto_id,
+                    $bodegaId,
+                    (float) $detalleAntiguo->cantidad
+                );
+
+                $this->ventaRepository->createMovimientoInventario([
+                    'tipo_movimiento' => 'ajuste_edicion_venta',
+                    'producto_id' => $detalleAntiguo->producto_id,
+                    'bodega_origen_id' => null,
+                    'bodega_destino_id' => $bodegaId,
+                    'cantidad' => $detalleAntiguo->cantidad,
+                    'observacion' => "Ajuste por edición de Venta #{$venta->id}",
+                    'user_id' => $userId,
+                ]);
+            }
+
+            $nuevosDetalles = $data['detalles'] ?? null;
+            $total = (float) $venta->total;
+            $destinoRecaudoId = null;
+
+            if ($nuevosDetalles && count($nuevosDetalles) > 0) {
+                $venta->detalles()->delete();
+
+                $subtotal = 0;
+                $impuesto = 0;
+                $soldicom = 0;
+                $sobreTasa = 0;
+                $descuento = 0;
+                $total = 0;
+
+                foreach ($nuevosDetalles as $detData) {
+                    $producto = $this->ventaRepository->findProductoById($detData['producto_id']);
+                    if (!$producto) {
+                        throw new HttpException(422, "Producto {$detData['producto_id']} no existe.");
+                    }
+
+                    if (!$producto->categoriaProducto) {
+                        throw new HttpException(
+                            422,
+                            "El producto {$producto->nombre} no tiene categoría."
+                        );
+                    }
+
+                    if (!$producto->categoriaProducto->destino_recaudo_id) {
+                        throw new HttpException(
+                            422,
+                            "La categoría del producto {$producto->nombre} no tiene destino de recaudo."
+                        );
+                    }
+
+                    $prodDestinoRecaudoId = (int) $producto->categoriaProducto->destino_recaudo_id;
+
+                    if ($destinoRecaudoId === null) {
+                        $destinoRecaudoId = $prodDestinoRecaudoId;
+                    } elseif ($destinoRecaudoId !== $prodDestinoRecaudoId) {
+                        throw new HttpException(
+                            422,
+                            'No se permiten productos de diferentes destinos de recaudo en una misma venta.'
+                        );
+                    }
+
+                    $inventario = $this->ventaRepository->findInventario($detData['producto_id'], $bodegaId);
+                    if (!$inventario || (float) $inventario->cantidad < (float) $detData['cantidad']) {
+                        throw new HttpException(422, "Stock insuficiente para {$producto->nombre}.");
+                    }
+
+                    $detSubtotal = round((float) $detData['cantidad'] * (float) $detData['precio_unitario'], 2);
+                    $detDescuento = round((float) ($detData['descuento'] ?? 0), 2);
+                    $detIvaValor = round((float) ($detData['iva_valor'] ?? 0), 2);
+                    $detSoldicom = round((float) ($detData['soldicom'] ?? 0), 2);
+                    $detSobreTasa = round((float) ($detData['sobre_tasa'] ?? 0), 2);
+                    $detTotal = (float) $detData['total'];
+
+                    $subtotal += $detSubtotal;
+                    $impuesto += $detIvaValor;
+                    $soldicom += $detSoldicom;
+                    $sobreTasa += $detSobreTasa;
+                    $descuento += $detDescuento;
+                    $total += $detTotal;
+
+                    $this->ventaRepository->createDetalle([
+                        'venta_id' => $venta->id,
+                        'producto_id' => $detData['producto_id'],
+                        'manguera_id' => null,
+                        'cantidad' => $detData['cantidad'],
+                        'precio_unitario' => $detData['precio_unitario'],
+                        'descuento' => $detDescuento,
+                        'iva' => $detData['iva'] ?? 0,
+                        'iva_valor' => $detIvaValor,
+                        'soldicom' => $detSoldicom,
+                        'sobre_tasa' => $detSobreTasa,
+                        'subtotal' => $detSubtotal,
+                        'total' => $detTotal,
+                    ]);
+
+                    $this->ventaRepository->decrementInventario($detData['producto_id'], $bodegaId, (float) $detData['cantidad']);
+
+                    $this->ventaRepository->createMovimientoInventario([
+                        'tipo_movimiento' => 'venta',
+                        'producto_id' => $detData['producto_id'],
+                        'bodega_origen_id' => $bodegaId,
+                        'bodega_destino_id' => null,
+                        'cantidad' => $detData['cantidad'],
+                        'observacion' => "Venta (editada) #{$venta->id}",
+                        'user_id' => $userId,
+                    ]);
+                }
+
+                $venta->subtotal = $subtotal;
+                $venta->descuento = $descuento;
+                $venta->impuesto = $impuesto;
+                $venta->soldicom = $soldicom;
+                $venta->sobre_tasa = $sobreTasa;
+                $venta->total = $total;
+            }
+
+            // Resolver destino de recaudo para asignación de cajas
+            if (!$destinoRecaudoId && $venta->detalles()->exists()) {
+                $primerDetalle = $venta->detalles()->with('producto.categoriaProducto')->first();
+                $destinoRecaudoId = $primerDetalle?->producto?->categoriaProducto?->destino_recaudo_id;
+            }
+
+            // Sincronización de pagos (pagos_venta, total_pagado, saldo_pendiente, estado_pago)
+            $tipoVenta = $data['tipo_venta'] ?? $venta->tipo_venta;
+            $nuevosPagos = array_key_exists('pagos', $data) ? $data['pagos'] : null;
+
+            if ($tipoVenta === 'credito') {
+                $totalPagado = 0;
+                if ($nuevosPagos !== null) {
+                    $venta->pagos()->delete();
+                }
+            } else {
+                if ($nuevosPagos !== null) {
+                    $sumaPagos = 0;
+                    foreach ($nuevosPagos as $pago) {
+                        $sumaPagos += (float) ($pago['monto'] ?? 0);
+                    }
+                    $sumaPagos = round($sumaPagos, 2);
+
+                    if ($sumaPagos > $total) {
+                        throw new HttpException(
+                            422,
+                            "El monto total de los pagos reportados ({$sumaPagos}) no puede ser superior al total de la venta ({$total})."
+                        );
+                    }
+
+                    $venta->pagos()->delete();
+
+                    foreach ($nuevosPagos as $pago) {
+                        $metodoPago = $pago['metodo_pago'];
+                        $montoPago = round((float) $pago['monto'], 2);
+
+                        if ($montoPago <= 0) {
+                            continue;
+                        }
+
+                        $tipoCaja = $this->resolverTipoCaja($metodoPago);
+                        $caja = $this->ventaRepository->getCajaAbiertaByTipoAndDestino($tipoCaja, $destinoRecaudoId);
+                        if (!$caja) {
+                            throw new HttpException(422, "No existe caja abierta para el destino de recaudo configurado.");
+                        }
+
+                        $this->ventaRepository->createPago([
+                            'venta_id' => $venta->id,
+                            'caja_id' => $caja->id,
+                            'user_id' => $userId,
+                            'fecha_pago' => now(),
+                            'monto' => $montoPago,
+                            'metodo_pago' => $metodoPago,
+                            'observacion' => $pago['observacion'] ?? null,
+                        ]);
+                    }
+
+                    $totalPagado = $sumaPagos;
+                } else {
+                    $sumaPagosExistentes = round((float) $venta->pagos()->sum('monto'), 2);
+
+                    if ($sumaPagosExistentes > $total) {
+                        throw new HttpException(
+                            422,
+                            "El monto total de los pagos ya registrados ({$sumaPagosExistentes}) supera el nuevo total de la venta ({$total}). Debe enviar la distribución de pagos ajustada."
+                        );
+                    }
+
+                    $totalPagado = $sumaPagosExistentes;
+                }
+            }
+
+            // Sincronizar movimientos de caja únicamente para ventas NO Islero
+            $usuarioVenta = $venta->user_id ? User::find($venta->user_id) : null;
+            $esIslero = !empty($venta->turno_islero_id) || ($usuarioVenta && $usuarioVenta->hasRole('islero'));
+
+            if (!$esIslero) {
+                $this->ventaRepository->deleteMovimientosCajaByVenta($venta->id);
+
+                if ($tipoVenta !== 'credito') {
+                    $pagosActuales = $venta->pagos()->get();
+                    foreach ($pagosActuales as $pago) {
+                        if ($pago->metodo_pago === 'credito' || (float) $pago->monto <= 0) {
+                            continue;
+                        }
+                        if (!$pago->caja_id) {
+                            continue;
+                        }
+
+                        $this->ventaRepository->createMovimientoCaja([
+                            'caja_id' => $pago->caja_id,
+                            'tipo_movimiento' => 'ingreso',
+                            'categoria_movimiento' => 'venta',
+                            'origen_modulo' => 'ventas',
+                            'origen_id' => $venta->id,
+                            'medio_pago' => $pago->metodo_pago,
+                            'monto' => $pago->monto,
+                            'descripcion' => "Ingreso por Venta (editada) #{$venta->id}",
+                            'user_id' => $userId,
+                            'fecha_movimiento' => now(),
+                        ]);
+                    }
+                }
+            }
+
+            $saldoPendiente = round($total - $totalPagado, 2);
+            if ($saldoPendiente <= 0) {
+                $totalPagado = $total;
+                $saldoPendiente = 0;
+                $estadoPago = 'pagado';
+            } else {
+                $estadoPago = $totalPagado > 0 ? 'parcial' : 'pendiente';
+            }
+
+            $venta->total_pagado = $totalPagado;
+            $venta->saldo_pendiente = $saldoPendiente;
+            $venta->estado_pago = $estadoPago;
+
+            $nuevoClienteId = array_key_exists('cliente_id', $data) ? $data['cliente_id'] : $oldClienteId;
+            $newSaldoPendiente = (float) $venta->saldo_pendiente;
+
+            // Manejo de saldos de cartera de clientes
+            if ($nuevoClienteId !== $oldClienteId) {
+                // Caso A: El cliente cambió
+                if ($oldClienteId && $oldSaldoPendiente > 0) {
+                    $oldCliente = $this->ventaRepository->findClienteById($oldClienteId);
+                    if ($oldCliente) {
+                        $saldoAnt = (float) $oldCliente->saldo_credito;
+                        $saldoNuev = max(0, round($saldoAnt - $oldSaldoPendiente, 2));
+                        $this->ventaRepository->updateCliente($oldCliente, ['saldo_credito' => $saldoNuev]);
+
+                        $this->ventaRepository->createMovimientoCartera([
+                            'cliente_id' => $oldCliente->id,
+                            'tipo_movimiento' => 'ajuste_edicion_venta',
+                            'origen_modulo' => 'ventas',
+                            'origen_id' => $venta->id,
+                            'valor' => $oldSaldoPendiente,
+                            'saldo_anterior' => $saldoAnt,
+                            'saldo_nuevo' => $saldoNuev,
+                            'medio_pago' => null,
+                            'descripcion' => "Ajuste por cambio de cliente en venta #{$venta->id}",
+                            'user_id' => $userId,
+                            'fecha_movimiento' => now(),
+                        ]);
+                    }
+                }
+
+                if ($nuevoClienteId && $newSaldoPendiente > 0) {
+                    $newCliente = $this->ventaRepository->findClienteById($nuevoClienteId);
+                    if (!$newCliente) {
+                        throw new HttpException(422, 'Cliente no encontrado.');
+                    }
+                    if (!(bool) $newCliente->maneja_credito) {
+                        throw new HttpException(422, 'El nuevo cliente no tiene crédito habilitado.');
+                    }
+
+                    $cupoDisp = (float) $newCliente->cupo_credito - (float) $newCliente->saldo_credito;
+                    if ($cupoDisp < $newSaldoPendiente) {
+                        throw new HttpException(422, 'El nuevo cliente no tiene cupo de crédito suficiente.');
+                    }
+
+                    $saldoAnt = (float) $newCliente->saldo_credito;
+                    $saldoNuev = round($saldoAnt + $newSaldoPendiente, 2);
+                    $this->ventaRepository->updateCliente($newCliente, ['saldo_credito' => $saldoNuev]);
+
+                    $this->ventaRepository->createMovimientoCartera([
+                        'cliente_id' => $newCliente->id,
+                        'tipo_movimiento' => 'venta_credito',
+                        'origen_modulo' => 'ventas',
+                        'origen_id' => $venta->id,
+                        'valor' => $newSaldoPendiente,
+                        'saldo_anterior' => $saldoAnt,
+                        'saldo_nuevo' => $saldoNuev,
+                        'medio_pago' => null,
+                        'descripcion' => "Venta crédito (reasignada) #{$venta->id}",
+                        'user_id' => $userId,
+                        'fecha_movimiento' => now(),
+                    ]);
+                }
+            } else {
+                // Caso B: Es el mismo cliente, se ajusta la diferencia de saldo pendiente
+                $diferencia = round($newSaldoPendiente - $oldSaldoPendiente, 2);
+
+                if ($oldClienteId && $diferencia != 0) {
+                    $cliente = $this->ventaRepository->findClienteById($oldClienteId);
+                    if ($cliente) {
+                        if ($diferencia > 0) {
+                            if (!(bool) $cliente->maneja_credito) {
+                                throw new HttpException(422, 'El cliente no tiene crédito habilitado.');
+                            }
+
+                            $cupoDisp = (float) $cliente->cupo_credito - (float) $cliente->saldo_credito;
+                            if ($cupoDisp < $diferencia) {
+                                throw new HttpException(422, 'El cliente no tiene cupo de crédito suficiente para el incremento.');
+                            }
+                        }
+
+                        $saldoAnt = (float) $cliente->saldo_credito;
+                        $saldoNuev = max(0, round($saldoAnt + $diferencia, 2));
+                        $this->ventaRepository->updateCliente($cliente, ['saldo_credito' => $saldoNuev]);
+
+                        $this->ventaRepository->createMovimientoCartera([
+                            'cliente_id' => $cliente->id,
+                            'tipo_movimiento' => $diferencia > 0 ? 'venta_credito' : 'ajuste_edicion_venta',
+                            'origen_modulo' => 'ventas',
+                            'origen_id' => $venta->id,
+                            'valor' => abs($diferencia),
+                            'saldo_anterior' => $saldoAnt,
+                            'saldo_nuevo' => $saldoNuev,
+                            'medio_pago' => null,
+                            'descripcion' => "Ajuste por edición de venta crédito #{$venta->id}",
+                            'user_id' => $userId,
+                            'fecha_movimiento' => now(),
+                        ]);
+                    }
+                }
+            }
+
+            if (array_key_exists('cliente_id', $data)) {
+                $venta->cliente_id = $data['cliente_id'];
+            }
+            if (isset($data['tipo_venta'])) {
+                $venta->tipo_venta = $data['tipo_venta'];
+            }
+            if (isset($data['observacion'])) {
+                $venta->observacion = $data['observacion'];
+            }
+
+            $venta->save();
+
+            if ($turno) {
+                $totalesTurno = $this->turnoRepository->recalcularTotalesTurno($turno->id);
+                $turno->update($totalesTurno);
+            }
+
+            return $this->findById($venta->id);
+        });
     }
 }

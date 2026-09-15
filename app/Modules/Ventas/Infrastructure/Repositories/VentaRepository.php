@@ -18,6 +18,8 @@ use App\Models\TurnoIslero;
 use App\Models\Manguera;
 use App\Models\LecturaManguera;
 use App\Models\User;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
 class VentaRepository implements VentaRepositoryInterface
 {
     public function getAll(array $filters = [])
@@ -124,10 +126,36 @@ class VentaRepository implements VentaRepositoryInterface
 
     public function decrementInventario(int $productoId, int $bodegaId, float $cantidad): void
     {
-        Inventario::query()
+        $inventario = $this->findInventario($productoId, $bodegaId);
+        if (!$inventario) {
+            $producto = $this->findProductoById($productoId);
+            $nombreProd = $producto ? $producto->nombre : "#{$productoId}";
+            throw new HttpException(
+                422,
+                "El producto {$nombreProd} no tiene registro de inventario en la bodega configurada."
+            );
+        }
+
+        if ((float) $inventario->cantidad < (float) $cantidad) {
+            $producto = $this->findProductoById($productoId);
+            $nombreProd = $producto ? $producto->nombre : "#{$productoId}";
+            throw new HttpException(
+                422,
+                "Stock insuficiente para {$nombreProd}."
+            );
+        }
+
+        $affected = Inventario::query()
             ->where('producto_id', $productoId)
             ->where('bodega_id', $bodegaId)
             ->decrement('cantidad', $cantidad);
+
+        if ($affected === 0) {
+            throw new HttpException(
+                422,
+                "No se pudo descontar el inventario del producto ID {$productoId}."
+            );
+        }
     }
 
     public function createMovimientoInventario(array $data): MovimientoInventario
@@ -138,6 +166,14 @@ class VentaRepository implements VentaRepositoryInterface
     public function createMovimientoCaja(array $data): MovimientoCaja
     {
         return MovimientoCaja::create($data)->load(['usuario', 'caja']);
+    }
+
+    public function deleteMovimientosCajaByVenta(int $ventaId): void
+    {
+        MovimientoCaja::query()
+            ->where('origen_modulo', 'ventas')
+            ->where('origen_id', $ventaId)
+            ->delete();
     }
 
     public function createMovimientoCartera(array $data): MovimientoCartera
@@ -161,10 +197,27 @@ class VentaRepository implements VentaRepositoryInterface
 
     public function incrementInventario(int $productoId, int $bodegaId, float $cantidad): void
     {
-        Inventario::query()
+        $inventario = $this->findInventario($productoId, $bodegaId);
+        if (!$inventario) {
+            $producto = $this->findProductoById($productoId);
+            $nombreProd = $producto ? $producto->nombre : "#{$productoId}";
+            throw new HttpException(
+                422,
+                "El producto {$nombreProd} no tiene registro de inventario en la bodega configurada para reintegrar el stock."
+            );
+        }
+
+        $affected = Inventario::query()
             ->where('producto_id', $productoId)
             ->where('bodega_id', $bodegaId)
             ->increment('cantidad', $cantidad);
+
+        if ($affected === 0) {
+            throw new HttpException(
+                422,
+                "No se pudo incrementar el inventario del producto ID {$productoId}."
+            );
+        }
     }
 
     public function getTurnoAbiertoByUser(int $userId): ?TurnoIslero

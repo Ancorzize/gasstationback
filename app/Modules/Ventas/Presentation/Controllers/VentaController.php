@@ -14,6 +14,7 @@ use App\Modules\Ventas\Presentation\Requests\AnularVentaRequest;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ConfiguracionEmpresa;
 use App\Modules\Ventas\Presentation\Requests\StoreVentaCombustibleRequest;
+use App\Modules\Ventas\Presentation\Requests\UpdateVentaRequest;
 
 class VentaController extends Controller
 {
@@ -190,6 +191,30 @@ class VentaController extends Controller
                 new VentaResource($venta),
                 'Venta de combustible registrada correctamente.',
                 201
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function update(UpdateVentaRequest $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('editar_ventas') && !$request->user()->can('crear_ventas')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $venta = $this->ventaService->update(
+                $id,
+                $request->validated(),
+                $request->user()->id
+            );
+
+            return ApiResponse::success(
+                new VentaResource($venta),
+                'Venta actualizada correctamente.'
             );
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());

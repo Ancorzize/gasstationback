@@ -32,9 +32,13 @@ class ProductoController extends Controller
 
             $user = $request->user();
 
-            if (!$user->bodega_id) {
+            $bodegaId = ($request->has('bodega_id') && $request->get('bodega_id') !== null && $request->get('bodega_id') !== '')
+                ? (int) $request->get('bodega_id')
+                : ($user->bodega_id ? (int) $user->bodega_id : null);
+
+            if (!$bodegaId) {
                 return ApiResponse::error(
-                    'El usuario no tiene una bodega asignada.',
+                    'El usuario no tiene una bodega asignada y no se especificó bodega.',
                     422
                 );
             }
@@ -49,7 +53,7 @@ class ProductoController extends Controller
 
             $productos = $this->productoService->paginate(
                 $filters,
-                (int) $user->bodega_id
+                $bodegaId
             );
 
             return ApiResponse::success([

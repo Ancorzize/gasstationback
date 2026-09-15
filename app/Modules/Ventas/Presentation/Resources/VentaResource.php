@@ -33,6 +33,12 @@ class VentaResource extends JsonResource
                 'email' => $this->usuario->email,
             ] : null,
 
+            'bodega_id' => $this->bodega_id,
+            'bodega' => $this->bodega ? [
+                'id' => $this->bodega->id,
+                'nombre' => $this->bodega->nombre,
+            ] : null,
+
             'tipo_venta' => $this->tipo_venta,
             'estado' => $this->estado,
             'estado_pago' => $this->estado_pago,

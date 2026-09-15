@@ -43,6 +43,8 @@ interface VentaRepositoryInterface
 
     public function createMovimientoCaja(array $data): MovimientoCaja;
 
+    public function deleteMovimientosCajaByVenta(int $ventaId): void;
+
     public function createMovimientoCartera(array $data): MovimientoCartera;
 
     public function nextNumeroFactura(): string;

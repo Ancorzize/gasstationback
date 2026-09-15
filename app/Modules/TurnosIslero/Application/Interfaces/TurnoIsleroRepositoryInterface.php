@@ -95,4 +95,8 @@ interface TurnoIsleroRepositoryInterface
         int $turnoId,
         array $mangueraIds
     ): ?TurnoIslero;
+
+    public function getResumenOperacionesByTurno(int $turnoId): array;
+
+    public function getOperacionesByTurnoAndTipo(int $turnoId, string $tipo): Collection;
 }

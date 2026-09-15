@@ -231,6 +231,8 @@ Route::middleware(['auth:sanctum'])->prefix('cartera')->group(function () {
     Route::get('/resumen', [CarteraController::class, 'resumen']);
     Route::get('/movimientos', [CarteraController::class, 'movimientos']);
     Route::post('/abonos', [CarteraController::class, 'registrarAbono']);
+    Route::post('/abonos/{id}/anular', [CarteraController::class, 'anularAbono']);
+    Route::put('/abonos/{id}', [CarteraController::class, 'updateAbono']);
     Route::post('/saldos-iniciales',[CarteraController::class, 'registrarSaldoInicial']);
 });
 
@@ -241,6 +243,7 @@ Route::middleware(['auth:sanctum'])->prefix('ventas')->group(function () {
     Route::post('/combustible', [VentaController::class, 'storeCombustible']);
 
     Route::get('/{id}', [VentaController::class, 'show']);
+    Route::put('/{id}', [VentaController::class, 'update']);
     Route::post('/{id}/anular', [VentaController::class, 'anular']);
     Route::get('/{id}/pdf', [VentaController::class, 'pdf']);
 });
@@ -277,6 +280,8 @@ Route::middleware(['auth:sanctum'])->prefix('turnos-islero')->group(function () 
     Route::get('/pendientes-cierre', [ TurnoIsleroController::class, 'pendientesCierre']);
     Route::get('/{id}/resumen-cierre', [TurnoIsleroController::class, 'resumenCierre']);
     Route::get('/{id}/revision-cierre', [ TurnoIsleroController::class, 'revisionCierre' ]);
+    Route::get('/{id}/operaciones', [TurnoIsleroController::class, 'resumenOperaciones']);
+    Route::get('/{id}/operaciones/{tipo}', [TurnoIsleroController::class, 'listarOperacionesPorTipo']);
     Route::get('/{id}', [TurnoIsleroController::class, 'show']);
     Route::post('/abrir', [TurnoIsleroController::class, 'abrir']);
     Route::post('/{id}/solicitar-cierre', [TurnoIsleroController::class, 'solicitarCierre']);
