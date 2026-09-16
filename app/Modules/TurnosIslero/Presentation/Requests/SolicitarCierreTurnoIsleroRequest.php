@@ -13,22 +13,25 @@ class SolicitarCierreTurnoIsleroRequest extends FormRequest
 
     public function rules(): array
     {
+        $turnoId = $this->route('id') ?? $this->route('turno');
+        $turno = $turnoId ? \App\Models\TurnoIslero::find($turnoId) : null;
+        $usuarioTurno = $turno ? ($turno->usuario ?? \App\Models\User::find($turno->user_id)) : $this->user();
+        $requiereCombustible = $usuarioTurno ? $usuarioTurno->can('vender_combustible') : true;
+
         return [
 
-            'lecturas_finales' => [
-                'required',
-                'array',
-                'min:1'
-            ],
+            'lecturas_finales' => $requiereCombustible
+                ? ['required', 'array', 'min:1']
+                : ['nullable', 'array'],
 
             'lecturas_finales.*.manguera_id' => [
-                'required',
+                'required_with:lecturas_finales',
                 'integer',
                 'exists:mangueras,id'
             ],
 
             'lecturas_finales.*.lectura_final' => [
-                'required',
+                'required_with:lecturas_finales',
                 'numeric',
                 'gte:0'
             ],

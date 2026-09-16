@@ -146,6 +146,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'ver_turnos_islero',
             'abrir_turnos_islero',
             'cerrar_turnos_islero',
+            'vender_combustible',
+            'vender_lubricantes',
 
             // Cartera
             'ver_cartera_clientes',
@@ -189,9 +191,36 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $adminRole->syncPermissions($permissions);
 
-        Role::firstOrCreate(['name' => 'cajero', 'guard_name' => 'sanctum']);
-        Role::firstOrCreate(['name' => 'vendedor', 'guard_name' => 'sanctum']);
-        Role::firstOrCreate(['name' => 'islero', 'guard_name' => 'sanctum']);
+        $cajeroRole = Role::firstOrCreate(['name' => 'cajero', 'guard_name' => 'sanctum']);
+        $cajeroRole->syncPermissions([
+            'ver_turnos_islero',
+            'abrir_turnos_islero',
+            'cerrar_turnos_islero',
+            'vender_lubricantes',
+            'crear_ventas',
+            'registrar_abonos_cartera',
+        ]);
+
+        $vendedorRole = Role::firstOrCreate(['name' => 'vendedor', 'guard_name' => 'sanctum']);
+        $vendedorRole->syncPermissions([
+            'ver_turnos_islero',
+            'abrir_turnos_islero',
+            'cerrar_turnos_islero',
+            'vender_lubricantes',
+            'crear_ventas',
+            'registrar_abonos_cartera',
+        ]);
+
+        $isleroRole = Role::firstOrCreate(['name' => 'islero', 'guard_name' => 'sanctum']);
+        $isleroRole->syncPermissions([
+            'ver_turnos_islero',
+            'abrir_turnos_islero',
+            'cerrar_turnos_islero',
+            'vender_combustible',
+            'vender_lubricantes',
+            'crear_ventas',
+            'registrar_abonos_cartera',
+        ]);
 
         $adminUser = User::firstOrCreate(
             ['email' => 'admin@admin.com'],

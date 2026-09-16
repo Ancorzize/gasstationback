@@ -293,9 +293,7 @@ class VentaService
                     'observacion' => $pago->observacion,
                 ]);
 
-                $isIslero = $turnoAbierto->usuario->hasRole('islero');
-                if (!$isIslero) {
-
+                if (empty($turnoAbierto)) {
                     $this->ventaRepository->createMovimientoCaja([
                         'caja_id' => $caja->id,
                         'tipo_movimiento' => 'ingreso',
@@ -445,9 +443,7 @@ class VentaService
             }
 
 
-            $esIslero = !empty($venta->turno_islero_id) || ($usuarioVenta && $usuarioVenta->hasRole('islero'));
-
-            if (!$esIslero) {
+            if (empty($venta->turno_islero_id)) {
 
                 foreach ($venta->pagos as $pago) {
 
@@ -749,8 +745,7 @@ class VentaService
                     'observacion' => $dto->observacion,
                 ]);
 
-                $isIslero = $turnoAbierto->usuario->hasRole('islero');
-                if (!$isIslero) {
+                if (empty($turnoAbierto)) {
                     $this->ventaRepository->createMovimientoCaja([
                         'caja_id' => $caja->id,
                         'tipo_movimiento' => 'ingreso',
@@ -1137,11 +1132,8 @@ class VentaService
                 }
             }
 
-            // Sincronizar movimientos de caja únicamente para ventas NO Islero
-            $usuarioVenta = $venta->user_id ? User::find($venta->user_id) : null;
-            $esIslero = !empty($venta->turno_islero_id) || ($usuarioVenta && $usuarioVenta->hasRole('islero'));
-
-            if (!$esIslero) {
+            // Sincronizar movimientos de caja únicamente para ventas sin turno
+            if (empty($venta->turno_islero_id)) {
                 $this->ventaRepository->deleteMovimientosCajaByVenta($venta->id);
 
                 if ($tipoVenta !== 'credito') {

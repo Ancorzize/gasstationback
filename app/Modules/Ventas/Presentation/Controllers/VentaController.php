@@ -85,11 +85,13 @@ class VentaController extends Controller
             );
         }
     }
-
+    /**
+     * Crear venta de lubricantes
+     */
     public function store(StoreVentaRequest $request)
     {
         try {
-            if (!$request->user()->can('crear_ventas')) {
+            if (!$request->user()->can('vender_lubricantes')) {
                 return ApiResponse::error('Sin permisos.', 403);
             }
 
@@ -173,10 +175,13 @@ class VentaController extends Controller
         }
     }
 
+    /**
+     * Crear venta de combustible
+     */
     public function storeCombustible(StoreVentaCombustibleRequest $request)
     {
         try {
-            if (!$request->user()->can('crear_ventas')) {
+            if (!$request->user()->can('vender_combustible')) {
                 return ApiResponse::error('Sin permisos.', 403);
             }
 

@@ -500,4 +500,79 @@ Se realizaron 7 ajustes específicos en los componentes del frontend React:
    - En `CarteraService::updateAbono`, si el abono posee un movimiento de caja asociado (`origen_modulo = 'cartera'`, `origen_id = $abono->id`, `categoria_movimiento = 'abono_cartera'`), este se actualiza con la nueva `caja_id`, `monto` y `medio_pago` sin generar registros duplicados.
    - Si no existía un movimiento de caja y se asigna una caja a un abono independiente sin turno, se crea el movimiento correspondiente en la caja indicada.
 
+## 23. Control de Operaciones de Turno mediante Permisos Spatie (IMPLEMENTADO)
+
+1. **Permisos y Seeder**:
+   - Permisos específicos: `vender_combustible`, `vender_lubricantes`, `registrar_abonos_cartera`.
+   - Se asignaron a los roles Spatie:
+     - `admin`: todos los permisos.
+     - `islero`: `ver_turnos_islero`, `abrir_turnos_islero`, `cerrar_turnos_islero`, `vender_combustible`, `vender_lubricantes`, `crear_ventas`, `registrar_abonos_cartera`.
+     - `vendedor` y `cajero`: `ver_turnos_islero`, `abrir_turnos_islero`, `cerrar_turnos_islero`, `vender_lubricantes`, `crear_ventas`, `registrar_abonos_cartera`.
+
+2. **Apertura de Turnos según Permisos (Backend & Frontend)**:
+   - `AbrirTurnoIsleroRequest.php`: la validación de `mangueras` es obligatoria únicamente si el usuario posee `vender_combustible`. Si no posee `vender_combustible`, la regla de mangueras se evalúa como `nullable`.
+   - `TurnoIsleroService::abrir`: si el usuario posee `vender_combustible`, exige mangueras activas y genera sus lecturas iniciales. Si no posee `vender_combustible`, permite omitir mangueras sin registrar lecturas iniciales.
+   - `OpenShiftModal.jsx`: consulta los permisos del usuario con `usePermissions()`. Si no tiene `vender_combustible`, oculta la selección de mangueras.
+
+3. **Cierre de Turnos sin Lecturas de Combustible**:
+   - `TurnoIsleroService::solicitarCierre`, `revisionCierre` y `cerrar`: si el turno no posee mangueras/lecturas (`$turno->lecturas->isEmpty()`), se omiten las validaciones de lecturas finales, los cálculos de galones físicos y las ventas sintéticas AJT.
+   - `ShiftClosingPage.jsx`: renderiza la sección de lecturas finales de mangueras estrictamente cuando el usuario autenticado posee `vender_combustible` y el turno contiene mangueras asignadas.
+
+4. **Control Estricto de Visibilidad en Interfaz Operativa**:
+   - `ShiftOperationsSection.jsx`: evalúa estrictamente `vender_combustible`, `vender_lubricantes` y `registrar_abonos_cartera` sin fallbacks permisivos (`|| ver_turnos_islero` o `|| crear_ventas`). Las 4 tarjetas de resumen se renderizan condicionalmente según los permisos específicos del usuario.
+   - `ShiftSummaryPage.jsx`: la sección "Detalle de Mangueras" se renderiza condicionalmente sólo si el usuario autenticado tiene el permiso `vender_combustible` y el turno contiene lecturas.
+
+5. **Resolución de Caché de Permisos (`usePermissions.js` & `authService.js`)**:
+   - `usePermissions.js`: ejecuta una consulta asíncrona a `GET /api/auth/me/permissions` al montar el componente en `useEffect(..., [])`, garantizando un único llamado sin bucles infinitos y refrescando los permisos Spatie actualizados desde el backend. Soporta también arreglos de permisos mediante `.some()`.
+   - `authService.js`: al iniciar sesión, elimina de `localStorage` la clave `permissions` obsoleta para forzar que el nuevo usuario obtenga sus permisos reales directamente del servidor.
+
+6. **Integración Completa de Permisos en Shift Management, Menú Principal y Shift Closing**:
+   - `ShiftManagementPage.jsx`: evalúa `vender_combustible`, `vender_lubricantes` y `registrar_abonos_cartera` con `usePermissions()`. Oculta individualmente los botones de acción rápida ("Venta Combustible", "Venta Lubricantes", "Registrar Abonos") cuando el usuario no cuenta con el permiso correspondiente.
+   - `Sidebar.jsx`: protege las entradas de navegación "Ventas Combustible" (`vender_combustible`), "Ventas Lubricantes" (`vender_lubricantes`) y "Cartera" (`['ver_cartera', 'registrar_abonos_cartera']`).
+   - `ShiftClosingPage.jsx`: renderiza la sección de mangueras únicamente cuando `hasPermission("vender_combustible") && Array.isArray(summary?.lecturas) && summary.lecturas.length > 0`, permitiendo solicitar cierres limpios sin requerir lecturas cuando el usuario carece de permiso o el turno no tiene mangueras.
+
+7. **Filtrado de Destinos de Recaudo en Backend según Permisos del Usuario del Turno**:
+   - `TurnoIsleroService.php`: se implementó el método privado `esDestinoPermitidoParaUsuario($destino, $user)` para filtrar destinos según los permisos del usuario propietario del turno (`$turno->usuario`):
+     - `codigo === 'COMB'`: requiere que el usuario tenga el permiso Spatie `vender_combustible`.
+     - `codigo === 'LUBR'`: requiere que el usuario tenga el permiso Spatie `vender_lubricantes`.
+     - Códigos diferentes de `COMB` y `LUBR`: se mantienen sin alteración.
+   - Se aplicó este filtro tanto en `resumenCierre()` (para que `destinos_recaudo` solo devuelva los destinos permitidos al usuario) como en `validarRecaudoDestinos()` (para que el backend exija en la validación únicamente los destinos pertenecientes a las capacidades del usuario, evitando errores `422` al solicitar/aprobar el cierre).
+   - No se modificó el módulo ni repositorio de destinos/cajas, manteniendo intactas la estructura de base de datos y la relación destino -> caja.
+
+8. **Ajuste de Validación de `lecturas_finales` en Solicitar Cierre (`SolicitarCierreTurnoIsleroRequest.php`)**:
+   - `SolicitarCierreTurnoIsleroRequest.php`: evalúa si el usuario propietario del turno (`$turno->usuario ?? User::find($turno->user_id)`) posee el permiso Spatie `vender_combustible`.
+   - Si el propietario posee `vender_combustible`: `lecturas_finales` se mantiene estrictamente obligatorio (`['required', 'array', 'min:1']`).
+   - Si el propietario NO posee `vender_combustible`: `lecturas_finales` permite un arreglo vacío (`['nullable', 'array']`), permitiendo el envío de `"lecturas_finales": []` sin lanzar el error `"The lecturas finales field is required."`.
+   - Las reglas hijas (`lecturas_finales.*.manguera_id`, `lecturas_finales.*.lectura_final`) utilizan `required_with:lecturas_finales`, garantizando que si el payload contiene elementos de mangueras, estos se validen estrictamente, pero si el arreglo está vacío, la validación apruebe limpiamente.
+   - No se alteró la lógica de negocio del cierre ni otros endpoints.
+
+9. **Filtrado de Panel Administrativo de Revisión de Turnos (`revisionCierre` & `ShiftApprovalsPage.jsx`)**:
+   - `TurnoIsleroService::revisionCierre()`: reutiliza el helper `esDestinoPermitidoParaUsuario($destino, $usuarioTurno)` para filtrar `$destinosCaja` según los permisos del usuario propietario del turno (`$turno->usuario`). Si el propietario carece de `vender_combustible`, se devuelve `$lecturas = collect([])` y solo se retornan los destinos autorizados (ej. `LUBR`).
+   - `ShiftApprovalsPage.jsx`: condiciona la renderización de la tarjeta visual de "Mangueras y Lecturas" a `editLecturas.length > 0`, y adapta el contenedor a 1 sola columna centrada (`space-y-6 max-w-2xl mx-auto`) cuando el turno pertenece a un usuario de solo lubricantes, ocultando la sección de combustible por completo al administrador sin perder su capacidad de revisar y aprobar el turno.
+
+10. **Ajuste de Validación de `lecturas_finales` en Endpoint de Cierre Directo/Aprobación (`CerrarTurnoIsleroRequest.php`)**:
+    - `CerrarTurnoIsleroRequest.php`: evalúa si el usuario propietario del turno (`$turno->usuario ?? User::find($turno->user_id)`) posee el permiso Spatie `vender_combustible`.
+    - Si el propietario posee `vender_combustible`: `lecturas_finales` se mantiene estrictamente obligatorio (`['required', 'array', 'min:1']`).
+    - Si el propietario NO posee `vender_combustible`: `lecturas_finales` permite un arreglo vacío (`['nullable', 'array']`), permitiendo al administrador aprobar o cerrar directamente el turno enviando `"lecturas_finales": []` sin lanzar el error `"The lecturas finales field is required."`.
+    - Las reglas hijas (`lecturas_finales.*.manguera_id`, `lecturas_finales.*.lectura_final`) utilizan `required_with:lecturas_finales`, garantizando que si el payload contiene elementos de mangueras, estos se validen strictly, pero si el arreglo está vacío, la validación apruebe limpiamente.
+    - No se alteró la lógica de negocio del cierre ni otros endpoints.
+
+11. **Postposición de Movimientos de Caja al Cierre Definitivo para Ventas bajo Turno Abierto (`VentaService.php`)**:
+    - Se eliminaron las verificaciones obsoletas basadas en roles Spatie (`hasRole('islero')`) en `VentaService.php` (`create`, `anular`, `createCombustible`, `update`).
+    - `create()` y `createCombustible()`: evalúan `empty($turnoAbierto)`. Si la venta se realiza bajo un turno abierto (sin importar el rol del usuario: islero, vendedor, cajero, supervisor, etc.), la generación inmediata de `movimientos_caja` se omite y se pospone para el cierre definitivo del turno (`TurnoIsleroService::cerrar()`). Si no hay turno abierto, se crea el movimiento de caja de manera inmediata.
+    - `anular()` y `update()`: evalúan `empty($venta->turno_islero_id)`. Los movimientos de caja de anulación o sincronización por edición únicamente se ejecutan si la venta fue realizada fuera de un turno.
+    - Se conserva la trazabilidad y la asignación de `caja_id` en `pagos_venta` al momento de la venta.
+    - `TurnoIsleroService::cerrar()` consolida en el cierre los movimientos de caja para todas las ventas del turno mediante `registrarMovimientosCaja()`, garantizando cero duplicados.
+
+12. **Generación Incondicional de Movimientos de Caja en Cierre Administrativo (`TurnoIsleroService.php`)**:
+    - `TurnoIsleroService::cerrar()`: Se eliminó la guarda obsoleta `if ($turno->usuario->hasRole('islero'))` alrededor de `registrarMovimientosCaja()` y `registrarMovimientosCajaAbonos()`.
+    - Al ejecutar el cierre definitivo de un turno (`PENDIENTE_CIERRE` -> `CERRADO`), se invocan de forma incondicional `registrarMovimientosCaja($dto, $turno)` y `registrarMovimientosCajaAbonos($turno, $dto->user_id)`.
+    - Garantiza que las ventas y abonos de cualquier usuario (islero, vendedor, cajero, supervisor) con turno abierto generen sus correspondientes `movimientos_caja` de ingreso al momento del cierre definitivo.
+    - Preserva la idempotencia en `registrarMovimientosCaja` (vía `findMovimientoCajaByOrigenMedioPagoAndDestino`) y `registrarMovimientosCajaAbonos` (vía `findMovimientoCajaByOrigenAndOrigenId`), evitando duplicación de movimientos de caja.
+    - Mantiene la separación conceptual: `$turno->user_id` / `$turno->usuario` es el propietario/operador del turno, mientras que `$dto->user_id` registra al usuario administrador autenticado que ejecuta el cierre definitivo.
+
+
+
+
+
 

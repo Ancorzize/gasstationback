@@ -13,10 +13,13 @@ class AbrirTurnoIsleroRequest extends FormRequest
 
     public function rules(): array
     {
+        $user = $this->user();
+        $requiereCombustible = $user && $user->can('vender_combustible');
+
         return [
             'estacion_id' => ['required', 'integer', 'exists:estaciones,id'],
 
-            'mangueras' => ['required', 'array', 'min:1'],
+            'mangueras' => $requiereCombustible ? ['required', 'array', 'min:1'] : ['nullable', 'array'],
             'mangueras.*' => ['required', 'integer', 'exists:mangueras,id'],
 
             'observacion_apertura' => ['nullable', 'string'],

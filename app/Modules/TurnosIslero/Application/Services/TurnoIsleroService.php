@@ -50,47 +50,56 @@ class TurnoIsleroService
     {
         return DB::transaction(function () use ($dto) {
 
-
-
             if ($this->turnoRepository->existsTurnoAbiertoByUser($dto->user_id)) {
                 throw new HttpException(422, 'Ya tienes un turno abierto.');
             }
 
-            $manguerasSeleccionadas = $this->turnoRepository->getManguerasByIds($dto->mangueras);
+            $user = \App\Models\User::find($dto->user_id);
+            $requiereCombustible = $user && $user->can('vender_combustible');
 
-            if ($manguerasSeleccionadas->count() !== count(array_unique($dto->mangueras))) {
-                throw new HttpException(422, 'Una o más mangueras seleccionadas no existen.');
+            if ($requiereCombustible && empty($dto->mangueras)) {
+                throw new HttpException(422, 'Debe seleccionar al menos una manguera.');
             }
 
-            foreach ($manguerasSeleccionadas as $manguera) {
-                if (!(bool) $manguera->is_active) {
-                    throw new HttpException(422, "La manguera {$manguera->nombre} está inactiva.");
+            $manguerasSeleccionadas = collect();
+
+            if (!empty($dto->mangueras)) {
+                $manguerasSeleccionadas = $this->turnoRepository->getManguerasByIds($dto->mangueras);
+
+                if ($manguerasSeleccionadas->count() !== count(array_unique($dto->mangueras))) {
+                    throw new HttpException(422, 'Una o más mangueras seleccionadas no existen.');
                 }
 
-                if ((int) $manguera->bomba?->estacion_id !== (int) $dto->estacion_id) {
-                    throw new HttpException(422, "La manguera {$manguera->nombre} no pertenece a la estación seleccionada.");
+                foreach ($manguerasSeleccionadas as $manguera) {
+                    if (!(bool) $manguera->is_active) {
+                        throw new HttpException(422, "La manguera {$manguera->nombre} está inactiva.");
+                    }
+
+                    if ((int) $manguera->bomba?->estacion_id !== (int) $dto->estacion_id) {
+                        throw new HttpException(422, "La manguera {$manguera->nombre} no pertenece a la estación seleccionada.");
+                    }
                 }
-            }
 
-            $ocupadas = $this->turnoRepository
-                ->getManguerasOcupadasEnTurnosAbiertos($dto->estacion_id)
-                ->toArray();
+                $ocupadas = $this->turnoRepository
+                    ->getManguerasOcupadasEnTurnosAbiertos($dto->estacion_id)
+                    ->toArray();
 
-            $manguerasOcupadasSeleccionadas = array_values(array_intersect($dto->mangueras, $ocupadas));
+                $manguerasOcupadasSeleccionadas = array_values(array_intersect($dto->mangueras, $ocupadas));
 
-            if (count($manguerasOcupadasSeleccionadas) > 0) {
-                throw new HttpException(422, 'Una o más mangueras seleccionadas ya están asignadas a un turno abierto.');
-            }
+                if (count($manguerasOcupadasSeleccionadas) > 0) {
+                    throw new HttpException(422, 'Una o más mangueras seleccionadas ya están asignadas a un turno abierto.');
+                }
 
-            $lecturasFaltantes = $this->getLecturasInicialesFaltantes(
-                $manguerasSeleccionadas,
-                $dto->lecturas_iniciales
-            );
+                $lecturasFaltantes = $this->getLecturasInicialesFaltantes(
+                    $manguerasSeleccionadas,
+                    $dto->lecturas_iniciales
+                );
 
-            if (count($lecturasFaltantes) > 0) {
-                throw ValidationException::withMessages([
-                    'lecturas_iniciales_faltantes' => $lecturasFaltantes,
-                ]);
+                if (count($lecturasFaltantes) > 0) {
+                    throw ValidationException::withMessages([
+                        'lecturas_iniciales_faltantes' => $lecturasFaltantes,
+                    ]);
+                }
             }
 
             $turno = $this->turnoRepository->createTurno([
@@ -102,34 +111,36 @@ class TurnoIsleroService
                 'observacion_apertura' => $dto->observacion_apertura,
             ]);
 
-            $this->turnoRepository->asignarMangueras($turno, $dto->mangueras);
+            if (!empty($dto->mangueras)) {
+                $this->turnoRepository->asignarMangueras($turno, $dto->mangueras);
 
-            foreach ($manguerasSeleccionadas as $manguera) {
-                $lecturaInicial = $this->resolverLecturaInicial(
-                    $manguera->id,
-                    $dto->lecturas_iniciales
-                );
-
-                $precioVigente = $this->turnoRepository->getPrecioVigenteProducto(
-                    $manguera->producto_id
-                );
-
-                if ($precioVigente === null) {
-                    throw new HttpException(
-                        422,
-                        "El producto {$manguera->producto?->nombre} no tiene precio de combustible vigente."
+                foreach ($manguerasSeleccionadas as $manguera) {
+                    $lecturaInicial = $this->resolverLecturaInicial(
+                        $manguera->id,
+                        $dto->lecturas_iniciales
                     );
-                }
 
-                $this->turnoRepository->createLectura([
-                    'turno_islero_id' => $turno->id,
-                    'manguera_id' => $manguera->id,
-                    'lectura_inicial' => $lecturaInicial,
-                    'lectura_final' => null,
-                    'galones_vendidos' => 0,
-                    'precio_galon' => $precioVigente,
-                    'total_venta' => 0,
-                ]);
+                    $precioVigente = $this->turnoRepository->getPrecioVigenteProducto(
+                        $manguera->producto_id
+                    );
+
+                    if ($precioVigente === null) {
+                        throw new HttpException(
+                            422,
+                            "El producto {$manguera->producto?->nombre} no tiene precio de combustible vigente."
+                        );
+                    }
+
+                    $this->turnoRepository->createLectura([
+                        'turno_islero_id' => $turno->id,
+                        'manguera_id' => $manguera->id,
+                        'lectura_inicial' => $lecturaInicial,
+                        'lectura_final' => null,
+                        'galones_vendidos' => 0,
+                        'precio_galon' => $precioVigente,
+                        'total_venta' => 0,
+                    ]);
+                }
             }
 
             return $this->findById($turno->id);
@@ -233,139 +244,125 @@ class TurnoIsleroService
             * - un administrador autorizado
             */
 
-            $manguerasAsignadas = $turno->lecturas
-                ->pluck('manguera_id')
-                ->map(fn ($id) => (int) $id)
-                ->toArray();
-
-            $manguerasEnviadas = collect($dto->lecturas_finales)
-                ->pluck('manguera_id')
-                ->map(fn ($id) => (int) $id)
-                ->toArray();
-
-            /*
-            * Validar que no falte ninguna manguera.
-            */
-            $faltantes = array_diff(
-                $manguerasAsignadas,
-                $manguerasEnviadas
-            );
-
-            if (!empty($faltantes)) {
-                throw new HttpException(
-                    422,
-                    'Debe enviar lectura final para todas las mangueras del turno.'
-                );
-            }
-
-            /*
-            * Validar que no lleguen mangueras que no pertenecen al turno.
-            */
-            $extras = array_diff(
-                $manguerasEnviadas,
-                $manguerasAsignadas
-            );
-
-            if (!empty($extras)) {
-                throw new HttpException(
-                    422,
-                    'Se enviaron mangueras que no pertenecen al turno.'
-                );
-            }
-
-            /*
-            * Actualizar lecturas finales y calcular combustible físico.
-            */
             $totalVentasCombustibleFisica = 0;
 
-            foreach ($dto->lecturas_finales as $item) {
+            if ($turno->lecturas->isNotEmpty()) {
+                $manguerasAsignadas = $turno->lecturas
+                    ->pluck('manguera_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->toArray();
 
-                $mangueraId = (int) $item['manguera_id'];
-                $lecturaFinal = (float) $item['lectura_final'];
+                $manguerasEnviadas = collect($dto->lecturas_finales)
+                    ->pluck('manguera_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->toArray();
 
-                $lectura = $this->turnoRepository
-                    ->findLecturaByTurnoAndManguera(
-                        $turno->id,
-                        $mangueraId
-                    );
-
-                if (!$lectura) {
-                    throw new HttpException(
-                        422,
-                        "La manguera {$mangueraId} no pertenece al turno."
-                    );
-                }
-
-                if ($lecturaFinal < (float) $lectura->lectura_inicial) {
-                    throw new HttpException(
-                        422,
-                        "La lectura final de la manguera {$mangueraId} no puede ser menor que la lectura inicial."
-                    );
-                }
-
-                $galonesVendidos = round(
-                    $lecturaFinal - (float) $lectura->lectura_inicial,
-                    3
+                $faltantes = array_diff(
+                    $manguerasAsignadas,
+                    $manguerasEnviadas
                 );
 
-                $totalVentaFisica = round(
-                    $galonesVendidos * (float) $lectura->precio_galon,
+                if (!empty($faltantes)) {
+                    throw new HttpException(
+                        422,
+                        'Debe enviar lectura final para todas las mangueras del turno.'
+                    );
+                }
+
+                $extras = array_diff(
+                    $manguerasEnviadas,
+                    $manguerasAsignadas
+                );
+
+                if (!empty($extras)) {
+                    throw new HttpException(
+                        422,
+                        'Se enviaron mangueras que no pertenecen al turno.'
+                    );
+                }
+
+                foreach ($dto->lecturas_finales as $item) {
+                    $mangueraId = (int) $item['manguera_id'];
+                    $lecturaFinal = (float) $item['lectura_final'];
+
+                    $lectura = $this->turnoRepository
+                        ->findLecturaByTurnoAndManguera(
+                            $turno->id,
+                            $mangueraId
+                        );
+
+                    if (!$lectura) {
+                        throw new HttpException(
+                            422,
+                            "La manguera {$mangueraId} no pertenece al turno."
+                        );
+                    }
+
+                    if ($lecturaFinal < (float) $lectura->lectura_inicial) {
+                        throw new HttpException(
+                            422,
+                            "La lectura final de la manguera {$mangueraId} no puede ser menor que la lectura inicial."
+                        );
+                    }
+
+                    $galonesVendidos = round(
+                        $lecturaFinal - (float) $lectura->lectura_inicial,
+                        3
+                    );
+
+                    $totalVentaFisica = round(
+                        $galonesVendidos * (float) $lectura->precio_galon,
+                        2
+                    );
+
+                    $this->turnoRepository->updateLectura(
+                        $lectura,
+                        [
+                            'lectura_final' => $lecturaFinal,
+                            'galones_vendidos' => $galonesVendidos,
+                            'total_venta' => $totalVentaFisica,
+                        ]
+                    );
+
+                    $totalVentasCombustibleFisica += $totalVentaFisica;
+
+                    $galonesSistema = $this->ventaRepository
+                        ->sumGalonesCombustibleByTurnoAndManguera(
+                            $turno->id,
+                            $mangueraId
+                        );
+
+                    $galonesAjuste = round(
+                        $galonesVendidos - (float) $galonesSistema,
+                        3
+                    );
+
+                    if ($galonesAjuste > 0) {
+                        $this->descontarInventarioCombustible(
+                            $turno,
+                            $lectura,
+                            $galonesAjuste,
+                            $dto->user_id
+                        );
+                    }
+                }
+
+                $totalVentasCombustibleFisica = round(
+                    $totalVentasCombustibleFisica,
                     2
                 );
 
-                $this->turnoRepository->updateLectura(
-                    $lectura,
-                    [
-                        'lectura_final' => $lecturaFinal,
-                        'galones_vendidos' => $galonesVendidos,
-                        'total_venta' => $totalVentaFisica,
-                    ]
-                );
-
-                $totalVentasCombustibleFisica += $totalVentaFisica;
-
                 /*
-                * El AJT solo corresponde a los galones físicos
-                * que exceden los galones registrados por el sistema.
-                *
-                * El inventario se descuenta únicamente por esa diferencia.
+                * Crear la venta AJT después de tener las lecturas finales.
                 */
-                $galonesSistema = $this->ventaRepository
-                    ->sumGalonesCombustibleByTurnoAndManguera(
-                        $turno->id,
-                        $mangueraId
-                    );
-
-                $galonesAjuste = round(
-                    $galonesVendidos - (float) $galonesSistema,
-                    3
+                $this->ventaService->crearVentaAjusteTurno(
+                    $turno,
+                    $turno->lecturas()
+                        ->with('manguera.producto.categoriaProducto')
+                        ->get(),
+                    $dto->user_id
                 );
-
-                if ($galonesAjuste > 0) {
-                    $this->descontarInventarioCombustible(
-                        $turno,
-                        $lectura,
-                        $galonesAjuste,
-                        $dto->user_id
-                    );
-                }
             }
-
-            $totalVentasCombustibleFisica = round(
-                $totalVentasCombustibleFisica,
-                2
-            );
-
-            /*
-            * Crear la venta AJT después de tener las lecturas finales.
-            */
-            $this->ventaService->crearVentaAjusteTurno(
-                $turno,
-                $turno->lecturas()
-                    ->with('manguera.producto.categoriaProducto')
-                    ->get(),
-                $dto->user_id
-            );
 
             /*
             * Procesar abonos pendientes de cartera del turno.
@@ -622,17 +619,15 @@ class TurnoIsleroService
             * Los movimientos de caja SOLO se registran cuando
             * el turno ya quedó cerrado.
             */
-            if ($turno->usuario->hasRole('islero')) {
-                $this->registrarMovimientosCaja(
-                    $dto,
-                    $turno
-                );
+            $this->registrarMovimientosCaja(
+                $dto,
+                $turno
+            );
 
-                $this->registrarMovimientosCajaAbonos(
-                    $turno,
-                    $dto->user_id
-                );
-            }
+            $this->registrarMovimientosCajaAbonos(
+                $turno,
+                $dto->user_id
+            );
 
             return $this->findById($turno->id);
         });
@@ -815,12 +810,18 @@ class TurnoIsleroService
         $resumen = $this->turnoRepository
             ->getResumenDestinosTurno($turno->id);
 
+        $usuarioTurno = $turno->usuario ?? \App\Models\User::find($turno->user_id);
+
         $destinos = $this->turnoRepository
             ->getDestinosConCajaAbierta();
 
         $destinosRecaudo = [];
 
         foreach ($destinos as $destino) {
+            if (!$this->esDestinoPermitidoParaUsuario($destino, $usuarioTurno)) {
+                continue;
+            }
+
             $destinosRecaudo[$destino->id] = [
                 'destino_recaudo_id' => $destino->id,
                 'codigo' => $destino->codigo,
@@ -1127,10 +1128,29 @@ class TurnoIsleroService
         }
     }
 
+    private function esDestinoPermitidoParaUsuario($destino, ?\App\Models\User $user): bool
+    {
+        if (!$user) {
+            return true;
+        }
+
+        if ($destino->codigo === 'COMB') {
+            return $user->can('vender_combustible');
+        }
+
+        if ($destino->codigo === 'LUBR') {
+            return $user->can('vender_lubricantes');
+        }
+
+        return true;
+    }
+
     private function validarRecaudoDestinos(
         TurnoIslero $turno,
         CerrarTurnoIsleroDTO $dto
     ): void {
+
+        $usuarioTurno = $turno->usuario ?? \App\Models\User::find($turno->user_id);
 
         $destinos = $this->turnoRepository
             ->getDestinosConCajaAbierta();
@@ -1138,6 +1158,10 @@ class TurnoIsleroService
         $esperado = [];
 
         foreach ($destinos as $destino) {
+
+            if (!$this->esDestinoPermitidoParaUsuario($destino, $usuarioTurno)) {
+                continue;
+            }
 
             $esperado[$destino->id] = [
 
@@ -1281,110 +1305,91 @@ class TurnoIsleroService
                 );
             }
 
-            /*
-            * Mangueras asignadas al turno.
-            */
-            $manguerasAsignadas = $turno->lecturas
-                ->pluck('manguera_id')
-                ->map(fn ($id) => (int) $id)
-                ->toArray();
+            if ($turno->lecturas->isNotEmpty()) {
+                $manguerasAsignadas = $turno->lecturas
+                    ->pluck('manguera_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->toArray();
 
-            $manguerasEnviadas = collect($dto->lecturas_finales)
-                ->pluck('manguera_id')
-                ->map(fn ($id) => (int) $id)
-                ->toArray();
+                $manguerasEnviadas = collect($dto->lecturas_finales)
+                    ->pluck('manguera_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->toArray();
 
-            /*
-            * Validar que estén todas las mangueras.
-            */
-            $faltantes = array_diff(
-                $manguerasAsignadas,
-                $manguerasEnviadas
-            );
-
-            if (!empty($faltantes)) {
-                throw new HttpException(
-                    422,
-                    'Debe enviar lectura final para todas las mangueras del turno.'
+                $faltantes = array_diff(
+                    $manguerasAsignadas,
+                    $manguerasEnviadas
                 );
-            }
 
-            /*
-            * Validar que no lleguen mangueras ajenas al turno.
-            */
-            $extras = array_diff(
-                $manguerasEnviadas,
-                $manguerasAsignadas
-            );
-
-            if (!empty($extras)) {
-                throw new HttpException(
-                    422,
-                    'Se enviaron mangueras que no pertenecen al turno.'
-                );
-            }
-
-            /*
-            * Guardar las lecturas finales.
-            *
-            * En este momento NO creamos AJT,
-            * NO descontamos inventario y
-            * NO registramos movimientos de caja.
-            */
-            foreach ($dto->lecturas_finales as $item) {
-
-                $mangueraId = (int) $item['manguera_id'];
-
-                $lectura = $this->turnoRepository
-                    ->findLecturaByTurnoAndManguera(
-                        $turno->id,
-                        $mangueraId
-                    );
-
-                if (!$lectura) {
+                if (!empty($faltantes)) {
                     throw new HttpException(
                         422,
-                        "La manguera {$mangueraId} no pertenece al turno."
+                        'Debe enviar lectura final para todas las mangueras del turno.'
                     );
                 }
 
-                $lecturaFinal = (float) $item['lectura_final'];
-                $lecturaInicial = (float) $lectura->lectura_inicial;
+                $extras = array_diff(
+                    $manguerasEnviadas,
+                    $manguerasAsignadas
+                );
 
-                if ($lecturaFinal < $lecturaInicial) {
+                if (!empty($extras)) {
                     throw new HttpException(
                         422,
-                        "La lectura final de la manguera {$mangueraId} no puede ser menor que la lectura inicial."
+                        'Se enviaron mangueras que no pertenecen al turno.'
                     );
                 }
 
-                $galonesVendidos = round(
-                    $lecturaFinal - $lecturaInicial,
-                    3
-                );
+                foreach ($dto->lecturas_finales as $item) {
+                    $mangueraId = (int) $item['manguera_id'];
 
-                /*
-                * El precio pertenece a la lectura del turno.
-                * No permitimos cambiarlo al solicitar cierre.
-                */
-                $precioGalon = round(
-                    (float) $lectura->precio_galon,
-                    2
-                );
+                    $lectura = $this->turnoRepository
+                        ->findLecturaByTurnoAndManguera(
+                            $turno->id,
+                            $mangueraId
+                        );
 
-                $totalVentaFisica = round(
-                    $galonesVendidos * $precioGalon,
-                    2
-                );
+                    if (!$lectura) {
+                        throw new HttpException(
+                            422,
+                            "La manguera {$mangueraId} no pertenece al turno."
+                        );
+                    }
 
-                $this->turnoRepository->updateLectura(
-                    $lectura,
-                    [
-                        'lectura_final' => $lecturaFinal,
-                        'galones_vendidos' => $galonesVendidos,
-                        'total_venta' => $totalVentaFisica,
-                    ]
-                );
+                    $lecturaFinal = (float) $item['lectura_final'];
+                    $lecturaInicial = (float) $lectura->lectura_inicial;
+
+                    if ($lecturaFinal < $lecturaInicial) {
+                        throw new HttpException(
+                            422,
+                            "La lectura final de la manguera {$mangueraId} no puede ser menor que la lectura inicial."
+                        );
+                    }
+
+                    $galonesVendidos = round(
+                        $lecturaFinal - $lecturaInicial,
+                        3
+                    );
+
+                    $precioGalon = round(
+                        (float) $lectura->precio_galon,
+                        2
+                    );
+
+                    $totalVentaFisica = round(
+                        $galonesVendidos * $precioGalon,
+                        2
+                    );
+
+                    $this->turnoRepository->updateLectura(
+                        $lectura,
+                        [
+                            'lectura_final' => $lecturaFinal,
+                            'galones_vendidos' => $galonesVendidos,
+                            'total_venta' => $totalVentaFisica,
+                        ]
+                    );
+                }
             }
 
             foreach ($dto->destinos_recaudo as $destino) {
@@ -1534,6 +1539,8 @@ class TurnoIsleroService
         $resumenDestinos = $this->turnoRepository
             ->getResumenDestinosTurno($turno->id);
 
+        $usuarioTurno = $turno->usuario ?? \App\Models\User::find($turno->user_id);
+
         /*
         * Destinos que actualmente tienen caja abierta.
         */
@@ -1543,6 +1550,10 @@ class TurnoIsleroService
         $destinos = [];
 
         foreach ($destinosCaja as $destino) {
+            if (!$this->esDestinoPermitidoParaUsuario($destino, $usuarioTurno)) {
+                continue;
+            }
+
             $destinos[$destino->id] = [
                 'destino_recaudo_id' => (int) $destino->id,
                 'codigo' => $destino->codigo,
@@ -1617,99 +1628,103 @@ class TurnoIsleroService
             })
             ->values();
 
+        $canCombustible = $usuarioTurno ? $usuarioTurno->can('vender_combustible') : true;
+
         /*
         * Lecturas de mangueras con máximo 2 decimales.
         */
-        $lecturas = $turno->lecturas
-            ->map(function ($lectura) use ($turno) {
+        $lecturas = $canCombustible
+            ? $turno->lecturas
+                ->map(function ($lectura) use ($turno) {
 
-                $precioGalon = round(
-                    (float) $lectura->precio_galon,
-                    2
-                );
-
-                $galonesVendidosSistema = $this->turnoRepository
-                    ->sumGalonesCombustibleByTurnoAndManguera(
-                        $turno->id,
-                        $lectura->manguera_id
+                    $precioGalon = round(
+                        (float) $lectura->precio_galon,
+                        2
                     );
 
-                $totalVentaSistema = $this->turnoRepository
-                    ->sumTotalCombustibleByTurnoAndManguera(
-                        $turno->id,
-                        $lectura->manguera_id
-                    );
+                    $galonesVendidosSistema = $this->turnoRepository
+                        ->sumGalonesCombustibleByTurnoAndManguera(
+                            $turno->id,
+                            $lectura->manguera_id
+                        );
 
-                $lecturaSugerida = round(
-                    (float) $lectura->lectura_inicial
-                    + (float) $galonesVendidosSistema,
-                    3
-                );
+                    $totalVentaSistema = $this->turnoRepository
+                        ->sumTotalCombustibleByTurnoAndManguera(
+                            $turno->id,
+                            $lectura->manguera_id
+                        );
 
-                return [
-                    'id' => $lectura->id,
-
-                    'manguera_id' => $lectura->manguera_id,
-
-                    'manguera' => $lectura->manguera ? [
-                        'id' => $lectura->manguera->id,
-                        'nombre' => $lectura->manguera->nombre,
-                        'codigo' => $lectura->manguera->codigo,
-
-                        'bomba' => $lectura->manguera->bomba ? [
-                            'id' => $lectura->manguera->bomba->id,
-                            'nombre' => $lectura->manguera->bomba->nombre,
-                            'codigo' => $lectura->manguera->bomba->codigo,
-                        ] : null,
-
-                        'producto' => $lectura->manguera->producto ? [
-                            'id' => $lectura->manguera->producto->id,
-                            'codigo' => $lectura->manguera->producto->codigo,
-                            'nombre' => $lectura->manguera->producto->nombre,
-                        ] : null,
-                    ] : null,
-
-                    'lectura_inicial' => round(
-                        (float) $lectura->lectura_inicial,
+                    $lecturaSugerida = round(
+                        (float) $lectura->lectura_inicial
+                        + (float) $galonesVendidosSistema,
                         3
-                    ),
+                    );
 
-                    'lectura_final' => $lectura->lectura_final !== null
-                        ? round(
-                            (float) $lectura->lectura_final,
+                    return [
+                        'id' => $lectura->id,
+
+                        'manguera_id' => $lectura->manguera_id,
+
+                        'manguera' => $lectura->manguera ? [
+                            'id' => $lectura->manguera->id,
+                            'nombre' => $lectura->manguera->nombre,
+                            'codigo' => $lectura->manguera->codigo,
+
+                            'bomba' => $lectura->manguera->bomba ? [
+                                'id' => $lectura->manguera->bomba->id,
+                                'nombre' => $lectura->manguera->bomba->nombre,
+                                'codigo' => $lectura->manguera->bomba->codigo,
+                            ] : null,
+
+                            'producto' => $lectura->manguera->producto ? [
+                                'id' => $lectura->manguera->producto->id,
+                                'codigo' => $lectura->manguera->producto->codigo,
+                                'nombre' => $lectura->manguera->producto->nombre,
+                            ] : null,
+                        ] : null,
+
+                        'lectura_inicial' => round(
+                            (float) $lectura->lectura_inicial,
                             3
-                        )
-                        : null,
+                        ),
 
-                    'precio_galon' => $precioGalon,
+                        'lectura_final' => $lectura->lectura_final !== null
+                            ? round(
+                                (float) $lectura->lectura_final,
+                                3
+                            )
+                            : null,
 
-                    'galones_vendidos_sistema' => round(
-                        (float) $galonesVendidosSistema,
-                        2
-                    ),
+                        'precio_galon' => $precioGalon,
 
-                    'total_venta_sistema' => round(
-                        (float) $totalVentaSistema,
-                        2
-                    ),
+                        'galones_vendidos_sistema' => round(
+                            (float) $galonesVendidosSistema,
+                            2
+                        ),
 
-                    'lectura_sugerida' => round(
-                        (float) $lecturaSugerida,
-                        3
-                    ),
+                        'total_venta_sistema' => round(
+                            (float) $totalVentaSistema,
+                            2
+                        ),
 
-                    'galones_vendidos' => round(
-                        (float) $lectura->galones_vendidos,
-                        2
-                    ),
+                        'lectura_sugerida' => round(
+                            (float) $lecturaSugerida,
+                            3
+                        ),
 
-                    'total_venta' => round(
-                        (float) $lectura->total_venta,
-                        2
-                    ),
-                ];
-            })
-            ->values();
+                        'galones_vendidos' => round(
+                            (float) $lectura->galones_vendidos,
+                            2
+                        ),
+
+                        'total_venta' => round(
+                            (float) $lectura->total_venta,
+                            2
+                        ),
+                    ];
+                })
+                ->values()
+            : collect([]);
 
         /*
         * Devolver información actual para la revisión administrativa.
