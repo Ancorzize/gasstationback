@@ -11,6 +11,8 @@ class UnidadMedida extends Model
     protected $fillable = [
         'nombre',
         'abreviatura',
+        'codigo_dian',
+        'simbolo_dian',
         'descripcion',
         'is_active',
     ];

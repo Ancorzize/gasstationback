@@ -21,15 +21,21 @@ class UpdateConfiguracionEmpresaRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:120'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'direccion' => ['nullable', 'string', 'max:200'],
+            'tipo_persona' => ['nullable', 'string', 'max:20'],
+            'tipo_documento' => ['nullable', 'string', 'max:20'],
 
             'pais_id' => ['nullable', 'integer', 'exists:paises,id'],
             'departamento_id' => ['nullable', 'integer', 'exists:departamentos,id'],
             'ciudad_id' => ['nullable', 'integer', 'exists:ciudades,id'],
+            'codigo_postal' => ['nullable', 'string', 'max:10'],
+            'matricula_mercantil' => ['nullable', 'string', 'max:50'],
 
             'logo_url' => ['nullable', 'string', 'max:255'],
 
             'responsable_iva' => ['required', 'boolean'],
             'regimen' => ['nullable', 'string', 'max:100'],
+            'tipo_regimen' => ['nullable', 'string', 'max:50'],
+            'responsabilidades_fiscales' => ['nullable', 'array'],
             'porcentaje_iva' => ['required', 'numeric', 'min:0'],
             'maneja_iva_incluido' => ['required', 'boolean'],
 

@@ -35,7 +35,8 @@ class Venta extends Model
         'turno_islero_id',
         'tipo_origen',
         'bodega_id',
-        'fecha_vencimiento'
+        'fecha_vencimiento',
+        'factura_electronica',
     ];
 
     protected $casts = [
@@ -47,6 +48,7 @@ class Venta extends Model
         'total' => 'decimal:2',
         'total_pagado' => 'decimal:2',
         'saldo_pendiente' => 'decimal:2',
+        'factura_electronica' => 'boolean',
         'fecha_venta' => 'datetime',
         'fecha_anulacion' => 'datetime',
         'fecha_vencimiento' => 'datetime',
@@ -97,5 +99,10 @@ class Venta extends Model
         )->with([
             'abonoCartera.usuario'
         ]);
+    }
+
+    public function documentosElectronicos(): HasMany
+    {
+        return $this->hasMany(DocumentoElectronico::class, 'venta_id');
     }
 }

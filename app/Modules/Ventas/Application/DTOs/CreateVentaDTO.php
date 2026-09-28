@@ -15,5 +15,6 @@ class CreateVentaDTO
         public ?string $observacion,
         public array $detalles,
         public array $pagos,
+        public bool $factura_electronica = false,
     ) {}
 }

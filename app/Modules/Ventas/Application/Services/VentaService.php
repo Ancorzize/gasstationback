@@ -12,12 +12,35 @@ use App\Modules\Ventas\Application\DTOs\CreateVentaCombustibleDTO;
 use App\Models\TurnoIslero;
 use Illuminate\Support\Collection;
 use App\Models\User;
+use App\Modules\Facturacion\Application\Services\FacturacionService;
+use App\Modules\Facturacion\Application\Services\DocumentoElectronicoService;
+use App\Modules\ConfiguracionFacturacion\Application\Interfaces\ConfiguracionFacturacionRepositoryInterface;
+use App\Modules\ConfiguracionEmpresa\Application\Interfaces\ConfiguracionEmpresaRepositoryInterface;
+use App\Modules\ResolucionesFacturacion\Application\Interfaces\ResolucionFacturacionRepositoryInterface;
+use App\Models\ResolucionFacturacion;
+use App\Modules\Facturacion\Application\DTOs\CrearDocumentoElectronicoDTO;
+use App\Modules\Facturacion\Application\DTOs\SolicitudFacturaDTO;
+use App\Modules\Facturacion\Application\DTOs\RespuestaFacturacionDTO;
+use App\Models\DocumentoElectronico;
+use App\Models\ConfiguracionEmpresa;
+use App\Models\ConfiguracionFacturacion;
+
 class VentaService
 {
     public function __construct(
         protected VentaRepositoryInterface $ventaRepository,
-        protected TurnoIsleroRepositoryInterface $turnoRepository
+        protected TurnoIsleroRepositoryInterface $turnoRepository,
+        protected ?FacturacionService $facturacionService = null,
+        protected ?DocumentoElectronicoService $documentoElectronicoService = null,
+        protected ?ConfiguracionFacturacionRepositoryInterface $configuracionFacturacionRepository = null,
+        protected ?ConfiguracionEmpresaRepositoryInterface $configuracionEmpresaRepository = null,
+        protected ?ResolucionFacturacionRepositoryInterface $resolucionFacturacionRepository = null
     ) {
+        $this->facturacionService = $facturacionService ?? app(FacturacionService::class);
+        $this->documentoElectronicoService = $documentoElectronicoService ?? app(DocumentoElectronicoService::class);
+        $this->configuracionFacturacionRepository = $configuracionFacturacionRepository ?? app(ConfiguracionFacturacionRepositoryInterface::class);
+        $this->configuracionEmpresaRepository = $configuracionEmpresaRepository ?? app(ConfiguracionEmpresaRepositoryInterface::class);
+        $this->resolucionFacturacionRepository = $resolucionFacturacionRepository ?? app(ResolucionFacturacionRepositoryInterface::class);
     }
 
     public function paginate(array $filters = [])
@@ -42,7 +65,7 @@ class VentaService
      */
     public function create(CreateVentaDTO $dto): Venta
     {
-        return DB::transaction(function () use ($dto) {
+        $ventaFinal = DB::transaction(function () use ($dto) {
 
             if (count($dto->detalles) <= 0) {
                 throw new HttpException(422, 'La venta no tiene productos.');
@@ -192,6 +215,20 @@ class VentaService
                 }
             }
 
+            if ($dto->factura_electronica) {
+                if (!$dto->cliente_id) {
+                    throw new HttpException(422, 'Debe seleccionar un cliente para generar factura electrónica.');
+                }
+                $clienteReq = $this->ventaRepository->findClienteById($dto->cliente_id);
+                if (!$clienteReq) {
+                    throw new HttpException(422, 'El cliente seleccionado no existe.');
+                }
+                $nombreReq = trim(($clienteReq->nombre ?? '') . ' ' . ($clienteReq->apellidos ?? ''));
+                if (empty($clienteReq->documento) || empty($nombreReq)) {
+                    throw new HttpException(422, 'El cliente seleccionado no tiene documento o nombre registrado.');
+                }
+            }
+
             $turnoAbierto = $this->ventaRepository->getTurnoAbiertoByUser($dto->user_id);
             if (empty($turnoAbierto)) {
                 throw new HttpException(422, 'El usuario no tiene turno abierto.');
@@ -204,6 +241,7 @@ class VentaService
                 'bodega_id' => $bodegaId,
                 'tipo_venta' => $dto->tipo_venta,
                 'tipo_origen' => 'pos',
+                'factura_electronica' => (bool) $dto->factura_electronica,
                 'estado' => 'confirmada',
                 'estado_pago' => $saldoPendiente <= 0
                     ? 'pagado'
@@ -341,6 +379,10 @@ class VentaService
 
             return $this->findById($venta->id);
         });
+
+        $this->procesarFacturacionElectronica($ventaFinal);
+
+        return $ventaFinal;
     }
 
     private function resolverTipoCaja(
@@ -548,7 +590,7 @@ class VentaService
      */
     public function createCombustible(CreateVentaCombustibleDTO $dto): Venta
     {
-        return DB::transaction(function () use ($dto) {
+        $ventaFinal = DB::transaction(function () use ($dto) {
 
             $turnoAbierto = $this->ventaRepository->getTurnoAbiertoByUser($dto->user_id);
 
@@ -665,6 +707,20 @@ class VentaService
                 }
             }
 
+            if ($dto->factura_electronica) {
+                if (!$dto->cliente_id) {
+                    throw new HttpException(422, 'Debe seleccionar un cliente para generar factura electrónica.');
+                }
+                $clienteReq = $this->ventaRepository->findClienteById($dto->cliente_id);
+                if (!$clienteReq) {
+                    throw new HttpException(422, 'El cliente seleccionado no existe.');
+                }
+                $nombreReq = trim(($clienteReq->nombre ?? '') . ' ' . ($clienteReq->apellidos ?? ''));
+                if (empty($clienteReq->documento) || empty($nombreReq)) {
+                    throw new HttpException(422, 'El cliente seleccionado no tiene documento o nombre registrado.');
+                }
+            }
+
             if ($dto->tipo_venta !== 'credito') {
                 $tipoCaja = $this->resolverTipoCaja(
                     $dto->metodo_pago
@@ -686,6 +742,8 @@ class VentaService
                 'bodega_id' => $bodegaId,
                 'turno_islero_id' => $turnoAbierto->id,
                 'tipo_venta' => $dto->tipo_venta,
+                'tipo_origen' => 'combustible',
+                'factura_electronica' => (bool) $dto->factura_electronica,
                 'estado' => 'confirmada',
                 'estado_pago' => $saldoPendiente <= 0 ? 'pagado' : 'pendiente',
                 'subtotal' => $subtotal,
@@ -699,7 +757,6 @@ class VentaService
                 'fecha_venta' => now(),
                 'fecha_vencimiento' => $saldoPendiente > 0 ? now()->addDays($cliente->dias_credito) : null,
                 'observacion' => $dto->observacion,
-                'tipo_origen' => 'combustible',
                 'destino_recaudo_id' => $destinoRecaudoId,
             ]);
 
@@ -788,6 +845,10 @@ class VentaService
 
             return $this->findById($venta->id);
         });
+
+        $this->procesarFacturacionElectronica($ventaFinal);
+
+        return $ventaFinal;
     }
 
     public function crearVentaAjusteTurno(
@@ -1294,5 +1355,264 @@ class VentaService
 
             return $this->findById($venta->id);
         });
+    }
+
+    /**
+     * Procesar la facturación electrónica de forma desacoplada de la venta comercial.
+     * Cualquier error o fallo en el proveedor no afecta ni revierte la venta.
+     */
+    public function procesarFacturacionElectronica(Venta $venta): ?DocumentoElectronico
+    {
+        try {
+            if (!$this->configuracionFacturacionRepository) {
+                return null;
+            }
+
+            $configFacturacion = $this->configuracionFacturacionRepository->first();
+
+            if (!$configFacturacion || !$configFacturacion->facturacion_electronica_activa || !$venta->factura_electronica ) {
+                return null;
+            }
+
+            // Verificar si el tipo de venta debe facturarse electrónicamente
+            if (!$venta->factura_electronica) {
+                if ($venta->tipo_origen === 'pos' && !$configFacturacion->facturar_ventas_pos) {
+                    return null;
+                }
+
+                if ($venta->tipo_origen === 'combustible' && !$configFacturacion->facturar_ventas_combustible) {
+                    return null;
+                }
+            }
+
+            // Cargar relaciones necesarias si no están cargadas
+            if (!$venta->relationLoaded('cliente')) {
+                $venta->load('cliente');
+            }
+            if (!$venta->relationLoaded('detalles')) {
+                $venta->load('detalles.producto');
+            }
+            if (!$venta->relationLoaded('usuario')) {
+                $venta->load('usuario');
+            }
+
+            $empresaConfig = $this->configuracionEmpresaRepository?->first();
+            $resolucionConfig = $this->resolucionFacturacionRepository?->findByTipoDocumento('factura', $empresaConfig?->id);
+
+            // Validar que exista una resolución activa y con número de resolución no vacío
+            if (!$resolucionConfig || !$resolucionConfig->is_active || empty($resolucionConfig->numero_resolucion)) {
+                \Illuminate\Support\Facades\Log::warning("No existe resolución de facturación electrónica activa o válida para el tipo 'factura' en venta #{$venta->id}.");
+                return null;
+            }
+
+            // Construir SolicitudDTO
+            $solicitud = $this->construirSolicitudFacturaDTO($venta, $empresaConfig, $configFacturacion, $resolucionConfig);
+
+            // Registrar DocumentoElectrónico inicial con estado 'pendiente'
+            $crearDto = new CrearDocumentoElectronicoDTO(
+                ventaId: $venta->id,
+                configuracionFacturacionId: $configFacturacion->id,
+                tipoDocumento: 'factura_electronica',
+                estado: 'pendiente',
+                proveedor: $configFacturacion->proveedor_activo ?? 'matias',
+                ambiente: $configFacturacion->ambiente ?? 'sandbox',
+                numeroDocumento: (string) $venta->numero_factura,
+                prefijo: $venta->prefijo ?? $resolucionConfig->prefijo ?? $empresaConfig?->prefijo_factura ?? 'SETP'
+            );
+
+            $documento = $this->documentoElectronicoService?->registrarEmision($crearDto);
+
+            if (!$this->facturacionService) {
+                return $documento;
+            }
+
+            // Enviar solicitud de facturación electrónica
+            $respuesta = $this->facturacionService->enviarFactura($solicitud);
+
+            // Actualizar documento con la respuesta obtenida
+            if ($documento && $this->documentoElectronicoService) {
+                return $this->documentoElectronicoService->actualizarDesdeRespuesta($documento->id, $respuesta);
+            }
+
+            return $documento;
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error al procesar facturación electrónica para venta #' . $venta->id, [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            try {
+                if (isset($documento) && $documento && $this->documentoElectronicoService) {
+                    $respuestaError = RespuestaFacturacionDTO::error(
+                        mensaje: 'Error durante la emisión: ' . $e->getMessage(),
+                        errores: ['exception' => $e->getMessage()]
+                    );
+                    return $this->documentoElectronicoService->actualizarDesdeRespuesta($documento->id, $respuestaError);
+                }
+            } catch (\Throwable $ex) {
+                \Illuminate\Support\Facades\Log::error('Error al actualizar trazabilidad de documento electrónico #' . $venta->id, [
+                    'error' => $ex->getMessage(),
+                ]);
+            }
+
+            return null;
+        }
+    }
+
+    /**
+     * Construir SolicitudFacturaDTO a partir de la Venta y Configuración.
+     */
+    protected function construirSolicitudFacturaDTO(
+        Venta $venta,
+        ?ConfiguracionEmpresa $empresaConfig,
+        ?ConfiguracionFacturacion $configFacturacion,
+        ?ResolucionFacturacion $resolucionConfig = null
+    ): SolicitudFacturaDTO {
+        $cliente = $venta->cliente;
+
+        if ($venta->factura_electronica) {
+            if (!$cliente) {
+                throw new HttpException(422, 'Se requiere un cliente registrado para emitir una factura electrónica a nombre de un adquirente.');
+            }
+
+            $nombreCliente = trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellidos ?? ''));
+            if (empty($nombreCliente)) {
+                throw new HttpException(422, 'El cliente seleccionado no tiene un nombre o razón social válido.');
+            }
+            if (empty($cliente->documento)) {
+                throw new HttpException(422, 'El cliente seleccionado no tiene un número de documento válido.');
+            }
+
+            $clienteData = [
+                'company_name' => $nombreCliente,
+                'nombre_razon_social' => $nombreCliente,
+                'dni' => (string) $cliente->documento,
+                'numero_documento' => (string) $cliente->documento,
+                'email' => (string) ($cliente->email ?? ''),
+                'telefono' => (string) ($cliente->telefono_uno ?? $cliente->telefono_dos ?? ''),
+                'mobile' => (string) ($cliente->telefono_uno ?? $cliente->telefono_dos ?? ''),
+                'direccion' => (string) ($cliente->direccion ?? ''),
+                'address' => (string) ($cliente->direccion ?? ''),
+                'identity_document_id' => (string) ($cliente->tipo_documento_id ?? '1'),
+                'type_organization_id' => (int) ($cliente->tipo_organization_id ?? $cliente->tipo_persona ?? 2),
+                'tax_regime_id' => (int) ($cliente->tax_regime_id ?? 2),
+                'tax_level_id' => (int) ($cliente->tax_level_id ?? 5),
+                'postal_code' => (string) ($cliente->codigo_postal ?? '661002'),
+                'country_id' => (string) ($cliente->pais_id ?? '45'),
+                'city_id' => (string) ($cliente->ciudad_id ?? '836'),
+            ];
+        } else {
+            if ($cliente) {
+                $nombreCliente = trim(($cliente->nombre ?? '') . ' ' . ($cliente->apellidos ?? ''));
+                if (empty($nombreCliente)) {
+                    $nombreCliente = 'CLIENTE MOSTRADOR';
+                }
+                $clienteData = [
+                    'company_name' => $nombreCliente,
+                    'nombre_razon_social' => $nombreCliente,
+                    'dni' => (string) ($cliente->documento ?? '222222222222'),
+                    'numero_documento' => (string) ($cliente->documento ?? '222222222222'),
+                    'email' => (string) ($cliente->email ?? 'factura@cliente.com'),
+                    'telefono' => (string) ($cliente->telefono_uno ?? $cliente->telefono_dos ?? '3000000000'),
+                    'mobile' => (string) ($cliente->telefono_uno ?? $cliente->telefono_dos ?? '3000000000'),
+                    'direccion' => (string) ($cliente->direccion ?? 'Dirección Conocida'),
+                    'address' => (string) ($cliente->direccion ?? 'Dirección Conocida'),
+                    'identity_document_id' => (string) ($cliente->tipo_documento_id ?? '1'),
+                    'type_organization_id' => (int) ($cliente->tipo_organization_id ?? $cliente->tipo_persona ?? 2),
+                    'tax_regime_id' => (int) ($cliente->tax_regime_id ?? 2),
+                    'tax_level_id' => (int) ($cliente->tax_level_id ?? 5),
+                    'postal_code' => (string) ($cliente->codigo_postal ?? '661002'),
+                    'country_id' => (string) ($cliente->pais_id ?? '45'),
+                    'city_id' => (string) ($cliente->ciudad_id ?? '836'),
+                ];
+            } else {
+                $clienteData = [
+                    'company_name' => 'CONSUMIDOR FINAL',
+                    'nombre_razon_social' => 'CONSUMIDOR FINAL',
+                    'dni' => '222222222222',
+                    'numero_documento' => '222222222222',
+                    'email' => 'factura@cliente.com',
+                    'telefono' => '3000000000',
+                    'direccion' => 'Dirección Conocida',
+                    'address' => 'Dirección Conocida',
+                    'identity_document_id' => '1',
+                    'type_organization_id' => 2,
+                    'tax_regime_id' => 2,
+                    'tax_level_id' => 5,
+                    'postal_code' => '661002',
+                    'country_id' => '45',
+                    'city_id' => '836',
+                ];
+            }
+        }
+
+        $prefijo = $resolucionConfig?->prefijo ?? $empresaConfig?->prefijo_factura ?? 'SETP';
+        $numeroResolucion = (string) ($resolucionConfig?->numero_resolucion ?? $empresaConfig?->numero_resolucion ?? '');
+
+        $cajeroNombre = $venta->usuario?->name ?? 'Cajero ERP';
+        $emisorData = [
+            'nit' => (string) ($empresaConfig?->nit ?? ''),
+            'dv' => (string) ($empresaConfig?->dv ?? ''),
+            'nombre_empresa' => (string) ($empresaConfig?->nombre_empresa ?? ''),
+            'resolution_number' => $numeroResolucion,
+            'cajero' => $cajeroNombre,
+            'vendedor' => $cajeroNombre,
+        ];
+
+        $itemsData = [];
+        foreach ($venta->detalles as $detalle) {
+            $cant = (float) $detalle->cantidad;
+            $precio = (float) $detalle->precio_unitario;
+            $subtotal = (float) $detalle->subtotal;
+            $ivaValor = (float) ($detalle->iva_valor ?? 0);
+            $ivaPorcentaje = (float) ($detalle->iva ?? 0);
+            $nombreProd = $detalle->producto?->nombre ?? 'Producto';
+            $codigoProd = $detalle->producto?->codigo ?? 'PROD-' . $detalle->producto_id;
+
+            $itemsData[] = [
+                'code' => (string) $codigoProd,
+                'codigo' => (string) $codigoProd,
+                'description' => (string) $nombreProd,
+                'nombre' => (string) $nombreProd,
+                'invoiced_quantity' => $cant,
+                'cantidad' => $cant,
+                'price_amount' => $precio,
+                'precio_unitario' => $precio,
+                'line_extension_amount' => $subtotal,
+                'tax_amount' => $ivaValor,
+                'percent' => $ivaPorcentaje,
+                'quantity_units_id' => '1093',
+                'um' => 'M',
+            ];
+        }
+
+        $totalesData = [
+            'subtotal' => (float) $venta->subtotal,
+            'impuestos' => (float) $venta->impuesto,
+            'descuento' => (float) $venta->descuento,
+            'total_pagar' => (float) $venta->total,
+            'line_extension_amount' => (float) $venta->subtotal,
+            'tax_exclusive_amount' => (float) $venta->subtotal,
+            'tax_inclusive_amount' => (float) $venta->total,
+            'payable_amount' => (float) $venta->total,
+        ];
+
+        return new SolicitudFacturaDTO(
+            ventaId: $venta->id,
+            prefijo: $prefijo,
+            folio: (string) $venta->numero_factura,
+            fechaEmision: $venta->fecha_venta ? $venta->fecha_venta->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s'),
+            tipoDocumento: 'factura_venta',
+            cliente: $clienteData,
+            emisor: $emisorData,
+            items: $itemsData,
+            totales: $totalesData,
+            medioPago: $venta->tipo_venta,
+            observacion: $venta->observacion,
+            metadatos: [
+                'resolution_number' => $numeroResolucion,
+                'prefix' => $prefijo,
+            ]
+        );
     }
 }

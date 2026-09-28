@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'matias' => [
+        'token' => env('MATIAS_API_TOKEN'),
+        'sandbox_url' => env('MATIAS_SANDBOX_URL', 'https://sandbox-api.maticerts.com'),
+        'production_url' => env('MATIAS_PRODUCTION_URL'),
+    ],
+
 ];

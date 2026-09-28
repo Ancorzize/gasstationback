@@ -5,7 +5,8 @@ namespace Database\Seeders;
 use App\Models\DashboardWidget;
 use Illuminate\Database\Seeder;
 //ejecutar: C:\php84\php.exe artisan db:seed --class=Dashboard
-
+//npm run dev -- --host 
+//php artisan serve --host=0.0.0.0 --port=8000  
 class Dashboard extends Seeder
 {
     public function run(): void

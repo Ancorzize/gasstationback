@@ -26,7 +26,7 @@ class VentaMapper
         }, $data['detalles']);
 
         $pagos = [];
-        if(isset($data['pagos'])){
+        if (isset($data['pagos'])) {
             $pagos = array_map(function ($pago) {
                 return new PagoVentaDTO(
                     metodo_pago: $pago['metodo_pago'],
@@ -35,7 +35,6 @@ class VentaMapper
                 );
             }, $data['pagos']);   
         }
-        
 
         return new CreateVentaDTO(
             cliente_id: isset($data['cliente_id']) ? (int) $data['cliente_id'] : null,
@@ -44,6 +43,7 @@ class VentaMapper
             observacion: $data['observacion'] ?? null,
             detalles: $detalles,
             pagos: $pagos,
+            factura_electronica: !empty($data['factura_electronica']),
         );
     }
 
@@ -57,6 +57,7 @@ class VentaMapper
             monto: (float) $data['monto'],
             observacion: $data['observacion'] ?? null,
             user_id: $userId,
+            factura_electronica: !empty($data['factura_electronica']),
         );
     }
 }

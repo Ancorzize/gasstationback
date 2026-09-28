@@ -13,6 +13,8 @@ class UnidadMedidaMapper
             nombre: $data['nombre'],
             abreviatura: $data['abreviatura'],
             descripcion: $data['descripcion'] ?? null,
+            codigo_dian: $data['codigo_dian'] ?? null,
+            simbolo_dian: $data['simbolo_dian'] ?? null,
         );
     }
 
@@ -22,6 +24,8 @@ class UnidadMedidaMapper
             nombre: $data['nombre'],
             abreviatura: $data['abreviatura'],
             descripcion: $data['descripcion'] ?? null,
+            codigo_dian: $data['codigo_dian'] ?? null,
+            simbolo_dian: $data['simbolo_dian'] ?? null,
         );
     }
 }

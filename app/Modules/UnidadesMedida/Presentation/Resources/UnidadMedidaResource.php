@@ -14,6 +14,8 @@ class UnidadMedidaResource extends JsonResource
             'nombre' => $this->nombre,
             'abreviatura' => $this->abreviatura,
             'descripcion' => $this->descripcion,
+            'codigo_dian' => $this->codigo_dian,
+            'simbolo_dian' => $this->simbolo_dian,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at,
         ];

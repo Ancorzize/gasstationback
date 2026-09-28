@@ -65,6 +65,7 @@ class VentaResource extends JsonResource
                 $this->whenLoaded('pagos')
             ),
             'tipo_origen' => $this->tipo_origen,
+            'factura_electronica' => (bool) $this->factura_electronica,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'motivo_anulacion' => $this->motivo_anulacion,

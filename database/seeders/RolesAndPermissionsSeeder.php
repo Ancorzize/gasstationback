@@ -75,6 +75,21 @@ class RolesAndPermissionsSeeder extends Seeder
             'ver_configuracion_empresa',
             'editar_configuracion_empresa',
 
+            // Mapeos catálogos facturación
+            'ver_mapeos_catalogos',
+            'crear_mapeos_catalogos',
+            'editar_mapeos_catalogos',
+            'eliminar_mapeos_catalogos',
+
+            // Resoluciones facturación
+            'ver_resoluciones_facturacion',
+            'crear_resoluciones_facturacion',
+            'editar_resoluciones_facturacion',
+            'eliminar_resoluciones_facturacion',
+
+            // Documentos electrónicos
+            'ver_documentos_electronicos',
+
             // Bodegas
             'ver_bodegas',
             'crear_bodegas',

@@ -21,6 +21,14 @@ class Cliente extends Model
         'cupo_credito',
         'dias_credito',
         'saldo_credito',
+        'tipo_persona',
+        'tipo_documento_id',
+        'tipo_organization_id',
+        'tax_regime_id',
+        'tax_level_id',
+        'codigo_postal',
+        'ciudad_id',
+        'pais_id',
     ];
 
     protected function casts(): array
@@ -32,6 +40,16 @@ class Cliente extends Model
             'saldo_credito' => 'decimal:2',
             'dias_credito' => 'integer',
         ];
+    }
+
+    public function ciudad()
+    {
+        return $this->belongsTo(Ciudad::class, 'ciudad_id');
+    }
+
+    public function pais()
+    {
+        return $this->belongsTo(Pais::class, 'pais_id');
     }
 
     public function movimientosCartera(): HasMany

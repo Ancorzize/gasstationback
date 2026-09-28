@@ -12,5 +12,6 @@ class CreateVentaCombustibleDTO
         public float $monto,
         public ?string $observacion,
         public int $user_id,
+        public bool $factura_electronica = false,
     ) {}
 }

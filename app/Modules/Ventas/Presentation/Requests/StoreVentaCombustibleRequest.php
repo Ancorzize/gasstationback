@@ -20,6 +20,7 @@ class StoreVentaCombustibleRequest extends FormRequest
             'metodo_pago' => ['nullable','required_unless:tipo_venta,credito','in:efectivo,transferencia,consignacion,datafono,qr'],
             'monto' => ['required', 'numeric', 'gt:0'],
             'observacion' => ['nullable', 'string'],
+            'factura_electronica' => ['nullable', 'boolean'],
         ];
     }
 

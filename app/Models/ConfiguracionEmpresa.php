@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ConfiguracionEmpresa extends Model
 {
@@ -17,12 +18,18 @@ class ConfiguracionEmpresa extends Model
         'email',
         'telefono',
         'direccion',
+        'tipo_persona',
+        'tipo_documento',
         'pais_id',
         'departamento_id',
         'ciudad_id',
+        'codigo_postal',
+        'matricula_mercantil',
         'logo_url',
         'responsable_iva',
         'regimen',
+        'tipo_regimen',
+        'responsabilidades_fiscales',
         'porcentaje_iva',
         'maneja_iva_incluido',
         'prefijo_factura',
@@ -45,6 +52,7 @@ class ConfiguracionEmpresa extends Model
         'fecha_resolucion' => 'date',
         'fecha_vencimiento' => 'date',
         'decimales' => 'integer',
+        'responsabilidades_fiscales' => 'array',
     ];
 
     public function pais(): BelongsTo
@@ -60,5 +68,10 @@ class ConfiguracionEmpresa extends Model
     public function ciudad(): BelongsTo
     {
         return $this->belongsTo(Ciudad::class);
+    }
+
+    public function configuracionFacturacion(): HasOne
+    {
+        return $this->hasOne(ConfiguracionFacturacion::class, 'configuracion_empresa_id');
     }
 }

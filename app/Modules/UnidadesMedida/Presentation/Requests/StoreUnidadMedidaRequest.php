@@ -17,6 +17,8 @@ class StoreUnidadMedidaRequest extends FormRequest
             'nombre' => ['required', 'string', 'max:150', 'unique:unidades_medida,nombre'],
             'abreviatura' => ['required', 'string', 'max:20', 'unique:unidades_medida,abreviatura'],
             'descripcion' => ['nullable', 'string'],
+            'codigo_dian' => ['nullable', 'string', 'max:50'],
+            'simbolo_dian' => ['nullable', 'string', 'max:50'],
         ];
     }
 

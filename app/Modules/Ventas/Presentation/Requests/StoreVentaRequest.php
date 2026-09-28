@@ -31,6 +31,11 @@ class StoreVentaRequest extends FormRequest
                 'string'
             ],
 
+            'factura_electronica' => [
+                'nullable',
+                'boolean'
+            ],
+
 
             'detalles' => [
                 'required',

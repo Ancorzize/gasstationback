@@ -19,6 +19,8 @@ class ConfiguracionEmpresaResource extends JsonResource
             'email' => $this->email,
             'telefono' => $this->telefono,
             'direccion' => $this->direccion,
+            'tipo_persona' => $this->tipo_persona,
+            'tipo_documento' => $this->tipo_documento,
 
             'pais_id' => $this->pais_id,
             'pais' => $this->pais ? [
@@ -41,6 +43,9 @@ class ConfiguracionEmpresaResource extends JsonResource
                 'codigo' => $this->ciudad->codigo,
             ] : null,
 
+            'codigo_postal' => $this->codigo_postal,
+            'matricula_mercantil' => $this->matricula_mercantil,
+
             'logo' => $this->logo_base64 ? [
                 'base64' => $this->logo_base64,
                 'mime_type' => $this->logo_mime_type,
@@ -49,6 +54,8 @@ class ConfiguracionEmpresaResource extends JsonResource
 
             'responsable_iva' => $this->responsable_iva,
             'regimen' => $this->regimen,
+            'tipo_regimen' => $this->tipo_regimen,
+            'responsabilidades_fiscales' => $this->responsabilidades_fiscales,
             'porcentaje_iva' => $this->porcentaje_iva,
             'maneja_iva_incluido' => $this->maneja_iva_incluido,
 

@@ -7,6 +7,8 @@ class CreateUnidadMedidaDTO
     public function __construct(
         public string $nombre,
         public string $abreviatura,
-        public ?string $descripcion,
+        public ?string $descripcion = null,
+        public ?string $codigo_dian = null,
+        public ?string $simbolo_dian = null,
     ) {}
 }

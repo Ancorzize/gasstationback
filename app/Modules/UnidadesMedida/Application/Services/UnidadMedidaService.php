@@ -36,6 +36,8 @@ class UnidadMedidaService
             'nombre' => $dto->nombre,
             'abreviatura' => $dto->abreviatura,
             'descripcion' => $dto->descripcion,
+            'codigo_dian' => $dto->codigo_dian,
+            'simbolo_dian' => $dto->simbolo_dian,
             'is_active' => true,
         ]);
     }
@@ -48,6 +50,8 @@ class UnidadMedidaService
             'nombre' => $dto->nombre,
             'abreviatura' => $dto->abreviatura,
             'descripcion' => $dto->descripcion,
+            'codigo_dian' => $dto->codigo_dian,
+            'simbolo_dian' => $dto->simbolo_dian,
         ]);
     }
 

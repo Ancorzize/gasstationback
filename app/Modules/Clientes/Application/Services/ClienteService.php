@@ -40,6 +40,14 @@ class ClienteService
             'telefono_dos' => $dto->telefono_dos,
             'direccion' => $dto->direccion,
             'email' => $dto->email,
+            'tipo_persona' => $dto->tipo_persona,
+            'tipo_documento_id' => $dto->tipo_documento_id,
+            'tipo_organization_id' => $dto->tipo_organization_id,
+            'tax_regime_id' => $dto->tax_regime_id,
+            'tax_level_id' => $dto->tax_level_id,
+            'codigo_postal' => $dto->codigo_postal,
+            'ciudad_id' => $dto->ciudad_id,
+            'pais_id' => $dto->pais_id,
             'is_active' => true,
         ]);
     }
@@ -55,7 +63,15 @@ class ClienteService
             'telefono_uno' => $dto->telefono_uno,
             'telefono_dos' => $dto->telefono_dos,
             'direccion' => $dto->direccion,
-            'email' => $dto->email
+            'email' => $dto->email,
+            'tipo_persona' => $dto->tipo_persona,
+            'tipo_documento_id' => $dto->tipo_documento_id,
+            'tipo_organization_id' => $dto->tipo_organization_id,
+            'tax_regime_id' => $dto->tax_regime_id,
+            'tax_level_id' => $dto->tax_level_id,
+            'codigo_postal' => $dto->codigo_postal,
+            'ciudad_id' => $dto->ciudad_id,
+            'pais_id' => $dto->pais_id,
         ]);
     }
 

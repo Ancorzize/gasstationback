@@ -14,6 +14,10 @@ use App\Modules\Productos\Presentation\Controllers\ProductoController;
 use App\Modules\Servicios\Presentation\Controllers\ServicioController;
 use App\Modules\Ubicaciones\Presentation\Controllers\UbicacionController;
 use App\Modules\ConfiguracionEmpresa\Presentation\Controllers\ConfiguracionEmpresaController;
+use App\Modules\ConfiguracionFacturacion\Presentation\Controllers\ConfiguracionFacturacionController;
+use App\Modules\Facturacion\Presentation\Controllers\MapeoCatalogoFacturacionController;
+use App\Modules\Facturacion\Presentation\Controllers\DocumentoElectronicoController;
+use App\Modules\ResolucionesFacturacion\Presentation\Controllers\ResolucionFacturacionController;
 use App\Modules\DestinoRecaudo\Presentation\Controllers\DestinoRecaudoController;
 use App\Modules\Perfil\Presentation\Controllers\PerfilController;
 use App\Modules\Bodegas\Presentation\Controllers\BodegaController;
@@ -147,6 +151,31 @@ Route::middleware(['auth:sanctum'])->prefix('configuracion-empresa')->group(func
 });
 
 Route::get('/configuracion-empresa', [ConfiguracionEmpresaController::class, 'show']);
+
+Route::middleware(['auth:sanctum'])->prefix('configuracion-facturacion')->group(function () {
+    Route::get('/', [ConfiguracionFacturacionController::class, 'show']);
+    Route::put('/', [ConfiguracionFacturacionController::class, 'update']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('mapeos-catalogos')->group(function () {
+    Route::get('/', [MapeoCatalogoFacturacionController::class, 'index']);
+    Route::post('/', [MapeoCatalogoFacturacionController::class, 'store']);
+    Route::get('/{id}', [MapeoCatalogoFacturacionController::class, 'show']);
+    Route::put('/{id}', [MapeoCatalogoFacturacionController::class, 'update']);
+    Route::delete('/{id}', [MapeoCatalogoFacturacionController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('resoluciones-facturacion')->group(function () {
+    Route::get('/', [ResolucionFacturacionController::class, 'index']);
+    Route::post('/', [ResolucionFacturacionController::class, 'store']);
+    Route::get('/{id}', [ResolucionFacturacionController::class, 'show']);
+    Route::put('/{id}', [ResolucionFacturacionController::class, 'update']);
+    Route::delete('/{id}', [ResolucionFacturacionController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('documentos-electronicos')->group(function () {
+    Route::get('/', [DocumentoElectronicoController::class, 'index']);
+});
 
 Route::middleware(['auth:sanctum'])->prefix('perfil')->group(function () {
     Route::put('/', [PerfilController::class, 'update']);
