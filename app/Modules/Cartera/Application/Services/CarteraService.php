@@ -136,7 +136,7 @@ class CarteraService
 
             $tipoCaja = in_array(
                 $dto->medio_pago,
-                ['efectivo', 'consignacion']
+                ['efectivo']
             )
                 ? 'efectivo'
                 : 'digital';
