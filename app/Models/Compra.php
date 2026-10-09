@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Compra extends Model
 {
@@ -28,7 +29,9 @@ class Compra extends Model
         'total_pagado',
         'saldo_pendiente',
         'observacion',
-        'numero_comprobante'
+        'numero_comprobante',
+        'documento_soporte_electronico',
+        'estado_documento_soporte',
     ];
 
     protected $casts = [
@@ -41,6 +44,7 @@ class Compra extends Model
         'total' => 'decimal:2',
         'total_pagado' => 'decimal:2',
         'saldo_pendiente' => 'decimal:2',
+        'documento_soporte_electronico' => 'boolean',
     ];
 
     public function proveedor(): BelongsTo
@@ -66,5 +70,15 @@ class Compra extends Model
     public function pagos(): HasMany
     {
         return $this->hasMany(PagoCompra::class);
+    }
+
+    public function documentoElectronico(): HasOne
+    {
+        return $this->hasOne(DocumentoElectronico::class, 'compra_id');
+    }
+
+    public function documentosElectronicos(): HasMany
+    {
+        return $this->hasMany(DocumentoElectronico::class, 'compra_id');
     }
 }

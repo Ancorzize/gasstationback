@@ -7,7 +7,6 @@ use App\Modules\Facturacion\Application\DTOs\CrearDocumentoElectronicoDTO;
 use App\Modules\Facturacion\Application\DTOs\ActualizarDocumentoElectronicoDTO;
 use App\Modules\Facturacion\Application\Interfaces\DocumentoElectronicoRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
-
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class DocumentoElectronicoRepository implements DocumentoElectronicoRepositoryInterface
@@ -36,6 +35,27 @@ class DocumentoElectronicoRepository implements DocumentoElectronicoRepositoryIn
             ->get();
     }
 
+    public function findByCompraId(int $compraId): Collection
+    {
+        return DocumentoElectronico::where('compra_id', $compraId)
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    public function findByGastoId(int $gastoId): Collection
+    {
+        return DocumentoElectronico::where('gasto_id', $gastoId)
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    public function findByPayrollSettlementId(int $settlementId): Collection
+    {
+        return DocumentoElectronico::where('payroll_settlement_id', $settlementId)
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
     public function findByCufe(string $cufe): ?DocumentoElectronico
     {
         return DocumentoElectronico::where('cufe', $cufe)->first();
@@ -45,6 +65,10 @@ class DocumentoElectronicoRepository implements DocumentoElectronicoRepositoryIn
     {
         $query = DocumentoElectronico::with(['venta.cliente', 'configuracionFacturacion'])
             ->orderBy('id', 'desc');
+
+        if (!empty($filters['venta_id'])) {
+            $query->where('venta_id', $filters['venta_id']);
+        }
 
         if (!empty($filters['fecha_inicial'])) {
             $query->whereDate('created_at', '>=', $filters['fecha_inicial']);
@@ -74,5 +98,29 @@ class DocumentoElectronicoRepository implements DocumentoElectronicoRepositoryIn
         }
 
         return $query->paginate($perPage);
+    }
+
+    /**
+     * Transición atómica para exclusión concurrente en transmisión.
+     */
+    public function marcarComoEnviando(int $documentoId): bool
+    {
+        $affected = DocumentoElectronico::where('id', $documentoId)
+            ->whereIn('estado', ['pendiente', 'rechazado'])
+            ->update(['estado' => 'enviando']);
+
+        return $affected > 0;
+    }
+
+    /**
+     * Restablecer estado a pendiente en caso de fallo técnico previo a respuesta.
+     */
+    public function restaurarEstadoPendiente(int $documentoId): bool
+    {
+        $affected = DocumentoElectronico::where('id', $documentoId)
+            ->where('estado', 'enviando')
+            ->update(['estado' => 'pendiente']);
+
+        return $affected > 0;
     }
 }

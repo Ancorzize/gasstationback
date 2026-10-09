@@ -25,6 +25,23 @@ class ResolucionFacturacionRepository implements ResolucionFacturacionRepository
         return $query->latest('id')->first();
     }
 
+    public function findAndLockByTipoDocumento(string $tipoDocumento, ?int $empresaId = null): ?ResolucionFacturacion
+    {
+        $query = ResolucionFacturacion::query()
+            ->where('tipo_documento', $tipoDocumento)
+            ->where('is_active', true)
+            ->lockForUpdate();
+
+        if ($empresaId !== null) {
+            $query->where(function ($q) use ($empresaId) {
+                $q->where('configuracion_empresa_id', $empresaId)
+                  ->orWhereNull('configuracion_empresa_id');
+            });
+        }
+
+        return $query->latest('id')->first();
+    }
+
     public function getAll(array $filters = []): Collection
     {
         $query = ResolucionFacturacion::query();

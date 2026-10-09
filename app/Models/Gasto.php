@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Gasto extends Model
 {
@@ -22,12 +24,15 @@ class Gasto extends Model
         'motivo_anulacion',
         'user_anulacion_id',
         'fecha_anulacion',
+        'documento_soporte_electronico',
+        'estado_documento_soporte',
     ];
 
     protected $casts = [
         'fecha_gasto' => 'date',
         'valor' => 'decimal:2',
         'fecha_anulacion' => 'datetime',
+        'documento_soporte_electronico' => 'boolean',
     ];
 
     public function proveedor(): BelongsTo
@@ -53,5 +58,15 @@ class Gasto extends Model
     public function usuarioAnulacion(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_anulacion_id');
+    }
+
+    public function documentoElectronico(): HasOne
+    {
+        return $this->hasOne(DocumentoElectronico::class, 'gasto_id');
+    }
+
+    public function documentosElectronicos(): HasMany
+    {
+        return $this->hasMany(DocumentoElectronico::class, 'gasto_id');
     }
 }

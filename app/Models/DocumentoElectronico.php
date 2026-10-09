@@ -14,6 +14,10 @@ class DocumentoElectronico extends Model
 
     protected $fillable = [
         'venta_id',
+        'compra_id',
+        'gasto_id',
+        'payroll_settlement_id',
+        'proveedor_id',
         'configuracion_facturacion_id',
         'tipo_documento',
         'estado',
@@ -37,11 +41,43 @@ class DocumentoElectronico extends Model
     ];
 
     /**
+     * Relación opcional con la Liquidación de Nómina de origen.
+     */
+    public function payrollSettlement(): BelongsTo
+    {
+        return $this->belongsTo(PayrollSettlement::class, 'payroll_settlement_id');
+    }
+
+    /**
      * Relación opcional con la Venta de origen.
      */
     public function venta(): BelongsTo
     {
         return $this->belongsTo(Venta::class, 'venta_id');
+    }
+
+    /**
+     * Relación opcional con la Compra de origen.
+     */
+    public function compra(): BelongsTo
+    {
+        return $this->belongsTo(Compra::class, 'compra_id');
+    }
+
+    /**
+     * Relación opcional con el Gasto de origen.
+     */
+    public function gasto(): BelongsTo
+    {
+        return $this->belongsTo(Gasto::class, 'gasto_id');
+    }
+
+    /**
+     * Relación opcional con el Proveedor asociado.
+     */
+    public function proveedorRelacion(): BelongsTo
+    {
+        return $this->belongsTo(Proveedor::class, 'proveedor_id');
     }
 
     /**

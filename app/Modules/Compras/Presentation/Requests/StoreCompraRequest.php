@@ -25,6 +25,8 @@ class StoreCompraRequest extends FormRequest
             'sobre_tasa' => ['required', 'numeric', 'gte:0'],
             'observacion' => ['nullable', 'string'],
             'numero_comprobante' => ['nullable', 'string'],
+            'documento_soporte_electronico' => ['nullable', 'boolean'],
+            'estado_documento_soporte' => ['nullable', 'string', 'max:30'],
             'detalles' => ['required', 'array', 'min:1'],
             'detalles.*.producto_id' => ['required', 'integer', 'exists:productos,id'],
             'detalles.*.cantidad' => ['required', 'numeric', 'gt:0'],

@@ -7,6 +7,7 @@ use App\Modules\ResolucionesFacturacion\Application\DTOs\CreateResolucionFactura
 use App\Modules\ResolucionesFacturacion\Application\DTOs\UpdateResolucionFacturacionDTO;
 use App\Modules\ResolucionesFacturacion\Application\Interfaces\ResolucionFacturacionRepositoryInterface;
 use App\Modules\ConfiguracionEmpresa\Application\Interfaces\ConfiguracionEmpresaRepositoryInterface;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ResolucionFacturacionService
@@ -15,6 +16,158 @@ class ResolucionFacturacionService
         protected ResolucionFacturacionRepositoryInterface $repository,
         protected ?ConfiguracionEmpresaRepositoryInterface $empresaRepository = null
     ) {}
+
+    /**
+     * Reservar e incrementar atómicamente el siguiente consecutivo de Documento Soporte Electrónico.
+     */
+    public function reservarConsecutivoDocumentoSoporte(?int $empresaId = null): array
+    {
+        return DB::transaction(function () use ($empresaId) {
+            $resolucion = $this->repository->findAndLockByTipoDocumento('documento_soporte', $empresaId);
+
+            if (!$resolucion) {
+                throw new HttpException(422, 'No existe una resolución de facturación activa para Documento Soporte.');
+            }
+
+            $consecutivoReservado = (int) $resolucion->consecutivo_actual;
+
+            if ($consecutivoReservado < (int) $resolucion->rango_desde) {
+                $consecutivoReservado = (int) $resolucion->rango_desde;
+            }
+
+            if ($consecutivoReservado > (int) $resolucion->rango_hasta) {
+                throw new HttpException(422, 'El rango numérico de la resolución para Documento Soporte se encuentra agotado.');
+            }
+
+            $this->repository->update($resolucion, [
+                'consecutivo_actual' => $consecutivoReservado + 1,
+            ]);
+
+            return [
+                'resolucion_id' => $resolucion->id,
+                'prefijo' => $resolucion->prefijo,
+                'numero_resolucion' => $resolucion->numero_resolucion,
+                'consecutivo' => $consecutivoReservado,
+                'folio' => (string) $consecutivoReservado,
+            ];
+        });
+    }
+
+    /**
+     * Reservar e incrementar atómicamente el siguiente consecutivo de Nota Crédito Electrónica.
+     */
+    public function reservarConsecutivoNotaCredito(?int $empresaId = null): array
+    {
+        return DB::transaction(function () use ($empresaId) {
+            $resolucion = $this->repository->findAndLockByTipoDocumento('nota_credito', $empresaId);
+
+            if (!$resolucion) {
+                $resolucion = $this->repository->findAndLockByTipoDocumento('factura', $empresaId);
+                
+                if (!$resolucion) {
+                    $resolucion = $this->repository->findAndLockByTipoDocumento('factura_electronica', $empresaId);
+                }
+
+                if (!$resolucion) {
+                    throw new HttpException(422, 'No existe una resolución de facturación activa para Nota Crédito ni Factura.');
+                }
+
+                $prefijoNC = 'NC';
+                $consecutivoReservado = (int) $resolucion->consecutivo_actual;
+                if ($consecutivoReservado < (int) $resolucion->rango_desde) {
+                    $consecutivoReservado = (int) $resolucion->rango_desde;
+                }
+
+                return [
+                    'resolucion_id' => $resolucion->id,
+                    'prefijo' => $prefijoNC,
+                    'numero_resolucion' => $resolucion->numero_resolucion,
+                    'consecutivo' => $consecutivoReservado,
+                    'folio' => (string) $consecutivoReservado,
+                ];
+            }
+
+            $consecutivoReservado = (int) $resolucion->consecutivo_actual;
+
+            if ($consecutivoReservado < (int) $resolucion->rango_desde) {
+                $consecutivoReservado = (int) $resolucion->rango_desde;
+            }
+
+            if ($consecutivoReservado > (int) $resolucion->rango_hasta) {
+                throw new HttpException(422, 'El rango numérico de la resolución para Nota Crédito se encuentra agotado.');
+            }
+
+            $this->repository->update($resolucion, [
+                'consecutivo_actual' => $consecutivoReservado + 1,
+            ]);
+
+            return [
+                'resolucion_id' => $resolucion->id,
+                'prefijo' => $resolucion->prefijo ?: 'NC',
+                'numero_resolucion' => $resolucion->numero_resolucion,
+                'consecutivo' => $consecutivoReservado,
+                'folio' => (string) $consecutivoReservado,
+            ];
+        });
+    }
+
+    /**
+     * Reservar e incrementar atómicamente el siguiente consecutivo de Nota Débito Electrónica.
+     */
+    public function reservarConsecutivoNotaDebito(?int $empresaId = null): array
+    {
+        return DB::transaction(function () use ($empresaId) {
+            $resolucion = $this->repository->findAndLockByTipoDocumento('nota_debito', $empresaId);
+
+            if (!$resolucion) {
+                $resolucion = $this->repository->findAndLockByTipoDocumento('factura', $empresaId);
+                
+                if (!$resolucion) {
+                    $resolucion = $this->repository->findAndLockByTipoDocumento('factura_electronica', $empresaId);
+                }
+
+                if (!$resolucion) {
+                    throw new HttpException(422, 'No existe una resolución de facturación activa para Nota Débito ni Factura.');
+                }
+
+                $prefijoND = 'ND';
+                $consecutivoReservado = (int) $resolucion->consecutivo_actual;
+                if ($consecutivoReservado < (int) $resolucion->rango_desde) {
+                    $consecutivoReservado = (int) $resolucion->rango_desde;
+                }
+
+                return [
+                    'resolucion_id' => $resolucion->id,
+                    'prefijo' => $prefijoND,
+                    'numero_resolucion' => $resolucion->numero_resolucion,
+                    'consecutivo' => $consecutivoReservado,
+                    'folio' => (string) $consecutivoReservado,
+                ];
+            }
+
+            $consecutivoReservado = (int) $resolucion->consecutivo_actual;
+
+            if ($consecutivoReservado < (int) $resolucion->rango_desde) {
+                $consecutivoReservado = (int) $resolucion->rango_desde;
+            }
+
+            if ($consecutivoReservado > (int) $resolucion->rango_hasta) {
+                throw new HttpException(422, 'El rango numérico de la resolución para Nota Débito se encuentra agotado.');
+            }
+
+            $this->repository->update($resolucion, [
+                'consecutivo_actual' => $consecutivoReservado + 1,
+            ]);
+
+            return [
+                'resolucion_id' => $resolucion->id,
+                'prefijo' => $resolucion->prefijo ?: 'ND',
+                'numero_resolucion' => $resolucion->numero_resolucion,
+                'consecutivo' => $consecutivoReservado,
+                'folio' => (string) $consecutivoReservado,
+            ];
+        });
+    }
 
     public function getResolucionByTipoDocumento(string $tipoDocumento, ?int $empresaId = null): ?ResolucionFacturacion
     {

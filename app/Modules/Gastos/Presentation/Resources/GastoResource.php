@@ -46,6 +46,9 @@ class GastoResource extends JsonResource
             'descripcion' => $this->descripcion,
             'estado' => $this->estado,
 
+            'documento_soporte_electronico' => (bool) $this->documento_soporte_electronico,
+            'estado_documento_soporte' => $this->estado_documento_soporte,
+
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'motivo_anulacion' => $this->motivo_anulacion,

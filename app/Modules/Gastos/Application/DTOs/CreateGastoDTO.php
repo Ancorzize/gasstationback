@@ -12,6 +12,8 @@ class CreateGastoDTO
         public string $descripcion,
         public int $user_id,
         public int $caja_id,
-        public string $tipo_caja
+        public string $tipo_caja,
+        public bool $documento_soporte_electronico = false,
+        public ?string $estado_documento_soporte = 'no_requerido',
     ) {}
 }

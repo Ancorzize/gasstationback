@@ -41,6 +41,9 @@ class CompraResource extends JsonResource
             'estado' => $this->estado,
             'estado_pago' => $this->estado_pago,
 
+            'documento_soporte_electronico' => (bool) $this->documento_soporte_electronico,
+            'estado_documento_soporte' => $this->estado_documento_soporte,
+
             'subtotal' => $this->subtotal,
             'impuesto' => $this->impuesto,
             'total' => $this->total,
@@ -48,7 +51,6 @@ class CompraResource extends JsonResource
             'saldo_pendiente' => $this->saldo_pendiente,
             'soldicom' => $this->soldicom,
             'sobre_tasa' => $this->sobre_tasa,
-            'saldo_pendiente' => $this->saldo_pendiente,
 
             'observacion' => $this->observacion,
             'numero_comprobante' => $this->numero_comprobante,

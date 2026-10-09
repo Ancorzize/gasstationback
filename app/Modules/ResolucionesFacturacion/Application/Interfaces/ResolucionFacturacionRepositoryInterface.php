@@ -10,6 +10,8 @@ interface ResolucionFacturacionRepositoryInterface
 {
     public function findByTipoDocumento(string $tipoDocumento, ?int $empresaId = null): ?ResolucionFacturacion;
 
+    public function findAndLockByTipoDocumento(string $tipoDocumento, ?int $empresaId = null): ?ResolucionFacturacion;
+
     public function getAll(array $filters = []): Collection;
 
     public function paginate(array $filters = [], int $perPage = 1000): LengthAwarePaginator;

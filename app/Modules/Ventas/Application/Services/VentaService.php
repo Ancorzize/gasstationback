@@ -425,6 +425,18 @@ class VentaService
                 );
             }
 
+            $facturaEmitida = DocumentoElectronico::where('venta_id', $venta->id)
+                ->where('tipo_documento', 'factura_electronica')
+                ->where('estado', 'emitido')
+                ->exists();
+
+            if ($facturaEmitida) {
+                throw new HttpException(
+                    422,
+                    'Esta venta ya tiene una factura electrónica emitida y no puede anularse directamente. Debe realizarse el ajuste mediante una Nota Crédito.'
+                );
+            }
+
             $usuarioVenta = null;
 
             if ($venta->user_id) {
@@ -964,6 +976,18 @@ class VentaService
 
             if ($venta->estado === 'anulada') {
                 throw new HttpException(422, 'No se puede editar una venta anulada.');
+            }
+
+            $facturaEmitida = DocumentoElectronico::where('venta_id', $venta->id)
+                ->where('tipo_documento', 'factura_electronica')
+                ->where('estado', 'emitido')
+                ->exists();
+
+            if ($facturaEmitida) {
+                throw new HttpException(
+                    422,
+                    'Esta venta ya tiene una factura electrónica emitida y no puede modificarse directamente. Debe realizarse el ajuste mediante una Nota Crédito o Nota Débito.'
+                );
             }
 
             if ($venta->tipo_origen === 'combustible') {

@@ -12,12 +12,16 @@ use App\Modules\Compras\Application\Interfaces\CompraRepositoryInterface;
 use App\Modules\Caja\Application\Interfaces\CajaRepositoryInterface;
 use App\Modules\Compras\Application\DTOs\ConfirmarCompraDTO;
 use App\Modules\Compras\Application\DTOs\CreatePagoProveedorDTO;
+use App\Modules\Compras\Infrastructure\Mappers\CompraMapper;
+use App\Modules\Facturacion\Application\DTOs\SolicitudDocumentoSoporteDTO;
+use App\Modules\Facturacion\Application\Services\DocumentoSoporteService;
 
 class CompraService
 {
     public function __construct(
         protected CompraRepositoryInterface $compraRepository,
-        protected CajaRepositoryInterface $cajaRepository
+        protected CajaRepositoryInterface $cajaRepository,
+        protected ?DocumentoSoporteService $documentoSoporteService = null
     ) {}
 
     public function getAll(array $filters = [])
@@ -45,6 +49,10 @@ class CompraService
             $sobre_tasa = $dto->sobre_tasa;
             $total = $subtotal + $impuesto + $soldicom + $sobre_tasa;
 
+            $estadoDs = $dto->documento_soporte_electronico
+                ? ($dto->estado_documento_soporte ?? 'pendiente')
+                : 'no_requerido';
+
             $compra = $this->compraRepository->create([
                 'proveedor_id' => $dto->proveedor_id,
                 'bodega_id' => $dto->bodega_id,
@@ -63,7 +71,9 @@ class CompraService
                 'total_pagado' => 0,
                 'saldo_pendiente' => $total,
                 'observacion' => $dto->observacion,
-                'numero_comprobante' => $dto->numero_comprobante
+                'numero_comprobante' => $dto->numero_comprobante,
+                'documento_soporte_electronico' => $dto->documento_soporte_electronico,
+                'estado_documento_soporte' => $estadoDs,
             ]);
 
             foreach ($dto->detalles as $detalle) {
@@ -100,6 +110,10 @@ class CompraService
             $sobre_tasa = $dto->sobre_tasa;
             $total = $subtotal + $impuesto + $soldicom + $sobre_tasa;
 
+            $estadoDs = $dto->documento_soporte_electronico
+                ? ($dto->estado_documento_soporte ?? 'pendiente')
+                : 'no_requerido';
+
             $this->compraRepository->update($compra, [
                 'proveedor_id' => $dto->proveedor_id,
                 'bodega_id' => $dto->bodega_id,
@@ -115,7 +129,9 @@ class CompraService
                 'total_pagado' => 0,
                 'saldo_pendiente' => $total,
                 'observacion' => $dto->observacion,
-                'numero_comprobante' => $dto->numero_comprobante
+                'numero_comprobante' => $dto->numero_comprobante,
+                'documento_soporte_electronico' => $dto->documento_soporte_electronico,
+                'estado_documento_soporte' => $estadoDs,
             ]);
 
             $this->compraRepository->deleteDetallesByCompra($compra->id);
@@ -139,9 +155,20 @@ class CompraService
         });
     }
 
+    /**
+     * Construir SolicitudDocumentoSoporteDTO a partir de una Compra.
+     */
+    public function obtenerSolicitudDocumentoSoporte(int $compraId): SolicitudDocumentoSoporteDTO
+    {
+        $compra = $this->findById($compraId);
+        $compra->load(['proveedor', 'detalles.producto']);
+
+        return CompraMapper::toSolicitudDocumentoSoporteDTO($compra);
+    }
+
     public function confirmar(int $id, ConfirmarCompraDTO $dto): Compra
     {
-        return DB::transaction(function () use ($id, $dto) {
+        $compra = DB::transaction(function () use ($id, $dto) {
             $compra = $this->findById($id);
 
             if ($compra->estado !== 'borrador') {
@@ -276,9 +303,19 @@ class CompraService
                     ]);
             }
 
-
             return $this->findById($compra->id);
         });
+
+        // Automatización de Documento Soporte Electrónico (fuera de la transacción SQL)
+        if ((bool) $compra->documento_soporte_electronico) {
+            $dsService = $this->documentoSoporteService ?? app(DocumentoSoporteService::class);
+            if ($dsService) {
+                $dsService->procesarEmisionAutomatica('compra', $compra->id);
+                $compra = $this->findById($compra->id);
+            }
+        }
+
+        return $compra;
     }
 
     public function getPagos(int $compraId)
@@ -668,5 +705,16 @@ class CompraService
                 'distribucion' => $distribucion,
             ];
         });
+    }
+
+    /**
+     * Actualizar el estado de emisión del Documento Soporte Electrónico en la Compra.
+     */
+    public function actualizarEstadoDocumentoSoporte(int $compraId, string $estado): void
+    {
+        $compra = $this->findById($compraId);
+        $this->compraRepository->update($compra, [
+            'estado_documento_soporte' => $estado,
+        ]);
     }
 }

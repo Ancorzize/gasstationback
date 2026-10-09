@@ -77,6 +77,24 @@ use App\Modules\Dashboard\Application\Interfaces\DashboardConfigRepositoryInterf
 use App\Modules\Dashboard\Infrastructure\Repositories\DashboardConfigRepository;
 use App\Modules\IndicadoresFinancieros\Application\Interfaces\IndicadorFinancieroRepositoryInterface;
 use App\Modules\IndicadoresFinancieros\Infrastructure\Repositories\IndicadorFinancieroRepository;
+use App\Modules\Empleados\Application\Interfaces\EmployeeRepositoryInterface;
+use App\Modules\Empleados\Infrastructure\Repositories\EmployeeRepository;
+use App\Modules\Empleados\Application\Interfaces\EmployeePaymentAccountRepositoryInterface;
+use App\Modules\Empleados\Infrastructure\Repositories\EmployeePaymentAccountRepository;
+use App\Modules\Nomina\Application\Interfaces\PayrollCycleRepositoryInterface;
+use App\Modules\Nomina\Infrastructure\Repositories\PayrollCycleRepository;
+use App\Modules\Nomina\Application\Interfaces\EmployeePayrollCycleRepositoryInterface;
+use App\Modules\Nomina\Infrastructure\Repositories\EmployeePayrollCycleRepository;
+use App\Modules\Nomina\Application\Interfaces\PayrollPeriodRepositoryInterface;
+use App\Modules\Nomina\Infrastructure\Repositories\PayrollPeriodRepository;
+use App\Modules\Nomina\Application\Interfaces\PayrollSettlementRepositoryInterface;
+use App\Modules\Nomina\Infrastructure\Repositories\PayrollSettlementRepository;
+use App\Modules\Nomina\Application\Interfaces\PayrollEarningRepositoryInterface;
+use App\Modules\Nomina\Infrastructure\Repositories\PayrollEarningRepository;
+use App\Modules\Nomina\Application\Interfaces\PayrollDeductionRepositoryInterface;
+use App\Modules\Nomina\Infrastructure\Repositories\PayrollDeductionRepository;
+use App\Modules\Nomina\Application\Interfaces\PayrollParameterRepositoryInterface;
+use App\Modules\Nomina\Infrastructure\Repositories\PayrollParameterRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -121,6 +139,15 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(DashboardRepositoryInterface::class, DashboardRepository::class);
         $this->app->bind(DashboardConfigRepositoryInterface::class, DashboardConfigRepository::class);
         $this->app->bind(IndicadorFinancieroRepositoryInterface::class, IndicadorFinancieroRepository::class);
+        $this->app->bind(EmployeeRepositoryInterface::class, EmployeeRepository::class);
+        $this->app->bind(EmployeePaymentAccountRepositoryInterface::class, EmployeePaymentAccountRepository::class);
+        $this->app->bind(PayrollCycleRepositoryInterface::class, PayrollCycleRepository::class);
+        $this->app->bind(EmployeePayrollCycleRepositoryInterface::class, EmployeePayrollCycleRepository::class);
+        $this->app->bind(PayrollPeriodRepositoryInterface::class, PayrollPeriodRepository::class);
+        $this->app->bind(PayrollSettlementRepositoryInterface::class, PayrollSettlementRepository::class);
+        $this->app->bind(PayrollEarningRepositoryInterface::class, PayrollEarningRepository::class);
+        $this->app->bind(PayrollDeductionRepositoryInterface::class, PayrollDeductionRepository::class);
+        $this->app->bind(PayrollParameterRepositoryInterface::class, PayrollParameterRepository::class);
     }
 
     public function boot(): void

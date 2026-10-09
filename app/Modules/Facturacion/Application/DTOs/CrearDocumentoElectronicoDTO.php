@@ -6,6 +6,10 @@ class CrearDocumentoElectronicoDTO
 {
     public function __construct(
         public readonly ?int $ventaId = null,
+        public readonly ?int $compraId = null,
+        public readonly ?int $gastoId = null,
+        public readonly ?int $payrollSettlementId = null,
+        public readonly ?int $proveedorId = null,
         public readonly ?int $configuracionFacturacionId = null,
         public readonly string $tipoDocumento = 'factura_electronica',
         public readonly string $estado = 'pendiente',
@@ -25,6 +29,10 @@ class CrearDocumentoElectronicoDTO
     {
         return new self(
             ventaId: $data['venta_id'] ?? null,
+            compraId: $data['compra_id'] ?? null,
+            gastoId: $data['gasto_id'] ?? null,
+            payrollSettlementId: $data['payroll_settlement_id'] ?? null,
+            proveedorId: $data['proveedor_id'] ?? null,
             configuracionFacturacionId: $data['configuracion_facturacion_id'] ?? null,
             tipoDocumento: $data['tipo_documento'] ?? 'factura_electronica',
             estado: $data['estado'] ?? 'pendiente',
@@ -45,6 +53,10 @@ class CrearDocumentoElectronicoDTO
     {
         return [
             'venta_id' => $this->ventaId,
+            'compra_id' => $this->compraId,
+            'gasto_id' => $this->gastoId,
+            'payroll_settlement_id' => $this->payrollSettlementId,
+            'proveedor_id' => $this->proveedorId,
             'configuracion_facturacion_id' => $this->configuracionFacturacionId,
             'tipo_documento' => $this->tipoDocumento,
             'estado' => $this->estado,

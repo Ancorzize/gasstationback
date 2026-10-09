@@ -189,7 +189,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'ingreso_manual_caja',
             'retiro_manual_caja',
             'transferencia_caja',
-            'crear_saldos_iniciales_cartera'
+            'crear_saldos_iniciales_cartera',
+
+            // Nómina
+            'ver_empleados',
+            'ver_periodos_nomina',
+            'ver_liquidaciones_nomina',
+            'ver_nomina_electronica'
         ];
 
         foreach ($permissions as $perm) {

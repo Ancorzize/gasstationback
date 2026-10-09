@@ -39,6 +39,7 @@ return [
         'token' => env('MATIAS_API_TOKEN'),
         'sandbox_url' => env('MATIAS_SANDBOX_URL', 'https://sandbox-api.maticerts.com'),
         'production_url' => env('MATIAS_PRODUCTION_URL'),
+        'ds_real_transmission' => env('MATIAS_DS_REAL_TRANSMISSION', false),
     ],
 
 ];

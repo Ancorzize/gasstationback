@@ -49,9 +49,24 @@ class ConfiguracionFacturacionService
             'proveedor_activo' => strtolower(trim($dto->proveedor_activo)),
             'ambiente' => $dto->ambiente,
             'facturacion_electronica_activa' => $dto->facturacion_electronica_activa,
+            'facturar_ventas_pos' => $dto->facturar_ventas_pos,
+            'facturar_ventas_combustible' => $dto->facturar_ventas_combustible,
+            'permitir_ventas_sin_datos_fiscales' => $dto->permitir_ventas_sin_datos_fiscales,
             'reintentos_automaticos' => $dto->reintentos_automaticos,
             'max_reintentos' => $dto->max_reintentos,
         ];
+
+        if ($dto->matias_sandbox_url !== null) {
+            $data['matias_sandbox_url'] = $dto->matias_sandbox_url;
+        }
+
+        if ($dto->matias_ds_real_transmission !== null) {
+            $data['matias_ds_real_transmission'] = $dto->matias_ds_real_transmission;
+        }
+
+        if ($dto->matias_api_token !== null && $dto->matias_api_token !== '********') {
+            $data['matias_api_token'] = $dto->matias_api_token;
+        }
 
         if (!$config) {
             return $this->repository->create($data);

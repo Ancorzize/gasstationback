@@ -39,6 +39,16 @@ use App\Modules\PreciosCombustible\Presentation\Controllers\PrecioCombustibleCon
 use App\Modules\Dashboard\Presentation\Controllers\DashboardController;
 use App\Modules\Dashboard\Presentation\Controllers\DashboardConfigController;
 use App\Modules\IndicadoresFinancieros\Presentation\Controllers\IndicadorFinancieroController;
+use App\Modules\Empleados\Presentation\Controllers\EmployeeController;
+use App\Modules\Empleados\Presentation\Controllers\EmployeePaymentAccountController;
+use App\Modules\Nomina\Presentation\Controllers\PayrollCycleController;
+use App\Modules\Nomina\Presentation\Controllers\EmployeePayrollCycleController;
+use App\Modules\Nomina\Presentation\Controllers\PayrollPeriodController;
+use App\Modules\Nomina\Presentation\Controllers\PayrollSettlementController;
+use App\Modules\Nomina\Presentation\Controllers\PayrollTransmissionController;
+use App\Modules\Nomina\Presentation\Controllers\PayrollEarningController;
+use App\Modules\Nomina\Presentation\Controllers\PayrollDeductionController;
+use App\Modules\Nomina\Presentation\Controllers\PayrollParameterController;
 //Route::get('/historico', [CajaController::class, 'historico']);
 
 Route::prefix('auth')->group(function () {
@@ -175,6 +185,17 @@ Route::middleware(['auth:sanctum'])->prefix('resoluciones-facturacion')->group(f
 
 Route::middleware(['auth:sanctum'])->prefix('documentos-electronicos')->group(function () {
     Route::get('/', [DocumentoElectronicoController::class, 'index']);
+    Route::post('/preparar-ds', [DocumentoElectronicoController::class, 'prepararDS']);
+    Route::post('/reintentar-ds-rechazados', [DocumentoElectronicoController::class, 'reintentarMasivoDS']);
+    Route::post('/{id}/transmitir-ds', [DocumentoElectronicoController::class, 'transmitirDS']);
+    Route::post('/{id}/reintentar-ds', [DocumentoElectronicoController::class, 'reintentarDS']);
+    Route::post('/preparar-nc', [DocumentoElectronicoController::class, 'prepararNC']);
+    Route::post('/{id}/transmitir-nc', [DocumentoElectronicoController::class, 'transmitirNC']);
+    Route::post('/{id}/reintentar-nc', [DocumentoElectronicoController::class, 'reintentarNC']);
+    Route::post('/preparar-nd', [DocumentoElectronicoController::class, 'prepararND']);
+    Route::post('/{id}/transmitir-nd', [DocumentoElectronicoController::class, 'transmitirND']);
+    Route::post('/{id}/reintentar-nd', [DocumentoElectronicoController::class, 'reintentarND']);
+    Route::get('/{id}', [DocumentoElectronicoController::class, 'show']);
 });
 
 Route::middleware(['auth:sanctum'])->prefix('perfil')->group(function () {
@@ -344,4 +365,79 @@ Route::middleware(['auth:sanctum'])->prefix('dashboard')->group(function () {
 
 Route::middleware(['auth:sanctum'])->prefix('indicadores-financieros')->group(function () {
     Route::get('/', [IndicadorFinancieroController::class, 'index']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('empleados')->group(function () {
+    Route::get('/', [EmployeeController::class, 'index']);
+    Route::post('/', [EmployeeController::class, 'store']);
+    Route::get('/{id}', [EmployeeController::class, 'show']);
+    Route::put('/{id}', [EmployeeController::class, 'update']);
+    Route::patch('/{id}/status', [EmployeeController::class, 'changeStatus']);
+
+    // Cuentas / Medios de Pago del empleado
+    Route::get('/{employeeId}/cuentas-pago', [EmployeePaymentAccountController::class, 'index']);
+    Route::post('/{employeeId}/cuentas-pago', [EmployeePaymentAccountController::class, 'store']);
+    Route::put('/cuentas-pago/{id}', [EmployeePaymentAccountController::class, 'update']);
+    Route::patch('/cuentas-pago/{id}/status', [EmployeePaymentAccountController::class, 'changeStatus']);
+
+    // Asignaciones históricas de ciclos de nómina al empleado
+    Route::get('/{employeeId}/ciclos-nomina', [EmployeePayrollCycleController::class, 'index']);
+    Route::post('/{employeeId}/ciclos-nomina', [EmployeePayrollCycleController::class, 'store']);
+    Route::get('/ciclos-nomina-asignaciones/{id}', [EmployeePayrollCycleController::class, 'show']);
+    Route::put('/ciclos-nomina-asignaciones/{id}', [EmployeePayrollCycleController::class, 'update']);
+    Route::patch('/ciclos-nomina-asignaciones/{id}/status', [EmployeePayrollCycleController::class, 'changeStatus']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('ciclos-nomina')->group(function () {
+    Route::get('/', [PayrollCycleController::class, 'index']);
+    Route::post('/', [PayrollCycleController::class, 'store']);
+    Route::get('/{id}', [PayrollCycleController::class, 'show']);
+    Route::put('/{id}', [PayrollCycleController::class, 'update']);
+    Route::patch('/{id}/status', [PayrollCycleController::class, 'changeStatus']);
+
+    // Períodos de nómina del ciclo
+    Route::get('/{cycleId}/periodos', [PayrollPeriodController::class, 'getByCycle']);
+    Route::post('/{cycleId}/periodos', [PayrollPeriodController::class, 'store']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('periodos-nomina')->group(function () {
+    Route::get('/', [PayrollPeriodController::class, 'index']);
+    Route::get('/{id}', [PayrollPeriodController::class, 'show']);
+    Route::put('/{id}', [PayrollPeriodController::class, 'update']);
+    Route::patch('/{id}/status', [PayrollPeriodController::class, 'changeStatus']);
+
+    // Liquidaciones de nómina del período
+    Route::get('/{periodId}/liquidaciones', [PayrollSettlementController::class, 'getByPeriod']);
+    Route::post('/{periodId}/liquidaciones', [PayrollSettlementController::class, 'store']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('liquidaciones-nomina')->group(function () {
+    Route::get('/', [PayrollSettlementController::class, 'index']);
+    Route::get('/{id}', [PayrollSettlementController::class, 'show']);
+    Route::put('/{id}', [PayrollSettlementController::class, 'update']);
+    Route::patch('/{id}/status', [PayrollSettlementController::class, 'changeStatus']);
+    Route::post('/{id}/transmitir', [PayrollTransmissionController::class, 'transmitir']);
+    Route::post('/{id}/reemplazar', [PayrollTransmissionController::class, 'reemplazar']);
+    Route::post('/{id}/eliminar', [PayrollTransmissionController::class, 'eliminar']);
+
+    // Devengados de la liquidación
+    Route::get('/{settlementId}/devengados', [PayrollEarningController::class, 'index']);
+    Route::post('/{settlementId}/devengados', [PayrollEarningController::class, 'store']);
+    Route::get('/{settlementId}/devengados/{id}', [PayrollEarningController::class, 'show']);
+    Route::put('/{settlementId}/devengados/{id}', [PayrollEarningController::class, 'update']);
+    Route::delete('/{settlementId}/devengados/{id}', [PayrollEarningController::class, 'destroy']);
+
+    // Deducciones de la liquidación
+    Route::get('/{settlementId}/deducciones', [PayrollDeductionController::class, 'index']);
+    Route::post('/{settlementId}/deducciones', [PayrollDeductionController::class, 'store']);
+    Route::get('/{settlementId}/deducciones/{id}', [PayrollDeductionController::class, 'show']);
+    Route::put('/{settlementId}/deducciones/{id}', [PayrollDeductionController::class, 'update']);
+    Route::delete('/{settlementId}/deducciones/{id}', [PayrollDeductionController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum'])->prefix('parametros-nomina')->group(function () {
+    Route::get('/', [PayrollParameterController::class, 'index']);
+    Route::post('/', [PayrollParameterController::class, 'store']);
+    Route::get('/{id}', [PayrollParameterController::class, 'show']);
+    Route::put('/{id}', [PayrollParameterController::class, 'update']);
 });
