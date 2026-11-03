@@ -15,6 +15,7 @@ use App\Models\PagoVenta;
 use App\Models\DetalleVenta;
 use App\Models\Caja;
 use App\Models\MovimientoCaja;
+use App\Models\AplicacionAnticipoCliente;
 class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 {
     public function getAll(array $filters = []): Collection
@@ -199,6 +200,17 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             ->where('turno_islero_id', $turnoId)
             ->whereIn('estado', ['registrado', 'pendiente', 'aplicado'])
             ->sum('valor');
+    }
+
+    public function sumAnticiposAplicadosByTurno(int $turnoId): float
+    {
+        return (float) AplicacionAnticipoCliente::query()
+            ->where('estado', 'aplicada')
+            ->whereHas('venta', function ($q) use ($turnoId) {
+                $q->where('turno_islero_id', $turnoId)
+                    ->where('estado', 'confirmada');
+            })
+            ->sum('monto_aplicado');
     }
 
     public function getPrecioVigenteProducto(int $productoId): ?float
@@ -539,23 +551,21 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 
     public function getResumenDestinosTurno(int $turnoId): Collection
     {
-        return DetalleVenta::query()
+        return PagoVenta::query()
             ->selectRaw("
-                categorias_producto.destino_recaudo_id,
+                cajas.destino_recaudo_id,
                 destinos_recaudo.codigo,
                 destinos_recaudo.nombre,
                 pagos_venta.metodo_pago,
-                SUM(detalle_ventas.total) as total
+                SUM(pagos_venta.monto) as total
             ")
-            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
-            ->join('productos', 'productos.id', '=', 'detalle_ventas.producto_id')
-            ->join('categorias_producto', 'categorias_producto.id', '=', 'productos.categoria_producto_id')
-            ->join('destinos_recaudo', 'destinos_recaudo.id', '=', 'categorias_producto.destino_recaudo_id')
-            ->join('pagos_venta', 'pagos_venta.venta_id', '=', 'ventas.id')
+            ->join('ventas', 'ventas.id', '=', 'pagos_venta.venta_id')
+            ->join('cajas', 'cajas.id', '=', 'pagos_venta.caja_id')
+            ->join('destinos_recaudo', 'destinos_recaudo.id', '=', 'cajas.destino_recaudo_id')
             ->where('ventas.turno_islero_id', $turnoId)
             ->where('ventas.estado', 'confirmada')
             ->groupBy(
-                'categorias_producto.destino_recaudo_id',
+                'cajas.destino_recaudo_id',
                 'destinos_recaudo.codigo',
                 'destinos_recaudo.nombre',
                 'pagos_venta.metodo_pago'
@@ -606,10 +616,13 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 
         $totalAbonos = $this->sumAbonosByTurno($turnoId);
 
+        $totalAnticipos = $this->sumAnticiposAplicadosByTurno($turnoId);
+
         $totalSistema = round(
             $totalVentasCombustible
             + $totalVentasLubricantes
-            - $totalCreditos,
+            - $totalCreditos
+            - $totalAnticipos,
             2
         );
 
@@ -624,6 +637,8 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             'total_ventas_lubricantes' => round($totalVentasLubricantes, 2),
             'total_creditos' => round($totalCreditos, 2),
             'total_abonos' => round($totalAbonos, 2),
+            'total_anticipos' => round($totalAnticipos, 2),
+            'anticipos_aplicados' => round($totalAnticipos, 2),
             'total_sistema' => $totalSistema,
             'total_recaudo_esperado' => $totalRecaudoEsperado,
         ];

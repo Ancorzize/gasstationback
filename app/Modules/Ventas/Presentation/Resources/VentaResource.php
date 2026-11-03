@@ -109,6 +109,24 @@ class VentaResource extends JsonResource
                         });
                     }
                 ),
+            'aplicaciones_anticipo' => $this->whenLoaded(
+                'aplicacionesAnticipo',
+                function () {
+                    return $this->aplicacionesAnticipo->map(function ($app) {
+                        return [
+                            'id' => $app->id,
+                            'anticipo_cliente_id' => $app->anticipo_cliente_id,
+                            'numero_anticipo' => $app->anticipo?->numero,
+                            'monto_aplicado' => (float) $app->monto_aplicado,
+                            'saldo_anterior' => (float) $app->saldo_anterior,
+                            'saldo_nuevo' => (float) $app->saldo_nuevo,
+                            'estado' => $app->estado,
+                            'observacion' => $app->observacion,
+                            'created_at' => $app->created_at,
+                        ];
+                    });
+                }
+            ),
             ];
     }
 

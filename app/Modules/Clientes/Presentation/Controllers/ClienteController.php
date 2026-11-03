@@ -153,6 +153,8 @@ class ClienteController extends Controller
                 'cupo_credito' => $data['cupo_credito'],
                 'saldo_credito' => $data['saldo_credito'],
                 'cupo_disponible' => $data['cupo_disponible'],
+                'saldo_a_favor' => $data['saldo_a_favor'],
+                'anticipos' => $data['anticipos'],
                 'movimientos' => MovimientoCarteraResource::collection($data['movimientos']),
             ], 'Estado de cuenta del cliente.');
 

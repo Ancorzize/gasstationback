@@ -18,6 +18,10 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\ConfiguracionEmpresa;
 use App\Modules\Compras\Presentation\Requests\ConfirmarCompraRequest;
 use App\Modules\Compras\Presentation\Requests\StorePagoProveedorRequest;
+use App\Modules\Compras\Presentation\Requests\StoreSaldoInicialProveedorRequest;
+use App\Modules\Compras\Presentation\Requests\StoreAnticipoProveedorRequest;
+use App\Modules\Compras\Presentation\Requests\ApplyAnticipoCompraRequest;
+use App\Modules\Compras\Application\DTOs\CreateAnticipoProveedorDTO;
 class CompraController extends Controller
 {
     public function __construct(
@@ -140,10 +144,8 @@ class CompraController extends Controller
                 'Compra confirmada correctamente.'
             );
         } catch (HttpException $e) {
-             print_r($e);
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {
-            print_r($e);
             return ApiResponse::error('Error interno del servidor.', 500);
         }
     }
@@ -267,6 +269,52 @@ class CompraController extends Controller
         }
     }
 
+    public function registrarSaldoInicial(StoreSaldoInicialProveedorRequest $request)
+    {
+        try {
+            if (!$request->user()->can('crear_compras')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $dto = CompraMapper::fromArrayToCreateSaldoInicialDTO(
+                $request->validated(),
+                $request->user()->id
+            );
+
+            $saldoInicial = $this->compraService->registrarSaldoInicial($dto);
+
+            return ApiResponse::success(
+                $saldoInicial,
+                'Saldo inicial de proveedor registrado correctamente.',
+                201
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function saldosInicialesProveedor(Request $request, int $proveedorId)
+    {
+        try {
+            if (!$request->user()->can('ver_compras')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $saldos = $this->compraService->getSaldosInicialesByProveedor($proveedorId);
+
+            return ApiResponse::success(
+                $saldos,
+                'Saldos iniciales del proveedor.'
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
     public function deudaProveedor(
         Request $request,
         int $proveedorId
@@ -303,4 +351,83 @@ class CompraController extends Controller
         }
     }
     
+
+    public function registrarAnticipoDirecto(StoreAnticipoProveedorRequest $request)
+    {
+        try {
+            if (!$request->user()->can('registrar_pagos_compra')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $validated = $request->validated();
+            $dto = new CreateAnticipoProveedorDTO(
+                proveedor_id: (int) $validated['proveedor_id'],
+                user_id: $request->user()->id,
+                caja_id: (int) $validated['caja_id'],
+                monto: (float) $validated['monto'],
+                metodo_pago: $validated['metodo_pago'],
+                referencia: $validated['referencia'] ?? null,
+                observacion: $validated['observacion'] ?? null,
+                fecha_pago: $validated['fecha_pago'] ?? null,
+            );
+
+            $resultado = $this->compraService->registrarAnticipoDirecto($dto);
+
+            return ApiResponse::success(
+                $resultado,
+                'Anticipo directo registrado correctamente.',
+                201
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function aplicarAnticipo(ApplyAnticipoCompraRequest $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('registrar_pagos_compra')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $validated = $request->validated();
+            $resultado = $this->compraService->aplicarAnticipoCompra(
+                compraId: $id,
+                monto: (float) $validated['monto'],
+                userId: $request->user()->id,
+                observacion: $validated['observacion'] ?? null
+            );
+
+            return ApiResponse::success(
+                $resultado,
+                'Saldo a favor aplicado a la compra correctamente.'
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function anticiposProveedor(Request $request, int $proveedorId)
+    {
+        try {
+            if (!$request->user()->can('ver_compras')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $anticipos = $this->compraService->getAnticiposByProveedor($proveedorId);
+
+            return ApiResponse::success(
+                $anticipos,
+                'Anticipos del proveedor obtenidos correctamente.'
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
 }

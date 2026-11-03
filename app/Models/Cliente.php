@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
+
 class Cliente extends Model
 {
     protected $table = 'clientes';
@@ -21,6 +22,7 @@ class Cliente extends Model
         'cupo_credito',
         'dias_credito',
         'saldo_credito',
+        'saldo_a_favor',
         'tipo_persona',
         'tipo_documento_id',
         'tipo_organization_id',
@@ -38,6 +40,7 @@ class Cliente extends Model
             'maneja_credito' => 'boolean',
             'cupo_credito' => 'decimal:2',
             'saldo_credito' => 'decimal:2',
+            'saldo_a_favor' => 'decimal:2',
             'dias_credito' => 'integer',
         ];
     }
@@ -65,5 +68,10 @@ class Cliente extends Model
     public function ventas(): HasMany
     {
         return $this->hasMany(Venta::class);
+    }
+
+    public function anticipos(): HasMany
+    {
+        return $this->hasMany(AnticipoCliente::class, 'cliente_id');
     }
 }

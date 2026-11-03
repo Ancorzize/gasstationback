@@ -4,7 +4,9 @@ namespace App\Modules\Cartera\Application\Services;
 
 use App\Models\Cliente;
 use App\Models\AbonoCartera;
+use App\Models\AnticipoCliente;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use App\Modules\Cartera\Application\DTOs\CreateAbonoCarteraDTO;
 use App\Modules\Cartera\Application\Interfaces\CarteraRepositoryInterface;
@@ -40,11 +42,18 @@ class CarteraService
 
         $movimientos = $this->carteraRepository->getMovimientosByCliente($cliente->id);
 
+        $anticipos = AnticipoCliente::query()
+            ->where('cliente_id', $cliente->id)
+            ->orderByDesc('id')
+            ->get();
+
         return [
             'cliente' => $cliente,
             'cupo_credito' => (float) $cliente->cupo_credito,
             'saldo_credito' => (float) $cliente->saldo_credito,
             'cupo_disponible' => (float) $cliente->cupo_credito - (float) $cliente->saldo_credito,
+            'saldo_a_favor' => (float) ($cliente->saldo_a_favor ?? 0),
+            'anticipos' => $anticipos,
             'movimientos' => $movimientos,
         ];
     }
@@ -79,8 +88,10 @@ class CarteraService
     {
         return DB::transaction(function () use ($dto) {
 
-            $cliente = $this->carteraRepository
-                ->findClienteById($dto->cliente_id);
+            $cliente = Cliente::query()
+                ->where('id', $dto->cliente_id)
+                ->lockForUpdate()
+                ->first();
 
             if (!$cliente) {
                 throw new HttpException(
@@ -89,31 +100,10 @@ class CarteraService
                 );
             }
 
-            if (!(bool) $cliente->maneja_credito) {
-                throw new HttpException(
-                    422,
-                    'El cliente no tiene crédito habilitado.'
-                );
-            }
-
-            if ((float) $cliente->saldo_credito <= 0) {
-                throw new HttpException(
-                    422,
-                    'El cliente no tiene saldo pendiente.'
-                );
-            }
-
             if ($dto->valor <= 0) {
                 throw new HttpException(
                     422,
                     'El valor del abono debe ser mayor a cero.'
-                );
-            }
-
-            if ($dto->valor > (float) $cliente->saldo_credito) {
-                throw new HttpException(
-                    422,
-                    'El abono no puede superar el saldo pendiente.'
                 );
             }
 
@@ -150,56 +140,6 @@ class CarteraService
 
             $turnoAbierto = $this->carteraRepository
                 ->getTurnoAbiertoByUser($dto->user_id);
-
-            $ventasPendientes = $this->carteraRepository
-                ->getVentasPendientesCliente($cliente->id);
-
-            $saldosInicialesPendientes = $this->carteraRepository
-                ->getSaldosInicialesPendientesCliente($cliente->id);
-
-            $deudas = collect();
-
-            foreach ($ventasPendientes as $venta) {
-
-                $deudas->push([
-                    'tipo' => 'venta',
-                    'id' => $venta->id,
-                    'fecha' => $venta->fecha_venta,
-                    'documento' => $venta,
-                    'saldo_pendiente' => (float) $venta->saldo_pendiente,
-                ]);
-            }
-
-            foreach ($saldosInicialesPendientes as $saldoInicial) {
-
-                $deudas->push([
-                    'tipo' => 'saldo_inicial',
-                    'id' => $saldoInicial->id,
-                    'fecha' => $saldoInicial->fecha_documento,
-                    'documento' => $saldoInicial,
-                    'saldo_pendiente' => (float) $saldoInicial->saldo_pendiente,
-                ]);
-            }
-
-            if ($deudas->isEmpty()) {
-                throw new HttpException(
-                    422,
-                    'El cliente no tiene documentos pendientes de pago.'
-                );
-            }
-
-            $deudas = $deudas
-                ->sortBy(function ($deuda) {
-
-                    $fecha = $deuda['fecha'];
-
-                    if ($fecha instanceof \Carbon\CarbonInterface) {
-                        return $fecha->timestamp;
-                    }
-
-                    return strtotime((string) $fecha);
-                })
-                ->values();
 
             if ($turnoAbierto) {
                 $abono = $this->carteraRepository->createAbono([
@@ -243,16 +183,53 @@ class CarteraService
                 'user_aplicacion_id' => $dto->user_id,
             ]);
 
+            $ventasPendientes = $this->carteraRepository
+                ->getVentasPendientesCliente($cliente->id);
+
+            $saldosInicialesPendientes = $this->carteraRepository
+                ->getSaldosInicialesPendientesCliente($cliente->id);
+
+            $deudas = collect();
+
+            foreach ($ventasPendientes as $venta) {
+                $deudas->push([
+                    'tipo' => 'venta',
+                    'id' => $venta->id,
+                    'fecha' => $venta->fecha_venta,
+                    'documento' => $venta,
+                    'saldo_pendiente' => (float) $venta->saldo_pendiente,
+                ]);
+            }
+
+            foreach ($saldosInicialesPendientes as $saldoInicial) {
+                $deudas->push([
+                    'tipo' => 'saldo_inicial',
+                    'id' => $saldoInicial->id,
+                    'fecha' => $saldoInicial->fecha_documento,
+                    'documento' => $saldoInicial,
+                    'saldo_pendiente' => (float) $saldoInicial->saldo_pendiente,
+                ]);
+            }
+
+            $deudas = $deudas
+                ->sortBy(function ($deuda) {
+                    $fecha = $deuda['fecha'];
+                    if ($fecha instanceof \Carbon\CarbonInterface) {
+                        return $fecha->timestamp;
+                    }
+                    return strtotime((string) $fecha);
+                })
+                ->values();
+
             $valorPendienteAbono = (float) $dto->valor;
+            $totalAplicadoADeuda = 0;
 
             foreach ($deudas as $deuda) {
-
                 if ($valorPendienteAbono <= 0) {
                     break;
                 }
 
                 $saldoDeuda = (float) $deuda['saldo_pendiente'];
-
                 if ($saldoDeuda <= 0) {
                     continue;
                 }
@@ -262,22 +239,13 @@ class CarteraService
                     $valorPendienteAbono
                 );
 
-                $nuevoSaldo = $saldoDeuda - $valorAplicado;
-
-                if ($nuevoSaldo < 0) {
-                    $nuevoSaldo = 0;
-                }
-
+                $nuevoSaldo = max(0, round($saldoDeuda - $valorAplicado, 2));
 
                 if ($deuda['tipo'] === 'venta') {
-
                     $venta = $deuda['documento'];
-
-
                     $estadoPago = $nuevoSaldo <= 0
                         ? 'pagado'
                         : 'parcial';
-
 
                     $this->carteraRepository->updateVenta(
                         $venta,
@@ -288,18 +256,15 @@ class CarteraService
                     );
 
                     $this->carteraRepository->createAbonoDetalle(
-
                         new CreateAbonoCarteraDetalleDTO(
                             abono_cartera_id: $abono->id,
                             venta_id: $venta->id,
                             valor_aplicado: $valorAplicado,
-
                         )
                     );
                 }
 
                 if ($deuda['tipo'] === 'saldo_inicial') {
-
                     $saldoInicial = $deuda['documento'];
                     $estado = $nuevoSaldo <= 0
                         ? 'pagado'
@@ -321,29 +286,19 @@ class CarteraService
                         ]);
                 }
 
-                $valorPendienteAbono -= $valorAplicado;
+                $totalAplicadoADeuda += $valorAplicado;
+                $valorPendienteAbono = round($valorPendienteAbono - $valorAplicado, 2);
             }
 
-            if ($valorPendienteAbono > 0.001) {
-
-                throw new HttpException(
-                    500,
-                    'No fue posible aplicar completamente el abono a las deudas pendientes.'
-                );
-            }
-
-            $saldoVentas = $this->carteraRepository
+            $saldoVentas = (float) $this->carteraRepository
                 ->getVentasPendientesCliente($cliente->id)
                 ->sum('saldo_pendiente');
 
-
-            $saldoIniciales = $this->carteraRepository
+            $saldoIniciales = (float) $this->carteraRepository
                 ->getSaldosInicialesPendientesCliente($cliente->id)
                 ->sum('saldo_pendiente');
 
-
-            $saldoNuevo = (float) $saldoVentas
-                + (float) $saldoIniciales;
+            $saldoNuevo = round($saldoVentas + $saldoIniciales, 2);
 
             $this->carteraRepository->updateCliente(
                 $cliente,
@@ -352,47 +307,48 @@ class CarteraService
                 ]
             );
 
-            $this->carteraRepository->createMovimientoCartera([
-
-                'cliente_id' => $cliente->id,
-
-                'tipo_movimiento' => 'abono',
-
-                'origen_modulo' => 'abonos_cartera',
-
-                'origen_id' => $abono->id,
-
-                'valor' => $dto->valor,
-
-                'saldo_anterior' => $saldoAnterior,
-
-                'saldo_nuevo' => $saldoNuevo,
-
-                'medio_pago' => $dto->medio_pago,
-
-                'descripcion' => $dto->observacion
-                    ?: 'Abono aplicado automáticamente a las deudas pendientes.',
-
-                'user_id' => $dto->user_id,
-
-                'fecha_movimiento' => now(),
-
-            ]);
-
-            if (!$turnoAbierto) {
-                $this->carteraRepository->createMovimientoCaja([
-                    'caja_id' => $caja->id,
-                    'tipo_movimiento' => 'ingreso',
-                    'categoria_movimiento' => 'abono_cartera',
-                    'origen_modulo' => 'cartera',
+            if ($totalAplicadoADeuda > 0) {
+                $this->carteraRepository->createMovimientoCartera([
+                    'cliente_id' => $cliente->id,
+                    'tipo_movimiento' => 'abono',
+                    'origen_modulo' => 'abonos_cartera',
                     'origen_id' => $abono->id,
+                    'valor' => $totalAplicadoADeuda,
+                    'saldo_anterior' => $saldoAnterior,
+                    'saldo_nuevo' => $saldoNuevo,
                     'medio_pago' => $dto->medio_pago,
-                    'monto' => $dto->valor,
-                    'descripcion' => 'Abono cartera cliente #' . $cliente->id,
+                    'descripcion' => $dto->observacion
+                        ?: 'Abono aplicado automáticamente a las deudas pendientes.',
                     'user_id' => $dto->user_id,
                     'fecha_movimiento' => now(),
                 ]);
             }
+
+            $excedente = round($valorPendienteAbono, 2);
+
+            if ($excedente > 0) {
+                $this->generarAnticipoPorExcedente(
+                    $cliente,
+                    $abono,
+                    $excedente,
+                    'abono_excedente',
+                    $dto->user_id,
+                    $caja->id
+                );
+            }
+
+            $this->carteraRepository->createMovimientoCaja([
+                'caja_id' => $caja->id,
+                'tipo_movimiento' => 'ingreso',
+                'categoria_movimiento' => 'abono_cartera',
+                'origen_modulo' => 'cartera',
+                'origen_id' => $abono->id,
+                'medio_pago' => $dto->medio_pago,
+                'monto' => $dto->valor,
+                'descripcion' => 'Abono cartera cliente #' . $cliente->id,
+                'user_id' => $dto->user_id,
+                'fecha_movimiento' => now(),
+            ]);
 
             return $abono
                 ->fresh()
@@ -854,7 +810,10 @@ class CarteraService
         }
 
         foreach ($abonosPendientes as $abono) {
-            $cliente = $this->carteraRepository->findClienteById($abono->cliente_id);
+            $cliente = Cliente::query()
+                ->where('id', $abono->cliente_id)
+                ->lockForUpdate()
+                ->first();
 
             if (!$cliente) {
                 throw new HttpException(
@@ -891,19 +850,9 @@ class CarteraService
                 return $fecha instanceof \Carbon\CarbonInterface ? $fecha->timestamp : strtotime((string) $fecha);
             })->values();
 
-            $deudaTotalDisponible = (float) $deudas->sum('saldo_pendiente');
-            $valorAbono = (float) $abono->valor;
-
-            if ($deudaTotalDisponible < $valorAbono - 0.001) {
-                $nombreCliente = $cliente->nombre ?: "ID #{$cliente->id}";
-                throw new HttpException(
-                    422,
-                    "El abono pendiente #{$abono->id} de {$nombreCliente} por $" . number_format($valorAbono, 2) . " no puede aplicarse completamente porque la deuda disponible ($" . number_format($deudaTotalDisponible, 2) . ") es insuficiente."
-                );
-            }
-
             $saldoAnteriorCliente = (float) $cliente->saldo_credito;
-            $valorPendienteAbono = $valorAbono;
+            $valorPendienteAbono = (float) $abono->valor;
+            $totalAplicadoADeuda = 0;
 
             foreach ($deudas as $deuda) {
                 if ($valorPendienteAbono <= 0) {
@@ -952,15 +901,8 @@ class CarteraService
                     ]);
                 }
 
+                $totalAplicadoADeuda += $valorAplicado;
                 $valorPendienteAbono = round($valorPendienteAbono - $valorAplicado, 2);
-            }
-
-            if ($valorPendienteAbono > 0.001) {
-                $nombreCliente = $cliente->nombre ?: "ID #{$cliente->id}";
-                throw new HttpException(
-                    422,
-                    "El abono pendiente #{$abono->id} de {$nombreCliente} por $" . number_format($valorAbono, 2) . " no pudo ser aplicado completamente."
-                );
             }
 
             $saldoVentas = (float) $this->carteraRepository->getVentasPendientesCliente($cliente->id)->sum('saldo_pendiente');
@@ -971,20 +913,41 @@ class CarteraService
                 'saldo_credito' => $saldoNuevoCliente,
             ]);
 
-            $this->carteraRepository->createMovimientoCartera([
-                'cliente_id' => $cliente->id,
-                'tipo_movimiento' => 'abono',
-                'origen_modulo' => 'abonos_cartera',
-                'origen_id' => $abono->id,
-                'valor' => $valorAbono,
-                'saldo_anterior' => $saldoAnteriorCliente,
-                'saldo_nuevo' => $saldoNuevoCliente,
-                'medio_pago' => $abono->medio_pago,
-                'descripcion' => $abono->observacion
-                    ?: 'Abono aplicado automáticamente al cerrar el turno.',
-                'user_id' => $userId,
-                'fecha_movimiento' => now(),
-            ]);
+            if ($totalAplicadoADeuda > 0) {
+                $this->carteraRepository->createMovimientoCartera([
+                    'cliente_id' => $cliente->id,
+                    'tipo_movimiento' => 'abono',
+                    'origen_modulo' => 'abonos_cartera',
+                    'origen_id' => $abono->id,
+                    'valor' => $totalAplicadoADeuda,
+                    'saldo_anterior' => $saldoAnteriorCliente,
+                    'saldo_nuevo' => $saldoNuevoCliente,
+                    'medio_pago' => $abono->medio_pago,
+                    'descripcion' => $abono->observacion
+                        ?: 'Abono aplicado automáticamente al cerrar el turno.',
+                    'user_id' => $userId,
+                    'fecha_movimiento' => now(),
+                ]);
+            }
+
+            $excedente = round($valorPendienteAbono, 2);
+
+            if ($excedente > 0) {
+                $anticipoExistente = AnticipoCliente::query()
+                    ->where('abono_cartera_id', $abono->id)
+                    ->first();
+
+                if (!$anticipoExistente) {
+                    $this->generarAnticipoPorExcedente(
+                        $cliente,
+                        $abono,
+                        $excedente,
+                        'turno_islero',
+                        $userId,
+                        $abono->caja_id
+                    );
+                }
+            }
 
             $abono->update([
                 'estado' => 'aplicado',
@@ -992,5 +955,124 @@ class CarteraService
                 'user_aplicacion_id' => $userId,
             ]);
         }
+    }
+
+    protected function generarAnticipoPorExcedente(
+        Cliente $cliente,
+        AbonoCartera $abono,
+        float $excedente,
+        string $origen,
+        int $userId,
+        ?int $cajaId = null
+    ): AnticipoCliente {
+        $ultimoAnticipo = AnticipoCliente::query()->lockForUpdate()->orderByDesc('id')->first();
+        $ultimoId = $ultimoAnticipo?->id ?? (int) (AnticipoCliente::query()->max('id') ?? 0);
+        $siguienteId = $ultimoId + 1;
+
+        $anticipo = null;
+        $intentos = 0;
+        $maxIntentos = 5;
+
+        while ($anticipo === null && $intentos < $maxIntentos) {
+            $intentos++;
+
+            do {
+                $numeroAnticipo = 'ANTC-' . str_pad((string) $siguienteId, 6, '0', STR_PAD_LEFT);
+                $siguienteId++;
+            } while (AnticipoCliente::query()->where('numero', $numeroAnticipo)->exists());
+
+            // Aislar la creación del anticipo en un savepoint interno para tolerar colisiones concurrentes
+            DB::beginTransaction();
+            try {
+                $anticipo = AnticipoCliente::create([
+                    'numero' => $numeroAnticipo,
+                    'cliente_id' => $cliente->id,
+                    'caja_id' => $cajaId ?? $abono->caja_id,
+                    'abono_cartera_id' => $abono->id,
+                    'origen' => $origen,
+                    'monto_original' => $excedente,
+                    'saldo_disponible' => $excedente,
+                    'estado' => 'disponible',
+                    'metodo_pago' => $abono->medio_pago,
+                    'referencia' => null,
+                    'observacion' => $abono->observacion ?: "Excedente generado en abono #{$abono->id}",
+                    'user_id' => $userId,
+                ]);
+                DB::commit();
+            } catch (QueryException $e) {
+                DB::rollBack();
+
+                if ($this->esColisionNumeroAnticipo($e)) {
+                    $ultimoId = (int) (AnticipoCliente::query()->max('id') ?? 0);
+                    $siguienteId = max($siguienteId, $ultimoId + 1);
+                    continue;
+                }
+
+                throw $e;
+            }
+        }
+
+        if (!$anticipo) {
+            throw new HttpException(
+                500,
+                'No fue posible asignar un correlativo único para el anticipo tras múltiples intentos.'
+            );
+        }
+
+        $saldoActualCredito = (float) $cliente->saldo_credito;
+
+        $this->carteraRepository->createMovimientoCartera([
+            'cliente_id' => $cliente->id,
+            'tipo_movimiento' => 'abono',
+            'origen_modulo' => 'abonos_cartera',
+            'origen_id' => $abono->id,
+            'valor' => $excedente,
+            'saldo_anterior' => $saldoActualCredito,
+            'saldo_nuevo' => $saldoActualCredito,
+            'medio_pago' => $abono->medio_pago,
+            'descripcion' => "Excedente registrado como anticipo (saldo a favor) #{$anticipo->numero}",
+            'user_id' => $userId,
+            'fecha_movimiento' => now(),
+        ]);
+
+        $saldoAFavorTotal = (float) AnticipoCliente::query()
+            ->where('cliente_id', $cliente->id)
+            ->where('estado', 'disponible')
+            ->sum('saldo_disponible');
+
+        $this->carteraRepository->updateCliente($cliente, [
+            'saldo_a_favor' => round($saldoAFavorTotal, 2),
+        ]);
+
+        return $anticipo;
+    }
+
+    protected function esColisionNumeroAnticipo(QueryException $e): bool
+    {
+        $sqlState = (string) $e->getCode();
+        $errorInfo = $e->errorInfo ?? [];
+        $driverCode = isset($errorInfo[1]) ? (int) $errorInfo[1] : null;
+        $message = strtolower($e->getMessage());
+
+        $esViolacionUnicidad = in_array($sqlState, ['23000', '23505'], true)
+            || $driverCode === 1062
+            || str_contains($message, 'duplicate entry')
+            || str_contains($message, 'unique constraint')
+            || str_contains($message, 'unique_violation');
+
+        if (!$esViolacionUnicidad) {
+            return false;
+        }
+
+        // Si la colisión fue en abono_cartera_id u otra restricción, no es error de correlativo
+        if (str_contains($message, 'abono_cartera_id')) {
+            return false;
+        }
+
+        return str_contains($message, 'anticipos_cliente_numero_unique')
+            || str_contains($message, 'anticipos_cliente.numero')
+            || str_contains($message, 'key (numero)')
+            || str_contains($message, "for key 'numero'")
+            || str_contains($message, "'anticipos_cliente_numero_unique'");
     }
 }

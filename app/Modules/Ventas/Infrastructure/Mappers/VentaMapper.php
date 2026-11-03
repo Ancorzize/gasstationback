@@ -44,6 +44,8 @@ class VentaMapper
             detalles: $detalles,
             pagos: $pagos,
             factura_electronica: !empty($data['factura_electronica']),
+            usar_anticipo: !empty($data['usar_anticipo']),
+            monto_anticipo: isset($data['monto_anticipo']) && $data['monto_anticipo'] !== '' ? (float) $data['monto_anticipo'] : null,
         );
     }
 
@@ -58,6 +60,8 @@ class VentaMapper
             observacion: $data['observacion'] ?? null,
             user_id: $userId,
             factura_electronica: !empty($data['factura_electronica']),
+            usar_anticipo: !empty($data['usar_anticipo']),
+            monto_anticipo: isset($data['monto_anticipo']) && $data['monto_anticipo'] !== '' ? (float) $data['monto_anticipo'] : null,
         );
     }
 }

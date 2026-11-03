@@ -105,4 +105,9 @@ class Venta extends Model
     {
         return $this->hasMany(DocumentoElectronico::class, 'venta_id');
     }
+
+    public function aplicacionesAnticipo(): HasMany
+    {
+        return $this->hasMany(AplicacionAnticipoCliente::class, 'venta_id');
+    }
 }

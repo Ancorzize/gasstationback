@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Proveedor extends Model
 {
@@ -16,6 +17,7 @@ class Proveedor extends Model
         'direccion',
         'email',
         'is_active',
+        'saldo_anticipo',
         'tipo_persona',
         'tipo_documento_id',
         'tipo_organization_id',
@@ -30,6 +32,7 @@ class Proveedor extends Model
     {
         return [
             'is_active' => 'boolean',
+            'saldo_anticipo' => 'decimal:2',
             'tipo_organization_id' => 'integer',
             'tax_regime_id' => 'integer',
             'tax_level_id' => 'integer',
@@ -46,5 +49,15 @@ class Proveedor extends Model
     public function pais(): BelongsTo
     {
         return $this->belongsTo(Pais::class, 'pais_id');
+    }
+
+    public function anticipos(): HasMany
+    {
+        return $this->hasMany(AnticipoProveedor::class, 'proveedor_id');
+    }
+
+    public function saldosIniciales(): HasMany
+    {
+        return $this->hasMany(SaldoInicialProveedor::class, 'proveedor_id');
     }
 }

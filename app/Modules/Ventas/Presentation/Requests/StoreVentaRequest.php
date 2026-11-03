@@ -18,12 +18,26 @@ class StoreVentaRequest extends FormRequest
             'cliente_id' => [
                 'nullable',
                 'integer',
+                'required_if:tipo_venta,credito',
+                'required_if:usar_anticipo,true',
+                'required_if:usar_anticipo,1',
                 'exists:clientes,id'
             ],
 
             'tipo_venta' => [
                 'required',
                 'in:contado,credito,mixta'
+            ],
+
+            'usar_anticipo' => [
+                'nullable',
+                'boolean'
+            ],
+
+            'monto_anticipo' => [
+                'nullable',
+                'numeric',
+                'gt:0'
             ],
 
             'observacion' => [

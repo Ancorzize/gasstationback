@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PagoCompra extends Model
 {
@@ -32,5 +33,9 @@ class PagoCompra extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-    
+
+    public function anticipo(): HasOne
+    {
+        return $this->hasOne(AnticipoProveedor::class, 'pago_compra_id');
+    }
 }

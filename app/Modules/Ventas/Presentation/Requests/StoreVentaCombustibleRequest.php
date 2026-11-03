@@ -16,7 +16,9 @@ class StoreVentaCombustibleRequest extends FormRequest
         return [
             'manguera_id' => ['required', 'integer', 'exists:mangueras,id'],
             'tipo_venta' => ['required', 'in:contado,credito,mixta'],
-            'cliente_id' => ['nullable','required_if:tipo_venta,credito','integer','exists:clientes,id'],
+            'cliente_id' => ['nullable','required_if:tipo_venta,credito','required_if:usar_anticipo,true','required_if:usar_anticipo,1','integer','exists:clientes,id'],
+            'usar_anticipo' => ['nullable', 'boolean'],
+            'monto_anticipo' => ['nullable', 'numeric', 'gt:0'],
             'metodo_pago' => ['nullable','required_unless:tipo_venta,credito','in:efectivo,transferencia,consignacion,datafono,qr'],
             'monto' => ['required', 'numeric', 'gt:0'],
             'observacion' => ['nullable', 'string'],

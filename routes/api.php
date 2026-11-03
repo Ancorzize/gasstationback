@@ -231,11 +231,16 @@ Route::middleware(['auth:sanctum'])->prefix('movimientos-inventario')->group(fun
 Route::middleware(['auth:sanctum'])->prefix('compras')->group(function () {
     Route::get('/', [CompraController::class, 'index']);
     Route::post('/pagos-general',  [CompraController::class, 'registrarPagoProveedor'] );
-     Route::get('/proveedores/{proveedorId}/deuda',  [CompraController::class, 'deudaProveedor']);
+    Route::post('/saldos-iniciales', [CompraController::class, 'registrarSaldoInicial']);
+    Route::post('/anticipos-directos', [CompraController::class, 'registrarAnticipoDirecto']);
+    Route::get('/proveedores/{proveedorId}/anticipos', [CompraController::class, 'anticiposProveedor']);
+    Route::get('/proveedores/{proveedorId}/saldos-iniciales', [CompraController::class, 'saldosInicialesProveedor']);
+    Route::get('/proveedores/{proveedorId}/deuda',  [CompraController::class, 'deudaProveedor']);
     Route::get('/{id}', [CompraController::class, 'show']);
     Route::post('/', [CompraController::class, 'store']);
     Route::put('/{id}', [CompraController::class, 'update']);
     Route::post('/{id}/confirmar', [CompraController::class, 'confirmar']);
+    Route::post('/{id}/aplicar-anticipo', [CompraController::class, 'aplicarAnticipo']);
 
     Route::get('/{id}/pagos', [CompraController::class, 'pagos']);
     Route::post('/{id}/pagos', [CompraController::class, 'registrarPago']);

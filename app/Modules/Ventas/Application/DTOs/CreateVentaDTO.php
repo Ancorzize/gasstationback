@@ -16,5 +16,7 @@ class CreateVentaDTO
         public array $detalles,
         public array $pagos,
         public bool $factura_electronica = false,
+        public bool $usar_anticipo = false,
+        public ?float $monto_anticipo = null,
     ) {}
 }

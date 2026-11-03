@@ -8,6 +8,10 @@ use App\Models\PagoCompra;
 use App\Models\Caja;
 use App\Models\MovimientoCaja;
 use App\Models\MovimientoInventario;
+use App\Models\SaldoInicialProveedor;
+use App\Models\AplicacionSaldoInicialProveedor;
+use App\Models\AnticipoProveedor;
+use App\Models\AplicacionAnticipoCompra;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -46,4 +50,34 @@ interface CompraRepositoryInterface
     public function getComprasPendientesByProveedor(int $proveedorId): Collection;
     
     public function getDeudaByProveedor(int $proveedorId): array;
+
+    public function createSaldoInicial(array $data): SaldoInicialProveedor;
+
+    public function updateSaldoInicial(SaldoInicialProveedor $saldoInicial, array $data): SaldoInicialProveedor;
+
+    public function getSaldosInicialesPendientesByProveedor(int $proveedorId): Collection;
+
+    public function existeDocumentoProveedor(int $proveedorId, string $numeroDocumento): bool;
+
+    public function generarSiguienteConsecutivoSIP(): string;
+
+    public function createAplicacionSaldoInicial(array $data): AplicacionSaldoInicialProveedor;
+
+    public function getAplicacionesBySaldoInicial(int $saldoInicialId): Collection;
+
+    public function createAnticipo(array $data): AnticipoProveedor;
+
+    public function findAnticipoById(int $id): ?AnticipoProveedor;
+
+    public function getAnticiposDisponiblesByProveedor(int $proveedorId): Collection;
+
+    public function updateAnticipo(AnticipoProveedor $anticipo, array $data): AnticipoProveedor;
+
+    public function generarSiguienteNumeroAnticipo(): string;
+
+    public function createAplicacionAnticipo(array $data): AplicacionAnticipoCompra;
+
+    public function getAplicacionesAnticipoByCompra(int $compraId): Collection;
+
+    public function updateAplicacionAnticipo(AplicacionAnticipoCompra $app, array $data): AplicacionAnticipoCompra;
 }

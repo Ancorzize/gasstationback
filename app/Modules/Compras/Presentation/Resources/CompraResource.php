@@ -17,6 +17,7 @@ class CompraResource extends JsonResource
                 'id' => $this->proveedor->id,
                 'nombre' => $this->proveedor->nombre,
                 'nit' => $this->proveedor->nit,
+                'saldo_anticipo' => (float) ($this->proveedor->saldo_anticipo ?? 0),
             ] : null,
 
             'bodega_id' => $this->bodega_id,
@@ -56,6 +57,18 @@ class CompraResource extends JsonResource
             'numero_comprobante' => $this->numero_comprobante,
 
             'detalles' => DetalleCompraResource::collection($this->whenLoaded('detalles')),
+            'aplicaciones_anticipo' => $this->relationLoaded('aplicacionesAnticipo') 
+                ? $this->aplicacionesAnticipo->map(fn($app) => [
+                    'id' => $app->id,
+                    'anticipo_id' => $app->anticipo_proveedor_id,
+                    'anticipo_numero' => $app->anticipo?->numero,
+                    'monto_aplicado' => (float) $app->monto_aplicado,
+                    'saldo_anterior' => (float) $app->saldo_anterior,
+                    'saldo_nuevo' => (float) $app->saldo_nuevo,
+                    'estado' => $app->estado,
+                    'created_at' => $app->created_at?->format('Y-m-d H:i:s'),
+                ]) 
+                : [],
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

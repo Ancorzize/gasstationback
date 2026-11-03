@@ -16,6 +16,7 @@ class ProveedorResource extends JsonResource
             'telefono' => $this->telefono,
             'direccion' => $this->direccion,
             'email' => $this->email,
+            'saldo_anticipo' => (float) ($this->saldo_anticipo ?? 0),
             'is_active' => $this->is_active,
             'created_at' => $this->created_at,
         ];

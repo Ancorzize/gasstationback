@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MovimientoCaja extends Model
 {
@@ -35,5 +36,15 @@ class MovimientoCaja extends Model
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function aplicacionesSaldoInicialProveedor(): HasMany
+    {
+        return $this->hasMany(AplicacionSaldoInicialProveedor::class, 'movimiento_caja_id');
+    }
+
+    public function anticiposProveedor(): HasMany
+    {
+        return $this->hasMany(AnticipoProveedor::class, 'movimiento_caja_id');
     }
 }

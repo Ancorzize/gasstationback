@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+
 class Caja extends Model
 {
     protected $table = 'cajas';
@@ -58,4 +59,13 @@ class Caja extends Model
         );
     }
 
+    public function anticiposCliente(): HasMany
+    {
+        return $this->hasMany(AnticipoCliente::class, 'caja_id');
+    }
+
+    public function anticiposProveedor(): HasMany
+    {
+        return $this->hasMany(AnticipoProveedor::class, 'caja_id');
+    }
 }

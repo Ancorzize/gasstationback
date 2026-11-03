@@ -411,6 +411,14 @@ class TurnoIsleroService
                 2
             );
 
+            $totalAnticipos = $this->turnoRepository
+                ->sumAnticiposAplicadosByTurno($turno->id);
+
+            $totalAnticipos = round(
+                (float) $totalAnticipos,
+                2
+            );
+
             $diferenciaCombustible = round(
                 $totalVentasCombustibleFisica
                 - $totalVentasCombustibleSistema,
@@ -472,8 +480,9 @@ class TurnoIsleroService
             $totalRecaudoEsperado = round(
                 $totalVentasCombustibleFisica
                 + $totalVentasLubricantes
-                + $totalAbonos
-                - $totalCreditos,
+                - $totalCreditos
+                - $totalAnticipos
+                + $totalAbonos,
                 2
             );
 
@@ -557,7 +566,7 @@ class TurnoIsleroService
                     'estado' => 'cerrado',
 
                     'total_ventas_combustible' =>
-                        $totalVentasCombustibleSistema,
+                        $totalVentasCombustibleFisica,
 
                     'total_ventas_combustible_sistema' =>
                         $totalVentasCombustibleSistema,
@@ -778,6 +787,9 @@ class TurnoIsleroService
         $totalAbonos = $this->turnoRepository
             ->sumAbonosByTurno($turno->id);
 
+        $totalAnticipos = $this->turnoRepository
+            ->sumAnticiposAplicadosByTurno($turno->id);
+
         $ventasLubricantesDetalle = $this->turnoRepository
             ->getVentasLubricantesDetalleByTurno($turno->id);
 
@@ -855,14 +867,16 @@ class TurnoIsleroService
         $destinosRecaudo = array_values($destinosRecaudo);
 
         $totalReportadoSugerido = round(
-            collect($destinosRecaudo)->sum('total'),
+            collect($destinosRecaudo)->sum('total') + (float) $totalAbonos,
             2
         );
 
         $totalSistema = round(
             (float) $totalVentasCombustible
             + (float) $totalVentasLubricantes
-            - (float) $totalCreditos,
+            - (float) $totalCreditos
+            - (float) $totalAnticipos
+            + (float) $totalAbonos,
             2
         );
 
@@ -983,6 +997,7 @@ class TurnoIsleroService
 
             'totales_pago_sugeridos' => [
                 'creditos' => round((float) $totalCreditos, 2),
+                'anticipos_aplicados' => round((float) $totalAnticipos, 2),
                 'total_reportado_sugerido' => $totalReportadoSugerido,
             ],
 
@@ -1012,11 +1027,16 @@ class TurnoIsleroService
                     2
                 ),
 
+                'anticipos_aplicados' => round(
+                    (float) $totalAnticipos,
+                    2
+                ),
+
                 'total_sistema' => $totalSistema,
             ],
 
             'balance_preliminar' => round(
-                $totalSistema - $totalReportadoSugerido,
+                $totalReportadoSugerido - $totalSistema,
                 2
             ),
 
@@ -1517,6 +1537,10 @@ class TurnoIsleroService
             $this->turnoRepository
                 ->sumAbonosByTurno($turno->id);
 
+        $totalAnticipos =
+            $this->turnoRepository
+                ->sumAnticiposAplicadosByTurno($turno->id);
+
         /*
         * Combustible físico según las lecturas actualmente guardadas.
         */
@@ -1750,6 +1774,12 @@ class TurnoIsleroService
 
                 'total_abonos' =>
                     round((float) $totalAbonos, 2),
+
+                'total_anticipos' =>
+                    round((float) $totalAnticipos, 2),
+
+                'anticipos_aplicados' =>
+                    round((float) $totalAnticipos, 2),
 
                 'otros_movimientos' =>
                     round((float) $turno->otros_movimientos, 2),

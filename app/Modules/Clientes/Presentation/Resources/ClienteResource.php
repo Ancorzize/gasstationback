@@ -32,6 +32,7 @@ class ClienteResource extends JsonResource
             'cupo_credito' => $this->cupo_credito,
             'dias_credito' => $this->dias_credito,
             'saldo_credito' => $this->saldo_credito,
+            'saldo_a_favor' => (float) ($this->saldo_a_favor ?? 0),
             'cupo_disponible' => (float) $this->cupo_credito - (float) $this->saldo_credito,
         ];
     }

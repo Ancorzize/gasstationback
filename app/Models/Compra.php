@@ -81,4 +81,9 @@ class Compra extends Model
     {
         return $this->hasMany(DocumentoElectronico::class, 'compra_id');
     }
+
+    public function aplicacionesAnticipo(): HasMany
+    {
+        return $this->hasMany(AplicacionAnticipoCompra::class, 'compra_id');
+    }
 }

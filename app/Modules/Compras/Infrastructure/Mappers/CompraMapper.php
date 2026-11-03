@@ -7,6 +7,7 @@ use App\Modules\Compras\Application\DTOs\CreateCompraDTO;
 use App\Modules\Compras\Application\DTOs\DetalleCompraDTO;
 use App\Modules\Compras\Application\DTOs\UpdateCompraDTO;
 use App\Modules\Compras\Application\DTOs\ConfirmarCompraDTO;
+use App\Modules\Compras\Application\DTOs\CreateSaldoInicialProveedorDTO;
 use App\Modules\Facturacion\Application\DTOs\SolicitudDocumentoSoporteDTO;
 
 class CompraMapper
@@ -79,7 +80,10 @@ class CompraMapper
 
     public static function fromArrayToConfirmarDTO(array $data): ConfirmarCompraDTO
     {
-        return new ConfirmarCompraDTO(caja_id: isset($data['caja_id']) ? (int) $data['caja_id'] : null);
+        return new ConfirmarCompraDTO(
+            caja_id: isset($data['caja_id']) && $data['caja_id'] !== '' ? (int) $data['caja_id'] : null,
+            monto_anticipo: isset($data['monto_anticipo']) ? (float) $data['monto_anticipo'] : 0.0,
+        );
     }
 
     /**
@@ -144,6 +148,18 @@ class CompraMapper
             medioPago: $compra->tipo_pago,
             observacion: $compra->observacion,
             metadatos: []
+        );
+    }
+
+    public static function fromArrayToCreateSaldoInicialDTO(array $data, int $userId): CreateSaldoInicialProveedorDTO
+    {
+        return new CreateSaldoInicialProveedorDTO(
+            proveedor_id: (int) $data['proveedor_id'],
+            numero_documento: !empty($data['numero_documento']) ? trim((string) $data['numero_documento']) : null,
+            fecha_documento: (string) $data['fecha_documento'],
+            valor: (float) $data['valor'],
+            observacion: $data['observacion'] ?? null,
+            user_id: $userId,
         );
     }
 }

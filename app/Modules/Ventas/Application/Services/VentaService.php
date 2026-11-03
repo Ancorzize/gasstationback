@@ -24,6 +24,9 @@ use App\Modules\Facturacion\Application\DTOs\RespuestaFacturacionDTO;
 use App\Models\DocumentoElectronico;
 use App\Models\ConfiguracionEmpresa;
 use App\Models\ConfiguracionFacturacion;
+use App\Models\Cliente;
+use App\Models\AnticipoCliente;
+use App\Models\AplicacionAnticipoCliente;
 
 class VentaService
 {
@@ -176,20 +179,61 @@ class VentaService
                 $total += $detalle->total;
             }
 
-            $totalPagado = 0;
+            $montoAnticipoAplicar = 0.0;
+            if ($dto->usar_anticipo) {
+                if (!$dto->cliente_id) {
+                    throw new HttpException(422, 'Debe seleccionar un cliente para aplicar anticipos.');
+                }
 
-            foreach ($dto->pagos as $pago) {
-                $totalPagado += $pago->monto;
+                $clienteAnticipo = Cliente::where('id', $dto->cliente_id)->lockForUpdate()->first();
+                if (!$clienteAnticipo) {
+                    throw new HttpException(404, 'Cliente no encontrado.');
+                }
+
+                $saldoAFavorDisponible = (float) AnticipoCliente::where('cliente_id', $clienteAnticipo->id)
+                    ->where('estado', 'disponible')
+                    ->where('saldo_disponible', '>', 0)
+                    ->sum('saldo_disponible');
+
+                if ($saldoAFavorDisponible <= 0) {
+                    throw new HttpException(422, 'El cliente seleccionado no cuenta con anticipos o saldo a favor disponible.');
+                }
+
+                $montoDeseado = ($dto->monto_anticipo !== null && $dto->monto_anticipo > 0)
+                    ? (float) $dto->monto_anticipo
+                    : (float) $total;
+
+                $montoAnticipoAplicar = min($montoDeseado, $saldoAFavorDisponible, (float) $total);
+
+                if ($montoAnticipoAplicar <= 0) {
+                    throw new HttpException(422, 'El monto de anticipo a aplicar debe ser mayor a cero.');
+                }
             }
 
-            $saldoPendiente = $total - $totalPagado;
+            $totalPagadoDirecto = 0.0;
+
+            foreach ($dto->pagos as $pago) {
+                $totalPagadoDirecto += (float) $pago->monto;
+            }
+
+            $totalCubierto = round($totalPagadoDirecto + $montoAnticipoAplicar, 2);
+
+            if ($totalCubierto > $total) {
+                throw new HttpException(
+                    422,
+                    "El total pagado (\${$totalPagadoDirecto}) sumado al anticipo (\${$montoAnticipoAplicar}) supera el total de la venta (\${$total})."
+                );
+            }
+
+            $saldoPendiente = round($total - $totalCubierto, 2);
+            $cliente = null;
 
             if ($saldoPendiente > 0) {
 
                 if (!$dto->cliente_id) {
                     throw new HttpException(
                         422,
-                        'Debe seleccionar un cliente para ventas a crédito.'
+                        'Debe seleccionar un cliente para ventas a crédito o con saldo pendiente.'
                     );
                 }
 
@@ -245,21 +289,30 @@ class VentaService
                 'estado' => 'confirmada',
                 'estado_pago' => $saldoPendiente <= 0
                     ? 'pagado'
-                    : ($totalPagado > 0 ? 'parcial' : 'pendiente'),
+                    : ($totalCubierto > 0 ? 'parcial' : 'pendiente'),
                 'subtotal' => $subtotal,
                 'descuento' => $descuento,
                 'impuesto' => $impuesto,
                 'soldicom' => $soldicom,
                 'sobre_tasa' => $sobreTasa,
                 'total' => $total,
-                'total_pagado' => $totalPagado,
+                'total_pagado' => $totalCubierto,
                 'saldo_pendiente' => $saldoPendiente,
                 'fecha_venta' => now(),
-                'fecha_vencimiento' => $saldoPendiente > 0 ? now()->addDays($cliente->dias_credito) : null,
+                'fecha_vencimiento' => ($saldoPendiente > 0 && $cliente) ? now()->addDays($cliente->dias_credito) : null,
                 'observacion' => $dto->observacion,
                 'turno_islero_id' => $turnoAbierto?->id,
                 'destino_recaudo_id' => $destinoRecaudoId,
             ]);
+
+            if ($montoAnticipoAplicar > 0) {
+                $this->aplicarAnticiposAVenta(
+                    $venta,
+                    $dto->cliente_id,
+                    $montoAnticipoAplicar,
+                    $dto->user_id
+                );
+            }
 
 
             foreach ($dto->detalles as $detalle) {
@@ -403,6 +456,94 @@ class VentaService
                 "Método de pago {$metodoPago} inválido."
             ),
         };
+    }
+
+    /**
+     * Aplica anticipos disponibles de un cliente a una venta en orden FIFO.
+     * Retorna el monto total efectivamente aplicado.
+     */
+    protected function aplicarAnticiposAVenta(
+        Venta $venta,
+        int $clienteId,
+        float $montoAAplicar,
+        int $userId
+    ): float {
+        if ($montoAAplicar <= 0) {
+            return 0.0;
+        }
+
+        $cliente = Cliente::where('id', $clienteId)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$cliente) {
+            throw new HttpException(404, 'Cliente no encontrado para aplicar anticipo.');
+        }
+
+        $anticipos = AnticipoCliente::where('cliente_id', $cliente->id)
+            ->where('estado', 'disponible')
+            ->where('saldo_disponible', '>', 0)
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->lockForUpdate()
+            ->get();
+
+        $saldoAFavorDisponible = (float) $anticipos->sum('saldo_disponible');
+
+        if ($saldoAFavorDisponible < $montoAAplicar) {
+            throw new HttpException(
+                422,
+                "El saldo a favor disponible (\${$saldoAFavorDisponible}) es insuficiente para cubrir el monto de anticipo solicitado (\${$montoAAplicar})."
+            );
+        }
+
+        $restantePorAplicar = $montoAAplicar;
+        $totalAplicado = 0.0;
+
+        foreach ($anticipos as $anticipo) {
+            if ($restantePorAplicar <= 0) {
+                break;
+            }
+
+            $saldoAnticipo = (float) $anticipo->saldo_disponible;
+            if ($saldoAnticipo <= 0) {
+                continue;
+            }
+
+            $aplicar = min($saldoAnticipo, $restantePorAplicar);
+            $nuevoSaldoAnticipo = round($saldoAnticipo - $aplicar, 2);
+
+            AplicacionAnticipoCliente::create([
+                'anticipo_cliente_id' => $anticipo->id,
+                'venta_id' => $venta->id,
+                'monto_aplicado' => $aplicar,
+                'saldo_anterior' => $saldoAnticipo,
+                'saldo_nuevo' => $nuevoSaldoAnticipo,
+                'estado' => 'aplicada',
+                'observacion' => "Aplicación de anticipo #{$anticipo->numero} en venta #{$venta->id}",
+                'user_id' => $userId,
+            ]);
+
+            $anticipo->saldo_disponible = $nuevoSaldoAnticipo;
+            if ($nuevoSaldoAnticipo <= 0) {
+                $anticipo->estado = 'agotado';
+            }
+            $anticipo->save();
+
+            $totalAplicado = round($totalAplicado + $aplicar, 2);
+            $restantePorAplicar = round($restantePorAplicar - $aplicar, 2);
+        }
+
+        $nuevoSaldoAFavorTotal = (float) AnticipoCliente::query()
+            ->where('cliente_id', $cliente->id)
+            ->where('estado', 'disponible')
+            ->sum('saldo_disponible');
+
+        $this->ventaRepository->updateCliente($cliente, [
+            'saldo_a_favor' => round($nuevoSaldoAFavorTotal, 2),
+        ]);
+
+        return $totalAplicado;
     }
 
     public function anular(
@@ -573,6 +714,42 @@ class VentaService
                 }
             }
 
+            // Reversión de anticipos aplicados a esta venta si existen
+            $aplicaciones = AplicacionAnticipoCliente::where('venta_id', $venta->id)
+                ->where('estado', 'aplicada')
+                ->get();
+
+            foreach ($aplicaciones as $aplicacion) {
+                $anticipo = AnticipoCliente::lockForUpdate()->find($aplicacion->anticipo_cliente_id);
+                if ($anticipo) {
+                    $anticipo->saldo_disponible = round((float) $anticipo->saldo_disponible + (float) $aplicacion->monto_aplicado, 2);
+                    if ($anticipo->estado === 'agotado') {
+                        $anticipo->estado = 'disponible';
+                    }
+                    $anticipo->save();
+                }
+
+                $aplicacion->update([
+                    'estado' => 'revertida',
+                    'revertido_at' => now(),
+                    'revertido_by' => $userId,
+                ]);
+            }
+
+            if ($aplicaciones->isNotEmpty() && $venta->cliente_id) {
+                $clienteAnticipo = Cliente::lockForUpdate()->find($venta->cliente_id);
+                if ($clienteAnticipo) {
+                    $nuevoSaldoAFavor = (float) AnticipoCliente::query()
+                        ->where('cliente_id', $clienteAnticipo->id)
+                        ->where('estado', 'disponible')
+                        ->sum('saldo_disponible');
+
+                    $this->ventaRepository->updateCliente($clienteAnticipo, [
+                        'saldo_a_favor' => round($nuevoSaldoAFavor, 2),
+                    ]);
+                }
+            }
+
             $this->ventaRepository->updateVenta(
                 $venta,
                 [
@@ -694,29 +871,70 @@ class VentaService
             $sobreTasa = 0;
             $descuento = 0;
 
-            $totalPagado = $dto->tipo_venta === 'credito' ? 0 : $dto->monto;
-            $saldoPendiente = $dto->tipo_venta === 'credito' ? $dto->monto : 0;
+            $montoAnticipoAplicar = 0.0;
+            if ($dto->usar_anticipo) {
+                if (!$dto->cliente_id) {
+                    throw new HttpException(422, 'Debe seleccionar un cliente para aplicar anticipos en venta de combustible.');
+                }
+
+                $clienteAnticipo = Cliente::where('id', $dto->cliente_id)->lockForUpdate()->first();
+                if (!$clienteAnticipo) {
+                    throw new HttpException(404, 'Cliente no encontrado.');
+                }
+
+                $saldoAFavorDisponible = (float) AnticipoCliente::where('cliente_id', $clienteAnticipo->id)
+                    ->where('estado', 'disponible')
+                    ->where('saldo_disponible', '>', 0)
+                    ->sum('saldo_disponible');
+
+                if ($saldoAFavorDisponible <= 0) {
+                    throw new HttpException(422, 'El cliente seleccionado no cuenta con anticipos o saldo a favor disponible.');
+                }
+
+                $montoDeseado = ($dto->monto_anticipo !== null && $dto->monto_anticipo > 0)
+                    ? (float) $dto->monto_anticipo
+                    : (float) $total;
+
+                $montoAnticipoAplicar = min($montoDeseado, $saldoAFavorDisponible, (float) $total);
+
+                if ($montoAnticipoAplicar <= 0) {
+                    throw new HttpException(422, 'El monto de anticipo a aplicar debe ser mayor a cero.');
+                }
+            }
+
+            $montoRestante = round($total - $montoAnticipoAplicar, 2);
+            $cliente = null;
 
             if ($dto->tipo_venta === 'credito') {
-                if (!$dto->cliente_id) {
-                    throw new HttpException(422, 'Debe seleccionar un cliente para ventas a crédito.');
+                $totalPagado = $montoAnticipoAplicar;
+                $saldoPendiente = $montoRestante;
+                $pagoDirecto = 0.0;
+
+                if ($saldoPendiente > 0) {
+                    if (!$dto->cliente_id) {
+                        throw new HttpException(422, 'Debe seleccionar un cliente para ventas a crédito.');
+                    }
+
+                    $cliente = $this->ventaRepository->findClienteById($dto->cliente_id);
+
+                    if (!$cliente) {
+                        throw new HttpException(422, 'Cliente no encontrado.');
+                    }
+
+                    if (!(bool) $cliente->maneja_credito) {
+                        throw new HttpException(422, 'El cliente no tiene crédito habilitado.');
+                    }
+
+                    $cupoDisponible = (float) $cliente->cupo_credito - (float) $cliente->saldo_credito;
+
+                    if ($cupoDisponible < $saldoPendiente) {
+                        throw new HttpException(422, 'El cliente no tiene cupo suficiente.');
+                    }
                 }
-
-                $cliente = $this->ventaRepository->findClienteById($dto->cliente_id);
-
-                if (!$cliente) {
-                    throw new HttpException(422, 'Cliente no encontrado.');
-                }
-
-                if (!(bool) $cliente->maneja_credito) {
-                    throw new HttpException(422, 'El cliente no tiene crédito habilitado.');
-                }
-
-                $cupoDisponible = (float) $cliente->cupo_credito - (float) $cliente->saldo_credito;
-
-                if ($cupoDisponible < $saldoPendiente) {
-                    throw new HttpException(422, 'El cliente no tiene cupo suficiente.');
-                }
+            } else {
+                $pagoDirecto = $montoRestante;
+                $totalPagado = round($montoAnticipoAplicar + $pagoDirecto, 2);
+                $saldoPendiente = 0.0;
             }
 
             if ($dto->factura_electronica) {
@@ -733,7 +951,7 @@ class VentaService
                 }
             }
 
-            if ($dto->tipo_venta !== 'credito') {
+            if ($dto->tipo_venta !== 'credito' && $pagoDirecto > 0) {
                 $tipoCaja = $this->resolverTipoCaja(
                     $dto->metodo_pago
                 );
@@ -757,7 +975,7 @@ class VentaService
                 'tipo_origen' => 'combustible',
                 'factura_electronica' => (bool) $dto->factura_electronica,
                 'estado' => 'confirmada',
-                'estado_pago' => $saldoPendiente <= 0 ? 'pagado' : 'pendiente',
+                'estado_pago' => $saldoPendiente <= 0 ? 'pagado' : ($totalPagado > 0 ? 'parcial' : 'pendiente'),
                 'subtotal' => $subtotal,
                 'descuento' => $descuento,
                 'impuesto' => $impuesto,
@@ -767,10 +985,19 @@ class VentaService
                 'total_pagado' => $totalPagado,
                 'saldo_pendiente' => $saldoPendiente,
                 'fecha_venta' => now(),
-                'fecha_vencimiento' => $saldoPendiente > 0 ? now()->addDays($cliente->dias_credito) : null,
+                'fecha_vencimiento' => ($saldoPendiente > 0 && $cliente) ? now()->addDays($cliente->dias_credito) : null,
                 'observacion' => $dto->observacion,
                 'destino_recaudo_id' => $destinoRecaudoId,
             ]);
+
+            if ($montoAnticipoAplicar > 0) {
+                $this->aplicarAnticiposAVenta(
+                    $venta,
+                    $dto->cliente_id,
+                    $montoAnticipoAplicar,
+                    $dto->user_id
+                );
+            }
 
             $this->ventaRepository->createDetalle([
                 'venta_id' => $venta->id,
@@ -803,13 +1030,13 @@ class VentaService
                 'user_id' => $dto->user_id,
             ]);
 
-            if ($dto->tipo_venta !== 'credito') {
+            if ($dto->tipo_venta !== 'credito' && $pagoDirecto > 0 && $caja) {
                 $pago = $this->ventaRepository->createPago([
                     'venta_id' => $venta->id,
                     'caja_id' => $caja->id,
                     'user_id' => $dto->user_id,
                     'fecha_pago' => now(),
-                    'monto' => $dto->monto,
+                    'monto' => $pagoDirecto,
                     'metodo_pago' => $dto->metodo_pago,
                     'observacion' => $dto->observacion,
                 ]);
@@ -822,7 +1049,7 @@ class VentaService
                         'origen_modulo' => 'ventas',
                         'origen_id' => $venta->id,
                         'medio_pago' => $dto->metodo_pago,
-                        'monto' => $dto->monto,
+                        'monto' => $pagoDirecto,
                         'descripcion' => "Ingreso por venta combustible #{$venta->id}",
                         'user_id' => $dto->user_id,
                         'fecha_movimiento' => now(),
@@ -830,7 +1057,7 @@ class VentaService
                 }
             }
 
-            if ($dto->tipo_venta === 'credito') {
+            if ($dto->tipo_venta === 'credito' && $saldoPendiente > 0) {
                 $cliente = $this->ventaRepository->findClienteById($dto->cliente_id);
 
                 $saldoAnterior = (float) $cliente->saldo_credito;

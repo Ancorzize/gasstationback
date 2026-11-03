@@ -10,6 +10,11 @@ use App\Models\Caja;
 use App\Models\MovimientoCaja;
 use App\Models\DetalleCompra;
 use App\Models\MovimientoInventario;
+use App\Models\SaldoInicialProveedor;
+use App\Models\AplicacionSaldoInicialProveedor;
+use App\Models\AnticipoProveedor;
+use App\Models\AplicacionAnticipoCompra;
+use App\Models\Proveedor;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Modules\Compras\Application\Interfaces\CompraRepositoryInterface;
@@ -114,6 +119,7 @@ class CompraRepository implements CompraRepositoryInterface
             'detalles.producto.categoriaProducto',
             'detalles.producto.unidadMedida',
             'pagos.usuario',
+            'aplicacionesAnticipo.anticipo',
         ])->find($id);
     }
 
@@ -215,23 +221,194 @@ class CompraRepository implements CompraRepositoryInterface
             ->get();
     }
 
+    public function getSaldosInicialesPendientesByProveedor(int $proveedorId): Collection
+    {
+        return SaldoInicialProveedor::query()
+            ->with(['usuario', 'aplicaciones'])
+            ->where('proveedor_id', $proveedorId)
+            ->whereIn('estado', ['pendiente', 'parcial'])
+            ->where('saldo_pendiente', '>', 0)
+            ->orderBy('fecha_documento')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+    }
+
+    public function createSaldoInicial(array $data): SaldoInicialProveedor
+    {
+        return SaldoInicialProveedor::create($data);
+    }
+
+    public function updateSaldoInicial(SaldoInicialProveedor $saldoInicial, array $data): SaldoInicialProveedor
+    {
+        $saldoInicial->update($data);
+        return $saldoInicial->fresh();
+    }
+
+    public function createAplicacionSaldoInicial(array $data): AplicacionSaldoInicialProveedor
+    {
+        return AplicacionSaldoInicialProveedor::create($data);
+    }
+
+    public function getAplicacionesBySaldoInicial(int $saldoInicialId): Collection
+    {
+        return AplicacionSaldoInicialProveedor::query()
+            ->with(['usuario', 'movimientoCaja'])
+            ->where('saldo_inicial_id', $saldoInicialId)
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    public function existeDocumentoProveedor(int $proveedorId, string $numeroDocumento): bool
+    {
+        $numero = trim($numeroDocumento);
+
+        $existeEnSaldoInicial = SaldoInicialProveedor::query()
+            ->where('proveedor_id', $proveedorId)
+            ->where('numero_documento', $numero)
+            ->where('estado', '!=', 'anulado')
+            ->exists();
+
+        if ($existeEnSaldoInicial) {
+            return true;
+        }
+
+        return Compra::query()
+            ->where('proveedor_id', $proveedorId)
+            ->where('numero_documento', $numero)
+            ->where('estado', 'confirmada')
+            ->exists();
+    }
+
+    public function generarSiguienteConsecutivoSIP(): string
+    {
+        $ultimo = SaldoInicialProveedor::query()
+            ->where('numero_documento', 'like', 'SIP-%')
+            ->orderByDesc('id')
+            ->first();
+
+        $ultimoNumero = 0;
+        if ($ultimo && preg_match('/^SIP-(\d+)$/', $ultimo->numero_documento, $matches)) {
+            $ultimoNumero = (int) $matches[1];
+        }
+
+        $maxId = (int) (SaldoInicialProveedor::query()->max('id') ?? 0);
+        $siguiente = max($ultimoNumero, $maxId) + 1;
+
+        do {
+            $consecutivo = 'SIP-' . str_pad((string) $siguiente, 6, '0', STR_PAD_LEFT);
+            $siguiente++;
+        } while (SaldoInicialProveedor::query()->where('numero_documento', $consecutivo)->exists());
+
+        return $consecutivo;
+    }
+
     public function getDeudaByProveedor(int $proveedorId): array
     {
         $compras = $this->getComprasPendientesByProveedor($proveedorId);
+        $saldosIniciales = $this->getSaldosInicialesPendientesByProveedor($proveedorId);
 
-        $totalDeuda = round(
+        $totalDeudaCompras = round(
             $compras->sum(
                 fn ($compra) => (float) $compra->saldo_pendiente
             ),
             2
         );
 
+        $totalDeudaSaldosIniciales = round(
+            $saldosIniciales->sum(
+                fn ($si) => (float) $si->saldo_pendiente
+            ),
+            2
+        );
+
+        $totalDeuda = round($totalDeudaCompras + $totalDeudaSaldosIniciales, 2);
+
+        $proveedor = Proveedor::find($proveedorId);
+        $saldoAFavor = (float) ($proveedor?->saldo_anticipo ?? 0);
+        $deudaNeta = max(0, round($totalDeuda - $saldoAFavor, 2));
+
         return [
             'proveedor_id' => $proveedorId,
             'total_deuda' => $totalDeuda,
+            'deuda_compras' => $totalDeudaCompras,
+            'deuda_saldos_iniciales' => $totalDeudaSaldosIniciales,
+            'saldo_a_favor_disponible' => $saldoAFavor,
+            'deuda_neta' => $deudaNeta,
             'total_compras_pendientes' => $compras->count(),
+            'total_saldos_iniciales_pendientes' => $saldosIniciales->count(),
             'compras' => $compras,
+            'saldos_iniciales' => $saldosIniciales,
         ];
     }
 
+    public function createAnticipo(array $data): AnticipoProveedor
+    {
+        return AnticipoProveedor::create($data);
+    }
+
+    public function findAnticipoById(int $id): ?AnticipoProveedor
+    {
+        return AnticipoProveedor::find($id);
+    }
+
+    public function getAnticiposDisponiblesByProveedor(int $proveedorId): Collection
+    {
+        return AnticipoProveedor::query()
+            ->where('proveedor_id', $proveedorId)
+            ->where('estado', 'disponible')
+            ->where('saldo_disponible', '>', 0)
+            ->orderBy('id', 'asc')
+            ->lockForUpdate()
+            ->get();
+    }
+
+    public function updateAnticipo(AnticipoProveedor $anticipo, array $data): AnticipoProveedor
+    {
+        $anticipo->update($data);
+        return $anticipo->fresh();
+    }
+
+    public function generarSiguienteNumeroAnticipo(): string
+    {
+        $ultimo = AnticipoProveedor::query()
+            ->where('numero', 'like', 'ANT-%')
+            ->orderByDesc('id')
+            ->first();
+
+        $ultimoNumero = 0;
+        if ($ultimo && preg_match('/^ANT-(\d+)$/', $ultimo->numero, $matches)) {
+            $ultimoNumero = (int) $matches[1];
+        }
+
+        $maxId = (int) (AnticipoProveedor::query()->max('id') ?? 0);
+        $siguiente = max($ultimoNumero, $maxId) + 1;
+
+        do {
+            $numero = 'ANT-' . str_pad((string) $siguiente, 6, '0', STR_PAD_LEFT);
+            $siguiente++;
+        } while (AnticipoProveedor::query()->where('numero', $numero)->exists());
+
+        return $numero;
+    }
+
+    public function createAplicacionAnticipo(array $data): AplicacionAnticipoCompra
+    {
+        return AplicacionAnticipoCompra::create($data);
+    }
+
+    public function getAplicacionesAnticipoByCompra(int $compraId): Collection
+    {
+        return AplicacionAnticipoCompra::query()
+            ->with(['anticipo', 'usuario'])
+            ->where('compra_id', $compraId)
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    public function updateAplicacionAnticipo(AplicacionAnticipoCompra $app, array $data): AplicacionAnticipoCompra
+    {
+        $app->update($data);
+        return $app->fresh();
+    }
 }
