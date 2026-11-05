@@ -160,6 +160,7 @@ Route::middleware(['auth:sanctum'])->prefix('configuracion-empresa')->group(func
     Route::put('/', [ConfiguracionEmpresaController::class, 'update']);
 });
 
+Route::get('/configuracion-empresa/apk-download-url', [ConfiguracionEmpresaController::class, 'publicApkDownloadUrl']);
 Route::get('/configuracion-empresa', [ConfiguracionEmpresaController::class, 'show']);
 
 Route::middleware(['auth:sanctum'])->prefix('configuracion-facturacion')->group(function () {

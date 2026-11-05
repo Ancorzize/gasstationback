@@ -31,6 +31,13 @@ class UpdateConfiguracionEmpresaRequest extends FormRequest
             'matricula_mercantil' => ['nullable', 'string', 'max:50'],
 
             'logo_url' => ['nullable', 'string', 'max:255'],
+            'url_descarga_apk' => [
+                'nullable',
+                'string',
+                'url',
+                'regex:/^https:\/\//i',
+                'max:500',
+            ],
 
             'responsable_iva' => ['required', 'boolean'],
             'regimen' => ['nullable', 'string', 'max:100'],
@@ -72,6 +79,9 @@ class UpdateConfiguracionEmpresaRequest extends FormRequest
             'fecha_resolucion.date' => 'La fecha de resolución no es válida.',
             'fecha_vencimiento.date' => 'La fecha de vencimiento no es válida.',
             'decimales.integer' => 'Los decimales deben ser un número entero.',
+            'url_descarga_apk.url' => 'La URL de descarga de la aplicación debe ser una dirección web válida.',
+            'url_descarga_apk.regex' => 'La URL de descarga de la aplicación debe ser un enlace seguro HTTPS.',
+            'url_descarga_apk.max' => 'La URL de descarga no puede superar los 500 caracteres.',
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }

@@ -957,7 +957,7 @@ class TurnoIsleroService
 
                     'galones_vendidos' => round(
                         (float) $lectura->galones_vendidos,
-                        2
+                        3
                     ),
 
                     'total_venta' => round(
@@ -1618,6 +1618,24 @@ class TurnoIsleroService
             }
         }
 
+        foreach ($destinos as $destinoId => &$itemDestino) {
+            $recaudoModel = $turno->recaudos
+                ->firstWhere('destino_recaudo_id', $destinoId);
+
+            $itemDestino['recaudo_islero'] = [
+                'efectivo' => $recaudoModel ? round((float) $recaudoModel->efectivo, 2) : 0,
+                'qr' => $recaudoModel ? round((float) $recaudoModel->qr, 2) : 0,
+                'datafono' => $recaudoModel ? round((float) $recaudoModel->datafono, 2) : 0,
+                'transferencia' => $recaudoModel ? round((float) $recaudoModel->transferencia, 2) : 0,
+                'consignacion' => $recaudoModel ? round((float) $recaudoModel->consignacion, 2) : 0,
+            ];
+
+            $itemDestino['total_recaudo_islero'] = $recaudoModel
+                ? round((float) $recaudoModel->total, 2)
+                : 0;
+        }
+        unset($itemDestino);
+
         /*
         * Información de ventas de lubricantes.
         */
@@ -1738,7 +1756,7 @@ class TurnoIsleroService
 
                         'galones_vendidos' => round(
                             (float) $lectura->galones_vendidos,
-                            2
+                            3
                         ),
 
                         'total_venta' => round(

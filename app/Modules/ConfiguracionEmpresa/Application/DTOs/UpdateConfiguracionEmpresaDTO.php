@@ -20,6 +20,7 @@ class UpdateConfiguracionEmpresaDTO
         public ?string $codigo_postal = null,
         public ?string $matricula_mercantil = null,
         public ?string $logo_url = null,
+        public ?string $url_descarga_apk = null,
         public bool $responsable_iva = true,
         public ?string $regimen = null,
         public ?string $tipo_regimen = null,

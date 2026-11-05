@@ -193,9 +193,26 @@ class RolesAndPermissionsSeeder extends Seeder
 
             // Nómina
             'ver_empleados',
+            'crear_empleados',
+            'editar_empleados',
+            'cambiar_estado_empleados',
+
             'ver_periodos_nomina',
+            'crear_periodos_nomina',
+            'editar_periodos_nomina',
+            'abrir_periodos_nomina',
+            'cerrar_periodos_nomina',
+            'anular_periodos_nomina',
+
             'ver_liquidaciones_nomina',
-            'ver_nomina_electronica'
+            'crear_liquidaciones_nomina',
+            'editar_liquidaciones_nomina',
+            'cambiar_estado_liquidaciones_nomina',
+
+            'ver_nomina_electronica',
+            'transmitir_nomina_electronica',
+            'reemplazar_nomina_electronica',
+            'eliminar_nomina_electronica',
         ];
 
         foreach ($permissions as $perm) {

@@ -24,6 +24,7 @@ class ConfiguracionEmpresaMapper
             codigo_postal: $data['codigo_postal'] ?? null,
             matricula_mercantil: $data['matricula_mercantil'] ?? null,
             logo_url: $data['logo_url'] ?? null,
+            url_descarga_apk: $data['url_descarga_apk'] ?? null,
             responsable_iva: (bool) $data['responsable_iva'],
             regimen: $data['regimen'] ?? null,
             tipo_regimen: $data['tipo_regimen'] ?? null,

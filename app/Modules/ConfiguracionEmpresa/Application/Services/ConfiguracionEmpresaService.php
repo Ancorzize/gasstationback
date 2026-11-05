@@ -43,6 +43,7 @@ class ConfiguracionEmpresaService
             'ciudad_id' => $dto->ciudad_id,
             'codigo_postal' => $dto->codigo_postal,
             'matricula_mercantil' => $dto->matricula_mercantil,
+            'url_descarga_apk' => $dto->url_descarga_apk,
             'responsable_iva' => $dto->responsable_iva,
             'regimen' => $dto->regimen,
             'tipo_regimen' => $dto->tipo_regimen,

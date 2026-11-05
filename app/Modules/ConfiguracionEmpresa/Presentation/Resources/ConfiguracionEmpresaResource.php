@@ -45,6 +45,7 @@ class ConfiguracionEmpresaResource extends JsonResource
 
             'codigo_postal' => $this->codigo_postal,
             'matricula_mercantil' => $this->matricula_mercantil,
+            'url_descarga_apk' => $this->url_descarga_apk,
 
             'logo' => $this->logo_base64 ? [
                 'base64' => $this->logo_base64,

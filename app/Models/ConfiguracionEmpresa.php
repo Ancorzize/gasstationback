@@ -26,6 +26,7 @@ class ConfiguracionEmpresa extends Model
         'codigo_postal',
         'matricula_mercantil',
         'logo_url',
+        'url_descarga_apk',
         'responsable_iva',
         'regimen',
         'tipo_regimen',
