@@ -227,38 +227,48 @@ class RolesAndPermissionsSeeder extends Seeder
             'guard_name' => 'sanctum',
         ]);
 
-        $adminRole->syncPermissions($permissions);
+        if ($adminRole->wasRecentlyCreated) {
+            $adminRole->syncPermissions($permissions);
+        } else {
+            $adminRole->givePermissionTo($permissions);
+        }
 
         $cajeroRole = Role::firstOrCreate(['name' => 'cajero', 'guard_name' => 'sanctum']);
-        $cajeroRole->syncPermissions([
-            'ver_turnos_islero',
-            'abrir_turnos_islero',
-            'cerrar_turnos_islero',
-            'vender_lubricantes',
-            'crear_ventas',
-            'registrar_abonos_cartera',
-        ]);
+        if ($cajeroRole->wasRecentlyCreated) {
+            $cajeroRole->syncPermissions([
+                'ver_turnos_islero',
+                'abrir_turnos_islero',
+                'cerrar_turnos_islero',
+                'vender_lubricantes',
+                'crear_ventas',
+                'registrar_abonos_cartera',
+            ]);
+        }
 
         $vendedorRole = Role::firstOrCreate(['name' => 'vendedor', 'guard_name' => 'sanctum']);
-        $vendedorRole->syncPermissions([
-            'ver_turnos_islero',
-            'abrir_turnos_islero',
-            'cerrar_turnos_islero',
-            'vender_lubricantes',
-            'crear_ventas',
-            'registrar_abonos_cartera',
-        ]);
+        if ($vendedorRole->wasRecentlyCreated) {
+            $vendedorRole->syncPermissions([
+                'ver_turnos_islero',
+                'abrir_turnos_islero',
+                'cerrar_turnos_islero',
+                'vender_lubricantes',
+                'crear_ventas',
+                'registrar_abonos_cartera',
+            ]);
+        }
 
         $isleroRole = Role::firstOrCreate(['name' => 'islero', 'guard_name' => 'sanctum']);
-        $isleroRole->syncPermissions([
-            'ver_turnos_islero',
-            'abrir_turnos_islero',
-            'cerrar_turnos_islero',
-            'vender_combustible',
-            'vender_lubricantes',
-            'crear_ventas',
-            'registrar_abonos_cartera',
-        ]);
+        if ($isleroRole->wasRecentlyCreated) {
+            $isleroRole->syncPermissions([
+                'ver_turnos_islero',
+                'abrir_turnos_islero',
+                'cerrar_turnos_islero',
+                'vender_combustible',
+                'vender_lubricantes',
+                'crear_ventas',
+                'registrar_abonos_cartera',
+            ]);
+        }
 
         $adminUser = User::firstOrCreate(
             ['email' => 'admin@admin.com'],
@@ -273,6 +283,10 @@ class RolesAndPermissionsSeeder extends Seeder
             $adminUser->assignRole($adminRole);
         }
 
-        $adminUser->syncPermissions($permissions);
+        if ($adminUser->wasRecentlyCreated) {
+            $adminUser->syncPermissions($permissions);
+        } else {
+            $adminUser->givePermissionTo($permissions);
+        }
     }
 }
