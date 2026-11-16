@@ -92,16 +92,28 @@ class MatiasInvoiceMapper
                 $taxAmount = (float)($item['tax_amount'] ?? 0);
                 $percent = (float)($item['percent'] ?? 0);
                 if ($taxAmount > 0 || $percent > 0) {
+                    $taxId = trim((string)($item['tax_id'] ?? ''));
+                    if ($taxId === '') {
+                        throw new \InvalidArgumentException(
+                            'No se puede construir tax_totals: falta el tax_id confirmado para una línea con impuesto.'
+                        );
+                    }
                     $itemTaxes[] = [
-                        'tax_id' => (string)($item['tax_id'] ?? '1'),
+                        'tax_id' => $taxId,
                         'tax_amount' => $taxAmount,
                         'taxable_amount' => $lineExt,
                         'percent' => $percent,
                     ];
                 }
             }
+            $itemTaxes = self::removeDuplicateLineTaxes($itemTaxes);
 
-            $lines[] = [
+            $allowanceCharges = $item['allowance_charges'] ?? [];
+            if (!is_array($allowanceCharges)) {
+                throw new \InvalidArgumentException('lines allowance_charges debe ser un arreglo.');
+            }
+
+            $mappedLine = [
                 'invoiced_quantity' => (string)number_format($cant, 2, '.', ''),
                 'quantity_units_id' => (string)($item['quantity_units_id'] ?? '1093'),
                 'line_extension_amount' => (string)number_format($lineExt, 2, '.', ''),
@@ -115,15 +127,24 @@ class MatiasInvoiceMapper
                 'um' => (string)($item['um'] ?? 'M'),
                 'tax_totals' => $itemTaxes,
             ];
+            if ($allowanceCharges !== []) {
+                $mappedLine['allowance_charges'] = $allowanceCharges;
+            }
+            $lines[] = $mappedLine;
         }
         $payload['lines'] = $lines;
+
+        $lineExtensionTotal = round(array_sum(array_map(
+            static fn (array $line): float => (float) $line['line_extension_amount'],
+            $lines
+        )), 2);
 
         // Totales Monetarios Legales
         if (isset($totales['legal_monetary_totals']) && is_array($totales['legal_monetary_totals'])) {
             $payload['legal_monetary_totals'] = $totales['legal_monetary_totals'];
         } else {
-            $lineExtTot = (float)($totales['line_extension_amount'] ?? $totales['subtotal'] ?? 0);
-            $taxExcl = (float)($totales['tax_exclusive_amount'] ?? $lineExtTot);
+            $lineExtTot = $lineExtensionTotal;
+            $taxExcl = $lineExtensionTotal;
             $taxIncl = (float)($totales['tax_inclusive_amount'] ?? $totales['total_pagar'] ?? $lineExtTot);
             $payable = (float)($totales['payable_amount'] ?? $taxIncl);
 
@@ -135,15 +156,112 @@ class MatiasInvoiceMapper
             ];
         }
 
-        // Totales de Impuestos Generales
-        if (isset($totales['tax_totals']) && is_array($totales['tax_totals'])) {
-            $payload['tax_totals'] = $totales['tax_totals'];
-        } else {
-            $payload['tax_totals'] = $meta['tax_totals'] ?? [];
+        foreach (['line_extension_amount', 'tax_exclusive_amount'] as $baseField) {
+            $providedBase = $payload['legal_monetary_totals'][$baseField] ?? null;
+            if (!is_numeric($providedBase) || round((float) $providedBase, 2) !== $lineExtensionTotal) {
+                throw new \InvalidArgumentException(sprintf(
+                    'No se puede construir la factura: legal_monetary_totals.%s debe coincidir con la suma de line_extension_amount (%.2f).',
+                    $baseField,
+                    $lineExtensionTotal
+                ));
+            }
+            $payload['legal_monetary_totals'][$baseField] = number_format($lineExtensionTotal, 2, '.', '');
         }
+
+        // Los totales de cabecera se agregan de los impuestos ya serializados
+        // en las líneas. La base legal se suma una sola vez por línea.
+        $payload['tax_totals'] = self::aggregateHeaderTaxTotals($lines);
 
         MatiasInvoicePayloadValidator::validate($payload);
 
         return $payload;
+    }
+
+    /** Elimina duplicados exactos de tributo dentro de una misma línea. */
+    private static function removeDuplicateLineTaxes(array $taxes): array
+    {
+        $unique = [];
+        $seen = [];
+        foreach ($taxes as $tax) {
+            if (!is_array($tax)) {
+                throw new \InvalidArgumentException('Cada componente de tax_totals debe ser un objeto.');
+            }
+            $taxId = trim((string) ($tax['tax_id'] ?? ''));
+            if ($taxId === '') {
+                throw new \InvalidArgumentException('No se puede transmitir un impuesto sin tax_id confirmado.');
+            }
+            foreach (['tax_amount', 'taxable_amount', 'percent'] as $field) {
+                if (!isset($tax[$field]) || !is_numeric($tax[$field])) {
+                    throw new \InvalidArgumentException("El componente de impuesto requiere {$field} numérico.");
+                }
+            }
+
+            $signature = implode('|', [
+                $taxId,
+                number_format((float) $tax['percent'], 4, '.', ''),
+                number_format((float) $tax['taxable_amount'], 2, '.', ''),
+                number_format((float) $tax['tax_amount'], 2, '.', ''),
+            ]);
+            if (!isset($seen[$signature])) {
+                $seen[$signature] = true;
+                $unique[] = [
+                    'tax_id' => $taxId,
+                    'tax_amount' => number_format((float) $tax['tax_amount'], 2, '.', ''),
+                    'taxable_amount' => number_format((float) $tax['taxable_amount'], 2, '.', ''),
+                    'percent' => (float) $tax['percent'],
+                ];
+            }
+        }
+
+        return $unique;
+    }
+
+    /** Agrega tributos por código y tarifa, contabilizando bases una vez por tributo y línea. */
+    private static function aggregateHeaderTaxTotals(array $lines): array
+    {
+        $totals = [];
+        foreach ($lines as $line) {
+            $lineGroups = [];
+            foreach ($line['tax_totals'] ?? [] as $tax) {
+                $taxId = (string) $tax['tax_id'];
+                $percent = (float) $tax['percent'];
+                $key = $taxId . '|' . number_format($percent, 4, '.', '');
+                $signature = number_format((float) $tax['taxable_amount'], 2, '.', '') . '|'
+                    . number_format((float) $tax['tax_amount'], 2, '.', '');
+                $lineGroups[$key]['tax_id'] = $taxId;
+                $lineGroups[$key]['percent'] = $percent;
+                $lineGroups[$key]['components'][$signature] = [
+                    'taxable_amount' => (float) $tax['taxable_amount'],
+                    'tax_amount' => (float) $tax['tax_amount'],
+                ];
+            }
+
+            foreach ($lineGroups as $key => $group) {
+                $lineBases = [];
+                $lineTax = 0.0;
+                foreach ($group['components'] as $component) {
+                    $baseKey = number_format(round($component['taxable_amount'], 2), 2, '.', '');
+                    $lineBases[$baseKey] = round($component['taxable_amount'], 2);
+                    $lineTax += $component['tax_amount'];
+                }
+                $lineBase = array_sum($lineBases);
+                $totals[$key] ??= [
+                    'tax_id' => $group['tax_id'],
+                    'taxable_amount' => 0.0,
+                    'percent' => $group['percent'],
+                    'tax_amount' => 0.0,
+                ];
+                $totals[$key]['taxable_amount'] += $lineBase;
+                $totals[$key]['tax_amount'] += $lineTax;
+            }
+        }
+
+        foreach ($totals as &$total) {
+            $total['taxable_amount'] = number_format(round($total['taxable_amount'], 2), 2, '.', '');
+            $total['tax_amount'] = number_format(round($total['tax_amount'], 2), 2, '.', '');
+        }
+        unset($total);
+
+        return array_values($totals);
     }
 }

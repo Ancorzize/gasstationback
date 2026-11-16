@@ -1814,14 +1814,86 @@ class VentaService
         ];
 
         $itemsData = [];
-        foreach ($venta->detalles as $detalle) {
+        $subtotalLineas = 0.0;
+        $impuestosLineas = 0.0;
+        foreach ($venta->detalles as $indice => $detalle) {
             $cant = (float) $detalle->cantidad;
             $precio = (float) $detalle->precio_unitario;
             $subtotal = (float) $detalle->subtotal;
             $ivaValor = (float) ($detalle->iva_valor ?? 0);
             $ivaPorcentaje = (float) ($detalle->iva ?? 0);
+            $descuento = (float) ($detalle->descuento ?? 0);
+            $soldicom = (float) ($detalle->soldicom ?? 0);
+            $sobreTasa = (float) ($detalle->sobre_tasa ?? 0);
+
+            if ($soldicom > 0 || $sobreTasa > 0) {
+                throw new \InvalidArgumentException(sprintf(
+                    'No se puede transmitir la línea %d (producto %d): tiene Sordicom o sobretasa, pero el detalle no contiene una clasificación MATÍAS confirmada para esos tributos.',
+                    $indice + 1,
+                    $detalle->producto_id
+                ));
+            }
+
+            if ($ivaPorcentaje <= 0 && $ivaValor <= 0) {
+                throw new \InvalidArgumentException(sprintf(
+                    'No se puede transmitir la línea %d (producto %d): iva e iva_valor son cero y GASSTATION no guarda una clasificación que permita distinguir exento, excluido, no gravado o dato faltante.',
+                    $indice + 1,
+                    $detalle->producto_id
+                ));
+            }
+
+            if ($ivaPorcentaje <= 0 || $ivaValor < 0) {
+                throw new \InvalidArgumentException(sprintf(
+                    'No se puede transmitir la línea %d (producto %d): iva e iva_valor no identifican un tratamiento de IVA consistente.',
+                    $indice + 1,
+                    $detalle->producto_id
+                ));
+            }
+
+            $baseImponible = round($subtotal, 2);
+            $impuestoEsperado = round($baseImponible * $ivaPorcentaje / 100, 2);
+            $ivaValor = round($ivaValor, 2);
+            if ($impuestoEsperado !== $ivaValor) {
+                throw new \InvalidArgumentException(sprintf(
+                    'No se puede transmitir la línea %d (producto %d): iva_valor (%.2f) no coincide con la base del detalle (%.2f) por la tarifa registrada (%.2f%%).',
+                    $indice + 1,
+                    $detalle->producto_id,
+                    $ivaValor,
+                    $baseImponible,
+                    $ivaPorcentaje
+                ));
+            }
+
+            $ivaPorLinea = [[
+                // MATÍAS documenta el ID 1 como IVA; no se infieren otros tributos.
+                'tax_id' => '1',
+                'tax_amount' => number_format($ivaValor, 2, '.', ''),
+                'taxable_amount' => number_format($baseImponible, 2, '.', ''),
+                'percent' => $ivaPorcentaje,
+            ]];
+
+            $subtotalLineas += $baseImponible;
+            $impuestosLineas += $ivaValor;
             $nombreProd = $detalle->producto?->nombre ?? 'Producto';
             $codigoProd = $detalle->producto?->codigo ?? 'PROD-' . $detalle->producto_id;
+
+            $allowanceCharges = [];
+            if ($descuento > 0) {
+                $valorAntesDescuento = round($cant * $precio, 2);
+                if (round($valorAntesDescuento - $descuento, 2) !== $baseImponible) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'No se puede transmitir la línea %d (producto %d): subtotal, precio, cantidad y descuento no coinciden.',
+                        $indice + 1,
+                        $detalle->producto_id
+                    ));
+                }
+                $allowanceCharges[] = [
+                    'amount' => number_format($descuento, 2, '.', ''),
+                    'base_amount' => number_format($valorAntesDescuento, 2, '.', ''),
+                    'charge_indicator' => false,
+                    'allowance_charge_reason' => 'Descuento comercial',
+                ];
+            }
 
             $itemsData[] = [
                 'code' => (string) $codigoProd,
@@ -1835,18 +1907,46 @@ class VentaService
                 'line_extension_amount' => $subtotal,
                 'tax_amount' => $ivaValor,
                 'percent' => $ivaPorcentaje,
+                'tax_id' => '1',
+                'tax_totals' => $ivaPorLinea,
+                'allowance_charges' => $allowanceCharges,
                 'quantity_units_id' => '1093',
                 'um' => 'M',
             ];
         }
 
+        $subtotalLineas = round($subtotalLineas, 2);
+        $impuestosLineas = round($impuestosLineas, 2);
+        if ($subtotalLineas !== round((float) $venta->subtotal, 2)) {
+            throw new \InvalidArgumentException(sprintf(
+                'No se puede transmitir la factura: la suma de bases de sus detalles (%.2f) no coincide con el subtotal de la venta (%.2f).',
+                $subtotalLineas,
+                (float) $venta->subtotal
+            ));
+        }
+        if ($impuestosLineas !== round((float) $venta->impuesto, 2)) {
+            throw new \InvalidArgumentException(sprintf(
+                'No se puede transmitir la factura: la suma del IVA guardado en los detalles (%.2f) no coincide con el impuesto de la venta (%.2f).',
+                $impuestosLineas,
+                (float) $venta->impuesto
+            ));
+        }
+        $totalCalculado = round($subtotalLineas + $impuestosLineas, 2);
+        if ($totalCalculado !== round((float) $venta->total, 2)) {
+            throw new \InvalidArgumentException(sprintf(
+                'No se puede transmitir la factura: bases más IVA (%.2f) no coinciden con el total cobrado (%.2f); puede haber otros tributos sin clasificación MATÍAS.',
+                $totalCalculado,
+                (float) $venta->total
+            ));
+        }
+
         $totalesData = [
-            'subtotal' => (float) $venta->subtotal,
-            'impuestos' => (float) $venta->impuesto,
+            'subtotal' => $subtotalLineas,
+            'impuestos' => $impuestosLineas,
             'descuento' => (float) $venta->descuento,
             'total_pagar' => (float) $venta->total,
-            'line_extension_amount' => (float) $venta->subtotal,
-            'tax_exclusive_amount' => (float) $venta->subtotal,
+            'line_extension_amount' => $subtotalLineas,
+            'tax_exclusive_amount' => $subtotalLineas,
             'tax_inclusive_amount' => (float) $venta->total,
             'payable_amount' => (float) $venta->total,
         ];
