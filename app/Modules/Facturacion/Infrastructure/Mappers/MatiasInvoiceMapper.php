@@ -3,6 +3,7 @@
 namespace App\Modules\Facturacion\Infrastructure\Mappers;
 
 use App\Modules\Facturacion\Application\DTOs\SolicitudFacturaDTO;
+use App\Modules\Facturacion\Infrastructure\Validators\MatiasInvoicePayloadValidator;
 
 /**
  * Mapper encuadradador del DTO genérico SolicitudFacturaDTO 
@@ -61,9 +62,7 @@ class MatiasInvoiceMapper
         }
 
         // Mapeo de Cliente / Receptores
-        $payload['customer'] = [
-            'country_id' => (string)($cliente['country_id'] ?? '45'),
-            'city_id' => (string)($cliente['city_id'] ?? '836'),
+        $payload['customer'] = MatiasCustomerMapper::toMatiasCustomer([
             'identity_document_id' => (string)($cliente['identity_document_id'] ?? $cliente['tipo_documento_id'] ?? '1'),
             'type_organization_id' => (int)($cliente['type_organization_id'] ?? $cliente['tipo_persona_id'] ?? 2),
             'tax_regime_id' => (int)($cliente['tax_regime_id'] ?? $cliente['tipo_regimen_id'] ?? 2),
@@ -72,9 +71,12 @@ class MatiasInvoiceMapper
             'dni' => (string)($cliente['dni'] ?? $cliente['numero_documento'] ?? '222222222222'),
             'mobile' => (string)($cliente['mobile'] ?? $cliente['telefono'] ?? '3000000000'),
             'email' => (string)($cliente['email'] ?? 'factura@cliente.com'),
-            'address' => (string)($cliente['address'] ?? $cliente['direccion'] ?? 'Dirección Conocida'),
-            'postal_code' => (string)($cliente['postal_code'] ?? '661002'),
-        ];
+            'address' => (string)($cliente['address'] ?? $cliente['direccion'] ?? ''),
+            'postal_code' => (string)($cliente['postal_code'] ?? ''),
+            'country_iso' => $cliente['country_iso'] ?? null,
+            'city_dane_code' => $cliente['city_dane_code'] ?? null,
+            'city_local_id' => $cliente['city_local_id'] ?? null,
+        ]);
 
         // Mapeo de Líneas de Producto
         $lines = [];
@@ -139,6 +141,8 @@ class MatiasInvoiceMapper
         } else {
             $payload['tax_totals'] = $meta['tax_totals'] ?? [];
         }
+
+        MatiasInvoicePayloadValidator::validate($payload);
 
         return $payload;
     }

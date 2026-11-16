@@ -1720,6 +1720,7 @@ class VentaService
         ?ResolucionFacturacion $resolucionConfig = null
     ): SolicitudFacturaDTO {
         $cliente = $venta->cliente;
+        $cliente?->loadMissing(['pais', 'ciudad']);
 
         if ($venta->factura_electronica) {
             if (!$cliente) {
@@ -1748,9 +1749,10 @@ class VentaService
                 'type_organization_id' => (int) ($cliente->tipo_organization_id ?? $cliente->tipo_persona ?? 2),
                 'tax_regime_id' => (int) ($cliente->tax_regime_id ?? 2),
                 'tax_level_id' => (int) ($cliente->tax_level_id ?? 5),
-                'postal_code' => (string) ($cliente->codigo_postal ?? '661002'),
-                'country_id' => (string) ($cliente->pais_id ?? '45'),
-                'city_id' => (string) ($cliente->ciudad_id ?? '836'),
+                'postal_code' => (string) ($cliente->codigo_postal ?? ''),
+                'country_iso' => (string) ($cliente->pais?->codigo_iso ?? ''),
+                'city_dane_code' => (string) ($cliente->ciudad?->codigo ?? ''),
+                'city_local_id' => (string) ($cliente->ciudad_id ?? ''),
             ];
         } else {
             if ($cliente) {
@@ -1766,15 +1768,16 @@ class VentaService
                     'email' => (string) ($cliente->email ?? 'factura@cliente.com'),
                     'telefono' => (string) ($cliente->telefono_uno ?? $cliente->telefono_dos ?? '3000000000'),
                     'mobile' => (string) ($cliente->telefono_uno ?? $cliente->telefono_dos ?? '3000000000'),
-                    'direccion' => (string) ($cliente->direccion ?? 'Dirección Conocida'),
-                    'address' => (string) ($cliente->direccion ?? 'Dirección Conocida'),
+                    'direccion' => (string) ($cliente->direccion ?? ''),
+                    'address' => (string) ($cliente->direccion ?? ''),
                     'identity_document_id' => (string) ($cliente->tipo_documento_id ?? '1'),
                     'type_organization_id' => (int) ($cliente->tipo_organization_id ?? $cliente->tipo_persona ?? 2),
                     'tax_regime_id' => (int) ($cliente->tax_regime_id ?? 2),
                     'tax_level_id' => (int) ($cliente->tax_level_id ?? 5),
-                    'postal_code' => (string) ($cliente->codigo_postal ?? '661002'),
-                    'country_id' => (string) ($cliente->pais_id ?? '45'),
-                    'city_id' => (string) ($cliente->ciudad_id ?? '836'),
+                    'postal_code' => (string) ($cliente->codigo_postal ?? ''),
+                    'country_iso' => (string) ($cliente->pais?->codigo_iso ?? ''),
+                    'city_dane_code' => (string) ($cliente->ciudad?->codigo ?? ''),
+                    'city_local_id' => (string) ($cliente->ciudad_id ?? ''),
                 ];
             } else {
                 $clienteData = [
@@ -1784,15 +1787,15 @@ class VentaService
                     'numero_documento' => '222222222222',
                     'email' => 'factura@cliente.com',
                     'telefono' => '3000000000',
-                    'direccion' => 'Dirección Conocida',
-                    'address' => 'Dirección Conocida',
+                    'direccion' => '',
+                    'address' => '',
                     'identity_document_id' => '1',
                     'type_organization_id' => 2,
                     'tax_regime_id' => 2,
                     'tax_level_id' => 5,
-                    'postal_code' => '661002',
-                    'country_id' => '45',
-                    'city_id' => '836',
+                    'postal_code' => '',
+                    'country_iso' => 'CO',
+                    'city_dane_code' => '',
                 ];
             }
         }
