@@ -21,6 +21,7 @@ class ConfiguracionFacturacion extends Model
         'max_reintentos',
         'matias_api_token',
         'matias_sandbox_url',
+        'matias_production_url',
         'matias_ds_real_transmission',
     ];
 
@@ -54,6 +55,14 @@ class ConfiguracionFacturacion extends Model
     public function getEffectiveMatiasSandboxUrl(): string
     {
         return $this->matias_sandbox_url ?: config('services.matias.sandbox_url', 'https://sandbox-api.maticerts.com');
+    }
+
+    /**
+     * Obtener la URL de Producción de MATIAS efectiva (BD > .env fallback).
+     */
+    public function getEffectiveMatiasProductionUrl(): ?string
+    {
+        return $this->matias_production_url ?: config('services.matias.production_url');
     }
 
     /**

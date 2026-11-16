@@ -20,6 +20,7 @@ class ConfiguracionFacturacionMapper
             permitir_ventas_sin_datos_fiscales: (bool) ($data['permitir_ventas_sin_datos_fiscales'] ?? true),
             matias_api_token: isset($data['matias_api_token']) ? (string) $data['matias_api_token'] : null,
             matias_sandbox_url: isset($data['matias_sandbox_url']) ? (string) $data['matias_sandbox_url'] : null,
+            matias_production_url: isset($data['matias_production_url']) ? (string) $data['matias_production_url'] : null,
             matias_ds_real_transmission: isset($data['matias_ds_real_transmission']) ? (bool) $data['matias_ds_real_transmission'] : null,
         );
     }

@@ -16,6 +16,7 @@ class UpdateConfiguracionFacturacionDTO
         public bool $permitir_ventas_sin_datos_fiscales = true,
         public ?string $matias_api_token = null,
         public ?string $matias_sandbox_url = null,
+        public ?string $matias_production_url = null,
         public ?bool $matias_ds_real_transmission = null,
     ) {}
 }

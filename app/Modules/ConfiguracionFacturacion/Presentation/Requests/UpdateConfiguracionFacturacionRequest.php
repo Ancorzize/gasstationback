@@ -25,6 +25,7 @@ class UpdateConfiguracionFacturacionRequest extends FormRequest
             'configuracion_empresa_id' => ['nullable', 'integer', 'exists:configuracion_empresa,id'],
             'matias_api_token' => ['nullable', 'string'],
             'matias_sandbox_url' => ['nullable', 'url', 'max:255'],
+            'matias_production_url' => ['nullable', 'url', 'max:255'],
             'matias_ds_real_transmission' => ['nullable', 'boolean'],
         ];
     }
@@ -45,6 +46,7 @@ class UpdateConfiguracionFacturacionRequest extends FormRequest
             'max_reintentos.max' => 'El máximo de reintentos no puede superar 10.',
             'configuracion_empresa_id.exists' => 'La empresa seleccionada no existe.',
             'matias_sandbox_url.url' => 'La URL de Sandbox de MATIAS debe ser una URL válida (ej. https://sandbox-api.maticerts.com).',
+            'matias_production_url.url' => 'La URL de Producción de MATIAS debe ser una URL válida (ej. https://api.maticerts.com).',
         ];
     }
 }

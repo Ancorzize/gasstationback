@@ -60,6 +60,10 @@ class ConfiguracionFacturacionService
             $data['matias_sandbox_url'] = $dto->matias_sandbox_url;
         }
 
+        if ($dto->matias_production_url !== null) {
+            $data['matias_production_url'] = $dto->matias_production_url;
+        }
+
         if ($dto->matias_ds_real_transmission !== null) {
             $data['matias_ds_real_transmission'] = $dto->matias_ds_real_transmission;
         }

@@ -25,6 +25,7 @@ class ConfiguracionFacturacionResource extends JsonResource
             'matias_api_token' => $hasToken ? '********' : '',
             'matias_api_token_configured' => $hasToken,
             'matias_sandbox_url' => $this->getEffectiveMatiasSandboxUrl(),
+            'matias_production_url' => $this->getEffectiveMatiasProductionUrl() ?? '',
             'matias_ds_real_transmission' => $this->getEffectiveMatiasDsRealTransmission(),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

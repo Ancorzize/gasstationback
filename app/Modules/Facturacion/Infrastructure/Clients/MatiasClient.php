@@ -30,9 +30,10 @@ class MatiasClient
         $this->timeout = $timeout;
         $configFact = \App\Models\ConfiguracionFacturacion::first();
         $sandboxUrl = $configFact?->getEffectiveMatiasSandboxUrl() ?? config('services.matias.sandbox_url', 'https://sandbox-api.maticerts.com');
+        $productionUrl = $configFact?->getEffectiveMatiasProductionUrl() ?? config('services.matias.production_url');
 
         $this->baseUrl = $customBaseUrl ?? match (strtolower(trim($ambiente))) {
-            'produccion', 'production' => config('services.matias.production_url') 
+            'produccion', 'production' => $productionUrl 
                 ?? throw new RuntimeException("La URL de producción de MATIAS API no está configurada."),
             default => $sandboxUrl,
         };
