@@ -3,12 +3,29 @@
 namespace App\Modules\Productos\Presentation\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use App\Models\Producto;
 
 class UpdateProductoRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $tipo = $this->input('tipo_impuesto');
+        if (is_string($tipo)) {
+            $tipoNormalized = strtolower(trim($tipo));
+            $merge = ['tipo_impuesto' => $tipoNormalized];
+
+            if (in_array($tipoNormalized, [Producto::TIPO_IMPUESTO_EXENTO, Producto::TIPO_IMPUESTO_EXCLUIDO], true) && !$this->has('porcentaje_iva')) {
+                $merge['porcentaje_iva'] = 0;
+            }
+
+            $this->merge($merge);
+        }
     }
 
     public function rules(): array
@@ -24,9 +41,40 @@ class UpdateProductoRequest extends FormRequest
             'unidad_medida_id' => ['required', 'integer', 'exists:unidades_medida,id'],
             'precio_compra' => ['nullable', 'numeric', 'min:0'],
             'precio_venta' => ['required', 'numeric', 'min:0'],
+            'tipo_impuesto' => ['required', 'string', Rule::in(Producto::TIPOS_IMPUESTO_PERMITIDOS)],
+            'porcentaje_iva' => ['required', 'numeric', 'min:0', 'max:100'],
+            'codigo_impuesto' => ['nullable', 'string', 'max:30'],
             'permite_decimal' => ['required', 'boolean'],
-            'codigo_barras' => [ 'nullable', 'string', 'max:50', 'unique:productos,codigo_barras,' . $id,],
+            'codigo_barras' => ['nullable', 'string', 'max:50', 'unique:productos,codigo_barras,' . $id],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $tipo = $this->input('tipo_impuesto');
+            $tarifa = $this->input('porcentaje_iva');
+
+            if ($tipo === null || $tarifa === null || !is_numeric($tarifa)) {
+                return;
+            }
+
+            $tarifaFloat = round((float) $tarifa, 2);
+
+            if ($tipo === Producto::TIPO_IMPUESTO_GRAVADO && $tarifaFloat <= 0) {
+                $validator->errors()->add(
+                    'porcentaje_iva',
+                    'Un producto clasificado como gravado debe tener una tarifa de IVA superior a 0%.'
+                );
+            }
+
+            if (in_array($tipo, [Producto::TIPO_IMPUESTO_EXENTO, Producto::TIPO_IMPUESTO_EXCLUIDO], true) && $tarifaFloat != 0.0) {
+                $validator->errors()->add(
+                    'porcentaje_iva',
+                    "Un producto clasificado como {$tipo} debe tener una tarifa de IVA igual a 0%."
+                );
+            }
+        });
     }
 
     public function messages(): array
@@ -45,8 +93,15 @@ class UpdateProductoRequest extends FormRequest
             'precio_venta.required' => 'El precio de venta es obligatorio.',
             'precio_venta.numeric' => 'El precio de venta debe ser numérico.',
             'precio_venta.min' => 'El precio de venta no puede ser negativo.',
+            'tipo_impuesto.required' => 'La clasificación tributaria del producto es obligatoria.',
+            'tipo_impuesto.in' => 'La clasificación tributaria debe ser gravado, exento o excluido.',
+            'porcentaje_iva.required' => 'La tarifa de IVA es obligatoria.',
+            'porcentaje_iva.numeric' => 'La tarifa de IVA debe ser un valor numérico.',
+            'porcentaje_iva.min' => 'La tarifa de IVA no puede ser negativa.',
+            'porcentaje_iva.max' => 'La tarifa de IVA no puede superar el 100%.',
             'permite_decimal.required' => 'Debe indicar si el producto permite decimales.',
             'permite_decimal.boolean' => 'El campo permite_decimal debe ser verdadero o falso.',
+            'codigo_barras.unique' => 'El código de barras ya está asociado a otro producto.',
         ];
     }
 }

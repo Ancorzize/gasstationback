@@ -9,7 +9,7 @@ class DetalleVentaDTO
         public float $cantidad,
         public float $precio_unitario,
         public float $descuento,
-        public int $iva,
+        public float $iva,
         public float $iva_valor,
         public float $soldicom,
         public float $sobre_tasa,
@@ -18,6 +18,6 @@ class DetalleVentaDTO
 
     public function subtotal(): float
     {
-        return ($this->cantidad * $this->precio_unitario) - $this->descuento;
+        return round(($this->cantidad * $this->precio_unitario) - $this->descuento, 2);
     }
 }

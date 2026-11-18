@@ -29,7 +29,10 @@ class DetalleVentaResource extends JsonResource
 
             'descuento' => $this->descuento,
 
-            'iva' => $this->iva,
+            'tipo_impuesto' => $this->tipo_impuesto,
+            'porcentaje_iva' => $this->porcentaje_iva !== null ? (float) $this->porcentaje_iva : ($this->iva !== null ? (float) $this->iva : null),
+            'codigo_impuesto' => $this->codigo_impuesto,
+            'iva' => $this->iva !== null ? (float) $this->iva : 0.0,
             'iva_valor' => $this->iva_valor,
 
             'soldicom' => $this->soldicom,

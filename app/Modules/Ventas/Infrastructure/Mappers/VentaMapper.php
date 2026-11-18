@@ -17,7 +17,7 @@ class VentaMapper
                 cantidad: (float) $detalle['cantidad'],
                 precio_unitario: (float) $detalle['precio_unitario'],
                 descuento: isset($detalle['descuento']) ? (float) $detalle['descuento'] : 0,
-                iva: isset($detalle['iva']) ? (int) $detalle['iva'] : 0,
+                iva: isset($detalle['iva']) ? (float) $detalle['iva'] : 0.0,
                 iva_valor: isset($detalle['iva_valor']) ? (float) $detalle['iva_valor'] : 0,
                 soldicom: isset($detalle['soldicom']) ? (float) $detalle['soldicom'] : 0,
                 sobre_tasa: isset($detalle['sobre_tasa']) ? (float) $detalle['sobre_tasa'] : 0,

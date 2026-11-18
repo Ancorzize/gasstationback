@@ -57,71 +57,171 @@ class MatiasProvider implements FacturacionProviderInterface
         // 3. Ejecutar la petición HTTP POST /invoice mediante MatiasClient
         $result = $this->client->postInvoice($payload, $token, $forceStatus);
 
-        // 4. Mapear y normalizar la respuesta recibida hacia RespuestaFacturacionDTO
-        if ($result['exitoso']) {
-            $data = $result['data'];
+        $data = is_array($result['data'] ?? null) ? $result['data'] : [];
+        $extracted = $this->extractDocumentFields($data, $solicitud->folio);
+        $cufeReal = $extracted['cufe'] ?? $this->client->extractCufeFromPayload($data);
+        $tieneCufeValido = is_string($cufeReal) && trim($cufeReal) !== '';
+        $estadoDian = $result['estado_dian'] ?? ($result['exitoso'] ? ($tieneCufeValido ? 'emitido' : 'enviado') : 'rechazado');
 
-            // Identificador externo
-            $id = $data['uuid']
-                ?? $data['id']
-                ?? $data['track_id']
-                ?? $data['document_number']
-                ?? null;
-
-            // CUFE
-            $cufe = $data['cufe']
-                ?? $data['document_key']
-                ?? null;
-
-            // Número de factura
-            $numero = $data['number']
-                ?? $data['document_number']
-                ?? $solicitud->folio;
-
-            // Código QR
-            $qr = $data['qr']
-                ?? $data['qr_code']
-                ?? null;
-
-            // PDF
-            $pdf = $data['pdf']
-                ?? $data['pdf_url']
-                ?? null;
-
-            // XML
-            $xml = $data['xml']
-                ?? $data['xml_url']
-                ?? null;
-
-            // Evitar "Array to string conversion"
-            $id = is_scalar($id) ? (string) $id : null;
-            $numero = is_scalar($numero) ? (string) $numero : null;
-            $cufe = is_scalar($cufe) ? (string) $cufe : null;
-            $qr = is_scalar($qr) ? (string) $qr : null;
-            $pdf = is_scalar($pdf) ? (string) $pdf : null;
-            $xml = is_scalar($xml) ? (string) $xml : null;
-
+        // 4. Mapear y normalizar la respuesta recibida hacia RespuestaFacturacionDTO.
+        // Regla obligatoria: Solo se marca 'emitido' cuando existe un CUFE real y no vacío.
+        if ($result['exitoso'] && $estadoDian === 'emitido' && $tieneCufeValido) {
             return RespuestaFacturacionDTO::exitoso(
                 estado: 'emitido',
-                identificadorExterno: $id,
-                numeroFactura: $numero,
-                cufe: $cufe,
-                qrCode: $qr,
-                pdfUrl: $pdf,
-                xmlUrl: $xml,
+                identificadorExterno: $extracted['id'],
+                numeroFactura: $extracted['numero'],
+                cufe: trim($cufeReal),
+                qrCode: $extracted['qr'],
+                pdfUrl: $extracted['pdf'],
+                xmlUrl: $extracted['xml'],
                 mensaje: is_scalar($result['mensaje'] ?? null)
                     ? (string) $result['mensaje']
                     : 'Solicitud procesada por la DIAN.',
-                datosTecnicos: $data
+                datosTecnicos: array_merge($data, [
+                    'http_status' => $result['status'] ?? 200,
+                ])
+            );
+        }
+
+        if (in_array($estadoDian, ['enviado', 'pendiente'], true) || ($result['exitoso'] && !$tieneCufeValido)) {
+            $estadoEnCurso = $estadoDian === 'pendiente' ? 'pendiente' : 'enviado';
+
+            return new RespuestaFacturacionDTO(
+                exitoso: false,
+                estado: $estadoEnCurso,
+                identificadorExterno: $extracted['id'],
+                numeroFactura: $extracted['numero'],
+                cufe: $tieneCufeValido ? trim($cufeReal) : null,
+                qrCode: $extracted['qr'],
+                pdfUrl: $extracted['pdf'],
+                xmlUrl: $extracted['xml'],
+                mensaje: is_scalar($result['mensaje'] ?? null) && trim((string) $result['mensaje']) !== ''
+                    ? (string) $result['mensaje']
+                    : 'Solicitud recibida por MATIAS API sin CUFE definitivo; en estado ' . $estadoEnCurso . '.',
+                errores: $result['errores'] ?? [],
+                datosTecnicos: array_merge($data, [
+                    'http_status' => $result['status'] ?? 200,
+                ])
             );
         }
 
         return RespuestaFacturacionDTO::error(
-            mensaje: $result['mensaje'],
+            mensaje: $result['mensaje'] ?? 'MATIAS/DIAN rechazó la factura electrónica.',
             errores: $result['errores'] ?? [],
             estado: 'rechazado',
-            datosTecnicos: $result['data'] ?? []
+            datosTecnicos: array_merge($data, [
+                'http_status' => $result['status'] ?? 0,
+            ])
         );
+    }
+
+    /**
+     * Extraer identificadores de documento (CUFE, UUID, TrackID, QR, PDF, XML)
+     * soportando estructuras planas y anidadas (raíz, data, result, response, dian_response, DianResponse).
+     */
+    protected function extractDocumentFields(array $data, ?string $fallbackFolio = null): array
+    {
+        $innerData = isset($data['data']) && is_array($data['data']) ? $data['data'] : [];
+        $resultNode = isset($data['result']) && is_array($data['result'])
+            ? $data['result']
+            : (isset($innerData['result']) && is_array($innerData['result']) ? $innerData['result'] : []);
+        $respNode = isset($data['response']) && is_array($data['response'])
+            ? $data['response']
+            : (isset($innerData['response']) && is_array($innerData['response'])
+                ? $innerData['response']
+                : (isset($resultNode['response']) && is_array($resultNode['response']) ? $resultNode['response'] : []));
+
+        $dianNode = [];
+        foreach ([$data, $innerData, $resultNode, $respNode] as $parent) {
+            if (isset($parent['dian_response']) && is_array($parent['dian_response'])) {
+                $dianNode = $parent['dian_response'];
+                break;
+            }
+            if (isset($parent['DianResponse']) && is_array($parent['DianResponse'])) {
+                $dianNode = $parent['DianResponse'];
+                break;
+            }
+        }
+
+        $cufe = $this->client->extractCufeFromPayload($data);
+
+        $id = $data['uuid']
+            ?? $data['id']
+            ?? $data['track_id']
+            ?? $innerData['uuid']
+            ?? $innerData['id']
+            ?? $innerData['track_id']
+            ?? $resultNode['uuid']
+            ?? $resultNode['id']
+            ?? $resultNode['track_id']
+            ?? $respNode['uuid']
+            ?? $respNode['track_id']
+            ?? $respNode['XmlDocumentKey']
+            ?? $dianNode['uuid']
+            ?? $dianNode['track_id']
+            ?? $dianNode['XmlDocumentKey']
+            ?? $cufe
+            ?? $data['document_number']
+            ?? $innerData['document_number']
+            ?? $resultNode['document_number']
+            ?? null;
+
+        $numero = $data['number']
+            ?? $data['document_number']
+            ?? $innerData['number']
+            ?? $innerData['document_number']
+            ?? $resultNode['number']
+            ?? $resultNode['document_number']
+            ?? $respNode['number']
+            ?? $respNode['document_number']
+            ?? $dianNode['number']
+            ?? $dianNode['document_number']
+            ?? $fallbackFolio;
+
+        $qr = $data['qr']
+            ?? $data['qr_code']
+            ?? $innerData['qr']
+            ?? $innerData['qr_code']
+            ?? $resultNode['qr']
+            ?? $resultNode['qr_code']
+            ?? $respNode['qr']
+            ?? $respNode['qr_code']
+            ?? (isset($data['qr']['url']) ? $data['qr']['url'] : null)
+            ?? (isset($innerData['qr']['url']) ? $innerData['qr']['url'] : null)
+            ?? (isset($resultNode['qr']['url']) ? $resultNode['qr']['url'] : null)
+            ?? null;
+
+        $pdf = $data['pdf']
+            ?? $data['pdf_url']
+            ?? $innerData['pdf']
+            ?? $innerData['pdf_url']
+            ?? $resultNode['pdf']
+            ?? $resultNode['pdf_url']
+            ?? $respNode['pdf']
+            ?? $respNode['pdf_url']
+            ?? (isset($data['pdf']['url']) ? $data['pdf']['url'] : null)
+            ?? (isset($innerData['pdf']['url']) ? $innerData['pdf']['url'] : null)
+            ?? (isset($resultNode['pdf']['url']) ? $resultNode['pdf']['url'] : null)
+            ?? null;
+
+        $xml = $data['xml']
+            ?? $data['xml_url']
+            ?? $innerData['xml']
+            ?? $innerData['xml_url']
+            ?? $resultNode['xml']
+            ?? $resultNode['xml_url']
+            ?? $respNode['xml']
+            ?? $respNode['xml_url']
+            ?? null;
+
+        return [
+            'id' => is_scalar($id) && trim((string) $id) !== '' ? trim((string) $id) : null,
+            'numero' => is_scalar($numero) && trim((string) $numero) !== '' ? trim((string) $numero) : null,
+            'cufe' => is_scalar($cufe) && trim((string) $cufe) !== '' ? trim((string) $cufe) : null,
+            'qr' => is_scalar($qr) && trim((string) $qr) !== '' ? trim((string) $qr) : null,
+            'pdf' => is_scalar($pdf) && trim((string) $pdf) !== '' ? trim((string) $pdf) : null,
+            'xml' => is_scalar($xml) && trim((string) $xml) !== '' ? trim((string) $xml) : null,
+        ];
     }
 
     /**

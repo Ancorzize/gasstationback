@@ -82,22 +82,18 @@ class MatiasInvoicePayloadValidator
                 $uniqueTaxesForLine[$taxSignature] = round($taxAmount, 2);
             }
 
-            if ($lineExtension > 0 && $uniqueBasesForLine === []) {
-                throw new InvalidArgumentException(
-                    "No se puede validar FAU04: lines[{$index}] tiene base positiva y no contiene tax_totals; falta clasificación tributaria explícita."
-                );
-            }
+            if ($uniqueBasesForLine !== []) {
+                $lineTaxableAmount += array_sum($uniqueBasesForLine);
+                $lineTaxAmount += array_sum($uniqueTaxesForLine);
 
-            $lineTaxableAmount += array_sum($uniqueBasesForLine);
-            $lineTaxAmount += array_sum($uniqueTaxesForLine);
-
-            if (round(array_sum($uniqueBasesForLine), 2) !== round($lineExtension, 2)) {
-                throw new InvalidArgumentException(sprintf(
-                    'La base imponible única de la línea %d (%.2f) no coincide con line_extension_amount (%.2f).',
-                    $index,
-                    array_sum($uniqueBasesForLine),
-                    $lineExtension
-                ));
+                if (round(array_sum($uniqueBasesForLine), 2) !== round($lineExtension, 2)) {
+                    throw new InvalidArgumentException(sprintf(
+                        'La base imponible única de la línea %d (%.2f) no coincide con line_extension_amount (%.2f).',
+                        $index,
+                        array_sum($uniqueBasesForLine),
+                        $lineExtension
+                    ));
+                }
             }
         }
 
@@ -122,6 +118,7 @@ class MatiasInvoicePayloadValidator
         }
 
         $headerTaxAmount = 0.0;
+        $headerTaxableByGroup = 0.0;
         foreach ($payload['tax_totals'] ?? [] as $taxIndex => $tax) {
             if (!is_array($tax)) {
                 throw new InvalidArgumentException("tax_totals[{$taxIndex}] no tiene una estructura válida.");
@@ -129,6 +126,10 @@ class MatiasInvoicePayloadValidator
             $headerTaxAmount += self::amount(
                 $tax['tax_amount'] ?? null,
                 "tax_totals[{$taxIndex}].tax_amount"
+            );
+            $headerTaxableByGroup += self::amount(
+                $tax['taxable_amount'] ?? null,
+                "tax_totals[{$taxIndex}].taxable_amount"
             );
         }
         if (round($headerTaxAmount, 2) !== round($lineTaxAmount, 2)) {
@@ -143,11 +144,11 @@ class MatiasInvoicePayloadValidator
             $legalTotals['tax_inclusive_amount'] ?? null,
             'legal_monetary_totals.tax_inclusive_amount'
         );
-        if (round($taxInclusive, 2) !== round($headerTaxExclusive + $headerTaxAmount, 2)) {
+        if (round($taxInclusive, 2) !== round($headerLineExtension + $headerTaxAmount, 2)) {
             throw new InvalidArgumentException(sprintf(
-                'tax_inclusive_amount (%.2f) no coincide con base más impuestos (%.2f).',
+                'tax_inclusive_amount (%.2f) no coincide con la suma de line_extension_amount más impuestos (%.2f).',
                 $taxInclusive,
-                $headerTaxExclusive + $headerTaxAmount
+                $headerLineExtension + $headerTaxAmount
             ));
         }
 

@@ -36,6 +36,11 @@ class ProductoResource extends JsonResource
 
             'precio_compra' => $this->precio_compra,
             'precio_venta' => $this->precio_venta,
+            'tipo_impuesto' => $this->tipo_impuesto,
+            'porcentaje_iva' => $this->porcentaje_iva !== null ? (float) $this->porcentaje_iva : null,
+            'codigo_impuesto' => $this->codigo_impuesto,
+            'iva' => $this->porcentaje_iva !== null ? (float) $this->porcentaje_iva : 0.0,
+            'clasificacion_tributaria_pendiente' => !$this->tieneClasificacionTributariaValida(),
             'permite_decimal' => $this->permite_decimal,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at,

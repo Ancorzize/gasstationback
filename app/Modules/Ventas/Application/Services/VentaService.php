@@ -14,9 +14,11 @@ use Illuminate\Support\Collection;
 use App\Models\User;
 use App\Modules\Facturacion\Application\Services\FacturacionService;
 use App\Modules\Facturacion\Application\Services\DocumentoElectronicoService;
+use App\Modules\Facturacion\Application\Services\CatalogosFacturacionService;
 use App\Modules\ConfiguracionFacturacion\Application\Interfaces\ConfiguracionFacturacionRepositoryInterface;
 use App\Modules\ConfiguracionEmpresa\Application\Interfaces\ConfiguracionEmpresaRepositoryInterface;
 use App\Modules\ResolucionesFacturacion\Application\Interfaces\ResolucionFacturacionRepositoryInterface;
+use App\Modules\ResolucionesFacturacion\Application\Services\ResolucionFacturacionService;
 use App\Models\ResolucionFacturacion;
 use App\Modules\Facturacion\Application\DTOs\CrearDocumentoElectronicoDTO;
 use App\Modules\Facturacion\Application\DTOs\SolicitudFacturaDTO;
@@ -25,6 +27,8 @@ use App\Models\DocumentoElectronico;
 use App\Models\ConfiguracionEmpresa;
 use App\Models\ConfiguracionFacturacion;
 use App\Models\Cliente;
+use App\Models\Producto;
+use App\Models\DetalleVenta;
 use App\Models\AnticipoCliente;
 use App\Models\AplicacionAnticipoCliente;
 
@@ -37,13 +41,17 @@ class VentaService
         protected ?DocumentoElectronicoService $documentoElectronicoService = null,
         protected ?ConfiguracionFacturacionRepositoryInterface $configuracionFacturacionRepository = null,
         protected ?ConfiguracionEmpresaRepositoryInterface $configuracionEmpresaRepository = null,
-        protected ?ResolucionFacturacionRepositoryInterface $resolucionFacturacionRepository = null
+        protected ?ResolucionFacturacionRepositoryInterface $resolucionFacturacionRepository = null,
+        protected ?ResolucionFacturacionService $resolucionFacturacionService = null,
+        protected ?CatalogosFacturacionService $catalogosFacturacionService = null
     ) {
         $this->facturacionService = $facturacionService ?? app(FacturacionService::class);
         $this->documentoElectronicoService = $documentoElectronicoService ?? app(DocumentoElectronicoService::class);
         $this->configuracionFacturacionRepository = $configuracionFacturacionRepository ?? app(ConfiguracionFacturacionRepositoryInterface::class);
         $this->configuracionEmpresaRepository = $configuracionEmpresaRepository ?? app(ConfiguracionEmpresaRepositoryInterface::class);
         $this->resolucionFacturacionRepository = $resolucionFacturacionRepository ?? app(ResolucionFacturacionRepositoryInterface::class);
+        $this->resolucionFacturacionService = $resolucionFacturacionService ?? app(ResolucionFacturacionService::class);
+        $this->catalogosFacturacionService = $catalogosFacturacionService ?? app(CatalogosFacturacionService::class);
     }
 
     public function paginate(array $filters = [])
@@ -86,6 +94,21 @@ class VentaService
 
             $bodegaId = (int) $user->bodega_id;
 
+            $empresaConfig = $this->configuracionEmpresaRepository?->first();
+            $configFacturacion = $this->configuracionFacturacionRepository?->first();
+            $facturacionActiva = (bool) ($configFacturacion && $configFacturacion->facturacion_electronica_activa);
+
+            if ((bool) $dto->factura_electronica && !$facturacionActiva) {
+                throw new HttpException(
+                    422,
+                    'La facturación electrónica se encuentra desactivada en la configuración del sistema.'
+                );
+            }
+
+            $requiereFacturacionElectronica = $facturacionActiva && (
+                (bool) $dto->factura_electronica || (bool) $configFacturacion->facturar_ventas_pos
+            );
+
             $subtotal = 0;
             $impuesto = 0;
             $soldicom = 0;
@@ -93,6 +116,7 @@ class VentaService
             $descuento = 0;
             $total = 0;
             $destinoRecaudoId = null;
+            $detallesCalculados = [];
 
             foreach ($dto->detalles as $detalle) {
 
@@ -144,14 +168,6 @@ class VentaService
                     );
                 }
 
-
-                if (!$producto) {
-                    throw new HttpException(
-                        422,
-                        "Producto {$detalle->producto_id} no existe."
-                    );
-                }
-
                 $inventario = $this->ventaRepository->findInventario(
                     $detalle->producto_id,
                     $bodegaId
@@ -171,12 +187,25 @@ class VentaService
                     );
                 }
 
-                $subtotal += $detalle->subtotal();
-                $impuesto += $detalle->iva_valor;
-                $soldicom += $detalle->soldicom;
-                $sobreTasa += $detalle->sobre_tasa;
-                $descuento += $detalle->descuento;
-                $total += $detalle->total;
+                $calculoLinea = $this->calcularLineaTributaria(
+                    producto: $producto,
+                    cantidad: (float) $detalle->cantidad,
+                    precioDigitado: (float) $detalle->precio_unitario,
+                    descuentoDigitado: (float) $detalle->descuento,
+                    empresaConfig: $empresaConfig,
+                    exigirClasificacion: $requiereFacturacionElectronica,
+                    soldicom: (float) $detalle->soldicom,
+                    sobreTasa: (float) $detalle->sobre_tasa
+                );
+
+                $detallesCalculados[] = $calculoLinea;
+
+                $subtotal = round($subtotal + $calculoLinea['subtotal'], 2);
+                $impuesto = round($impuesto + $calculoLinea['iva_valor'], 2);
+                $soldicom = round($soldicom + $calculoLinea['soldicom'], 2);
+                $sobreTasa = round($sobreTasa + $calculoLinea['sobre_tasa'], 2);
+                $descuento = round($descuento + $calculoLinea['descuento'], 2);
+                $total = round($total + $calculoLinea['total'], 2);
             }
 
             $montoAnticipoAplicar = 0.0;
@@ -210,6 +239,12 @@ class VentaService
                 }
             }
 
+            // Si la venta es de contado sin anticipo y el frontend envió 1 solo pago cuyo monto difiere ligeramente
+            // porque el frontend no conocía el IVA real calculado en el backend, ajustar el monto del pago único al total real.
+            if ($dto->tipo_venta === 'contado' && !$dto->usar_anticipo && count($dto->pagos) === 1) {
+                $dto->pagos[0]->monto = $total;
+            }
+
             $totalPagadoDirecto = 0.0;
 
             foreach ($dto->pagos as $pago) {
@@ -219,10 +254,16 @@ class VentaService
             $totalCubierto = round($totalPagadoDirecto + $montoAnticipoAplicar, 2);
 
             if ($totalCubierto > $total) {
-                throw new HttpException(
-                    422,
-                    "El total pagado (\${$totalPagadoDirecto}) sumado al anticipo (\${$montoAnticipoAplicar}) supera el total de la venta (\${$total})."
-                );
+                if ($dto->tipo_venta === 'contado' && count($dto->pagos) === 1 && $montoAnticipoAplicar > 0) {
+                    $dto->pagos[0]->monto = max(0.0, round($total - $montoAnticipoAplicar, 2));
+                    $totalPagadoDirecto = $dto->pagos[0]->monto;
+                    $totalCubierto = round($totalPagadoDirecto + $montoAnticipoAplicar, 2);
+                } else {
+                    throw new HttpException(
+                        422,
+                        "El total pagado (\${$totalPagadoDirecto}) sumado al anticipo (\${$montoAnticipoAplicar}) supera el total de la venta (\${$total})."
+                    );
+                }
             }
 
             $saldoPendiente = round($total - $totalCubierto, 2);
@@ -277,9 +318,35 @@ class VentaService
             if (empty($turnoAbierto)) {
                 throw new HttpException(422, 'El usuario no tiene turno abierto.');
             }
+
+            // Validar que exista caja abierta para cada pago antes de reservar consecutivo de facturación
+            $cajasPorPago = [];
+            foreach ($dto->pagos as $idxPago => $pago) {
+                $tipoCaja = $this->resolverTipoCaja($pago->metodo_pago);
+                $caja = $this->ventaRepository->getCajaAbiertaByTipoAndDestino(
+                    $tipoCaja,
+                    $destinoRecaudoId
+                );
+
+                if (!$caja) {
+                    throw new HttpException(
+                        422,
+                        'No existe caja abierta para el destino de recaudo configurado.'
+                    );
+                }
+
+                $cajasPorPago[$idxPago] = $caja;
+            }
+
+            $numeracion = $this->resolverNumeracionVenta(
+                requiereFacturaElectronica: $requiereFacturacionElectronica,
+                empresaId: $empresaConfig?->id,
+                prefijoDefault: 'POS'
+            );
+
             $venta = $this->ventaRepository->createVenta([
-                'prefijo' => 'POS',
-                'numero_factura' => $this->ventaRepository->nextNumeroFactura(),
+                'prefijo' => $numeracion['prefijo'],
+                'numero_factura' => $numeracion['numero_factura'],
                 'cliente_id' => $dto->cliente_id,
                 'user_id' => $dto->user_id,
                 'bodega_id' => $bodegaId,
@@ -315,64 +382,47 @@ class VentaService
             }
 
 
-            foreach ($dto->detalles as $detalle) {
+            foreach ($detallesCalculados as $detalleCalc) {
 
                 $this->ventaRepository->createDetalle([
                     'venta_id' => $venta->id,
-                    'producto_id' => $detalle->producto_id,
+                    'producto_id' => $detalleCalc['producto_id'],
                     'manguera_id' => null,
-                    'cantidad' => $detalle->cantidad,
-                    'precio_unitario' => $detalle->precio_unitario,
-                    'descuento' => $detalle->descuento,
-                    'iva' => $detalle->iva,
-                    'iva_valor' => $detalle->iva_valor,
-                    'soldicom' => $detalle->soldicom,
-                    'sobre_tasa' => $detalle->sobre_tasa,
-                    'subtotal' => $detalle->subtotal(),
-                    'total' => $detalle->total,
+                    'cantidad' => $detalleCalc['cantidad'],
+                    'precio_unitario' => $detalleCalc['precio_unitario'],
+                    'descuento' => $detalleCalc['descuento'],
+                    'tipo_impuesto' => $detalleCalc['tipo_impuesto'],
+                    'porcentaje_iva' => $detalleCalc['porcentaje_iva'],
+                    'codigo_impuesto' => $detalleCalc['codigo_impuesto'],
+                    'iva' => $detalleCalc['iva'],
+                    'iva_valor' => $detalleCalc['iva_valor'],
+                    'soldicom' => $detalleCalc['soldicom'],
+                    'sobre_tasa' => $detalleCalc['sobre_tasa'],
+                    'subtotal' => $detalleCalc['subtotal'],
+                    'total' => $detalleCalc['total'],
                 ]);
 
 
 
                 $this->ventaRepository->decrementInventario(
-                    $detalle->producto_id,
+                    $detalleCalc['producto_id'],
                     $bodegaId,
-                    $detalle->cantidad
+                    $detalleCalc['cantidad']
                 );
 
                 $this->ventaRepository->createMovimientoInventario([
                     'tipo_movimiento' => 'venta',
-                    'producto_id' => $detalle->producto_id,
+                    'producto_id' => $detalleCalc['producto_id'],
                     'bodega_origen_id' => $bodegaId,
                     'bodega_destino_id' => null,
-                    'cantidad' => $detalle->cantidad,
+                    'cantidad' => $detalleCalc['cantidad'],
                     'observacion' => "Venta #{$venta->id}",
                     'user_id' => $dto->user_id,
                 ]);
             }
 
-            foreach ($dto->pagos as $pago) {
-
-
-                $tipoCaja =
-                    $this->resolverTipoCaja(
-                        $pago->metodo_pago
-                    );
-
-                $caja =
-                    $this->ventaRepository
-                    ->getCajaAbiertaByTipoAndDestino(
-                        $tipoCaja,
-                        $destinoRecaudoId
-                    );
-
-                if (!$caja) {
-                    throw new HttpException(
-                        422,
-                        "No existe caja abierta para el destino de recaudo configurado."
-                    );
-                }
-
+            foreach ($dto->pagos as $idxPago => $pago) {
+                $caja = $cajasPorPago[$idxPago];
 
                 $this->ventaRepository->createPago([
                     'venta_id' => $venta->id,
@@ -864,12 +914,36 @@ class VentaService
                 throw new HttpException(422, 'La cantidad de galones calculada no es válida.');
             }
 
-            $total = $dto->monto;
-            $subtotal = $dto->monto;
-            $impuesto = 0;
-            $soldicom = 0;
-            $sobreTasa = 0;
-            $descuento = 0;
+            $empresaConfig = $this->configuracionEmpresaRepository?->first();
+            $configFacturacion = $this->configuracionFacturacionRepository?->first();
+            $facturacionActiva = (bool) ($configFacturacion && $configFacturacion->facturacion_electronica_activa);
+
+            if ((bool) $dto->factura_electronica && !$facturacionActiva) {
+                throw new HttpException(
+                    422,
+                    'La facturación electrónica se encuentra desactivada en la configuración del sistema.'
+                );
+            }
+
+            $requiereFacturacionElectronica = $facturacionActiva && (
+                (bool) $dto->factura_electronica || (bool) $configFacturacion->facturar_ventas_combustible
+            );
+
+            $calculoCombustible = $this->calcularLineaCombustiblePorMonto(
+                producto: $manguera->producto,
+                cantidadGalones: $cantidadGalones,
+                precioGalonTurno: $precioGalon,
+                montoDespachado: (float) $dto->monto,
+                empresaConfig: $empresaConfig,
+                exigirClasificacion: $requiereFacturacionElectronica
+            );
+
+            $total = $calculoCombustible['total'];
+            $subtotal = $calculoCombustible['subtotal'];
+            $impuesto = $calculoCombustible['iva_valor'];
+            $soldicom = $calculoCombustible['soldicom'];
+            $sobreTasa = $calculoCombustible['sobre_tasa'];
+            $descuento = $calculoCombustible['descuento'];
 
             $montoAnticipoAplicar = 0.0;
             if ($dto->usar_anticipo) {
@@ -964,9 +1038,15 @@ class VentaService
                 $caja = null;
             }
 
+            $numeracion = $this->resolverNumeracionVenta(
+                requiereFacturaElectronica: $requiereFacturacionElectronica,
+                empresaId: $empresaConfig?->id,
+                prefijoDefault: 'POS'
+            );
+
             $venta = $this->ventaRepository->createVenta([
-                'prefijo' => 'POS',
-                'numero_factura' => $this->ventaRepository->nextNumeroFactura(),
+                'prefijo' => $numeracion['prefijo'],
+                'numero_factura' => $numeracion['numero_factura'],
                 'cliente_id' => $dto->cliente_id,
                 'user_id' => $dto->user_id,
                 'bodega_id' => $bodegaId,
@@ -1002,15 +1082,18 @@ class VentaService
             $this->ventaRepository->createDetalle([
                 'venta_id' => $venta->id,
                 'producto_id' => $manguera->producto_id,
-                'cantidad' => $cantidadGalones,
-                'precio_unitario' => $precioGalon,
-                'descuento' => 0,
-                'iva' => 0,
-                'iva_valor' => 0,
-                'soldicom' => 0,
-                'sobre_tasa' => 0,
-                'subtotal' => $subtotal,
-                'total' => $total,
+                'cantidad' => $calculoCombustible['cantidad'],
+                'precio_unitario' => $calculoCombustible['precio_unitario'],
+                'descuento' => $calculoCombustible['descuento'],
+                'tipo_impuesto' => $calculoCombustible['tipo_impuesto'],
+                'porcentaje_iva' => $calculoCombustible['porcentaje_iva'],
+                'codigo_impuesto' => $calculoCombustible['codigo_impuesto'],
+                'iva' => $calculoCombustible['iva'],
+                'iva_valor' => $calculoCombustible['iva_valor'],
+                'soldicom' => $calculoCombustible['soldicom'],
+                'sobre_tasa' => $calculoCombustible['sobre_tasa'],
+                'subtotal' => $calculoCombustible['subtotal'],
+                'total' => $calculoCombustible['total'],
                 'manguera_id' => $manguera->id,
             ]);
 
@@ -1098,8 +1181,10 @@ class VentaService
         $detalles = [];
 
         $subtotal = 0;
+        $impuesto = 0;
         $total = 0;
         $destinoRecaudoId = null;
+        $empresaConfig = $this->configuracionEmpresaRepository?->first();
 
         foreach ($lecturas as $lectura) {
 
@@ -1133,17 +1218,22 @@ class VentaService
 
             $valor = round($galonesAjuste * (float)$lectura->precio_galon, 2);
 
-            $subtotal += $valor;
-            $total += $valor;
+            $calculoAjt = $this->calcularLineaCombustiblePorMonto(
+                producto: $producto,
+                cantidadGalones: $galonesAjuste,
+                precioGalonTurno: (float) $lectura->precio_galon,
+                montoDespachado: $valor,
+                empresaConfig: $empresaConfig,
+                exigirClasificacion: false
+            );
 
-            $detalles[] = [
-                'producto_id' => $producto->id,
+            $subtotal = round($subtotal + $calculoAjt['subtotal'], 2);
+            $impuesto = round($impuesto + $calculoAjt['iva_valor'], 2);
+            $total = round($total + $calculoAjt['total'], 2);
+
+            $detalles[] = array_merge($calculoAjt, [
                 'manguera_id' => $lectura->manguera_id,
-                'cantidad' => $galonesAjuste,
-                'precio_unitario' => (float)$lectura->precio_galon,
-                'subtotal' => $valor,
-                'total' => $valor,
-            ];
+            ]);
         }
 
         if (count($detalles) == 0) {
@@ -1163,7 +1253,7 @@ class VentaService
             'estado_pago' => 'pagado',
             'subtotal' => $subtotal,
             'descuento' => 0,
-            'impuesto' => 0,
+            'impuesto' => $impuesto,
             'soldicom' => 0,
             'sobre_tasa' => 0,
             'total' => $total,
@@ -1183,11 +1273,14 @@ class VentaService
                 'manguera_id' => $detalle['manguera_id'],
                 'cantidad' => $detalle['cantidad'],
                 'precio_unitario' => $detalle['precio_unitario'],
-                'descuento' => 0,
-                'iva' => 0,
-                'iva_valor' => 0,
-                'soldicom' => 0,
-                'sobre_tasa' => 0,
+                'descuento' => $detalle['descuento'],
+                'tipo_impuesto' => $detalle['tipo_impuesto'],
+                'porcentaje_iva' => $detalle['porcentaje_iva'],
+                'codigo_impuesto' => $detalle['codigo_impuesto'],
+                'iva' => $detalle['iva'],
+                'iva_valor' => $detalle['iva_valor'],
+                'soldicom' => $detalle['soldicom'],
+                'sobre_tasa' => $detalle['sobre_tasa'],
                 'subtotal' => $detalle['subtotal'],
                 'total' => $detalle['total'],
             ]);
@@ -1254,7 +1347,10 @@ class VentaService
 
             $bodegaId = (int) $venta->bodega_id;
 
+            $detallesPreviosPorProducto = [];
             foreach ($venta->detalles as $detalleAntiguo) {
+                $detallesPreviosPorProducto[(int) $detalleAntiguo->producto_id] = $detalleAntiguo;
+
                 $this->ventaRepository->incrementInventario(
                     $detalleAntiguo->producto_id,
                     $bodegaId,
@@ -1278,6 +1374,13 @@ class VentaService
 
             if ($nuevosDetalles && count($nuevosDetalles) > 0) {
                 $venta->detalles()->delete();
+
+                $empresaConfig = $this->configuracionEmpresaRepository?->first();
+                $configFacturacion = $this->configuracionFacturacionRepository?->first();
+                $facturacionActiva = (bool) ($configFacturacion && $configFacturacion->facturacion_electronica_activa);
+                $requiereFacturacionElectronica = $facturacionActiva && (
+                    (bool) $venta->factura_electronica || (bool) $configFacturacion->facturar_ventas_pos
+                );
 
                 $subtotal = 0;
                 $impuesto = 0;
@@ -1322,43 +1425,53 @@ class VentaService
                         throw new HttpException(422, "Stock insuficiente para {$producto->nombre}.");
                     }
 
-                    $detSubtotal = round((float) $detData['cantidad'] * (float) $detData['precio_unitario'], 2);
-                    $detDescuento = round((float) ($detData['descuento'] ?? 0), 2);
-                    $detIvaValor = round((float) ($detData['iva_valor'] ?? 0), 2);
-                    $detSoldicom = round((float) ($detData['soldicom'] ?? 0), 2);
-                    $detSobreTasa = round((float) ($detData['sobre_tasa'] ?? 0), 2);
-                    $detTotal = (float) $detData['total'];
+                    $detallePrevio = $detallesPreviosPorProducto[(int) $detData['producto_id']] ?? null;
 
-                    $subtotal += $detSubtotal;
-                    $impuesto += $detIvaValor;
-                    $soldicom += $detSoldicom;
-                    $sobreTasa += $detSobreTasa;
-                    $descuento += $detDescuento;
-                    $total += $detTotal;
+                    $calculoLinea = $this->calcularLineaTributaria(
+                        producto: $producto,
+                        cantidad: (float) $detData['cantidad'],
+                        precioDigitado: (float) $detData['precio_unitario'],
+                        descuentoDigitado: (float) ($detData['descuento'] ?? 0),
+                        empresaConfig: $empresaConfig,
+                        exigirClasificacion: $requiereFacturacionElectronica,
+                        soldicom: (float) ($detData['soldicom'] ?? 0),
+                        sobreTasa: (float) ($detData['sobre_tasa'] ?? 0),
+                        snapshotPrevio: $detallePrevio
+                    );
+
+                    $subtotal = round($subtotal + $calculoLinea['subtotal'], 2);
+                    $impuesto = round($impuesto + $calculoLinea['iva_valor'], 2);
+                    $soldicom = round($soldicom + $calculoLinea['soldicom'], 2);
+                    $sobreTasa = round($sobreTasa + $calculoLinea['sobre_tasa'], 2);
+                    $descuento = round($descuento + $calculoLinea['descuento'], 2);
+                    $total = round($total + $calculoLinea['total'], 2);
 
                     $this->ventaRepository->createDetalle([
                         'venta_id' => $venta->id,
-                        'producto_id' => $detData['producto_id'],
+                        'producto_id' => $calculoLinea['producto_id'],
                         'manguera_id' => null,
-                        'cantidad' => $detData['cantidad'],
-                        'precio_unitario' => $detData['precio_unitario'],
-                        'descuento' => $detDescuento,
-                        'iva' => $detData['iva'] ?? 0,
-                        'iva_valor' => $detIvaValor,
-                        'soldicom' => $detSoldicom,
-                        'sobre_tasa' => $detSobreTasa,
-                        'subtotal' => $detSubtotal,
-                        'total' => $detTotal,
+                        'cantidad' => $calculoLinea['cantidad'],
+                        'precio_unitario' => $calculoLinea['precio_unitario'],
+                        'descuento' => $calculoLinea['descuento'],
+                        'tipo_impuesto' => $calculoLinea['tipo_impuesto'],
+                        'porcentaje_iva' => $calculoLinea['porcentaje_iva'],
+                        'codigo_impuesto' => $calculoLinea['codigo_impuesto'],
+                        'iva' => $calculoLinea['iva'],
+                        'iva_valor' => $calculoLinea['iva_valor'],
+                        'soldicom' => $calculoLinea['soldicom'],
+                        'sobre_tasa' => $calculoLinea['sobre_tasa'],
+                        'subtotal' => $calculoLinea['subtotal'],
+                        'total' => $calculoLinea['total'],
                     ]);
 
-                    $this->ventaRepository->decrementInventario($detData['producto_id'], $bodegaId, (float) $detData['cantidad']);
+                    $this->ventaRepository->decrementInventario($calculoLinea['producto_id'], $bodegaId, $calculoLinea['cantidad']);
 
                     $this->ventaRepository->createMovimientoInventario([
                         'tipo_movimiento' => 'venta',
-                        'producto_id' => $detData['producto_id'],
+                        'producto_id' => $calculoLinea['producto_id'],
                         'bodega_origen_id' => $bodegaId,
                         'bodega_destino_id' => null,
-                        'cantidad' => $detData['cantidad'],
+                        'cantidad' => $calculoLinea['cantidad'],
                         'observacion' => "Venta (editada) #{$venta->id}",
                         'user_id' => $userId,
                     ]);
@@ -1389,6 +1502,10 @@ class VentaService
                 }
             } else {
                 if ($nuevosPagos !== null) {
+                    if (count($nuevosPagos) === 1) {
+                        $nuevosPagos[0]['monto'] = $total;
+                    }
+
                     $sumaPagos = 0;
                     foreach ($nuevosPagos as $pago) {
                         $sumaPagos += (float) ($pago['monto'] ?? 0);
@@ -1609,11 +1726,306 @@ class VentaService
     }
 
     /**
+     * Resolver la numeración de una venta sincronizando con la resolución activa de factura electrónica
+     * cuando la venta requiere emisión electrónica, o usando el consecutivo comercial en caso contrario.
+     */
+    protected function resolverNumeracionVenta(
+        bool $requiereFacturaElectronica,
+        ?int $empresaId = null,
+        string $prefijoDefault = 'POS'
+    ): array {
+        if ($requiereFacturaElectronica && $this->resolucionFacturacionService) {
+            $reserva = $this->resolucionFacturacionService->reservarConsecutivoFactura($empresaId);
+            return [
+                'prefijo' => $reserva['prefijo'] ?: $prefijoDefault,
+                'numero_factura' => (string) $reserva['consecutivo'],
+                'resolucion_id' => $reserva['resolucion_id'] ?? null,
+            ];
+        }
+
+        return [
+            'prefijo' => $prefijoDefault,
+            'numero_factura' => $this->ventaRepository->nextNumeroFactura(),
+            'resolucion_id' => null,
+        ];
+    }
+
+    /**
+     * Cálculo tributario centralizado para productos generales y lubricantes (POS y edición).
+     * Consulta la clasificación real del producto (o snapshot previo en edición) y aplica
+     * responsable_iva y maneja_iva_incluido de ConfiguracionEmpresa.
+     */
+    public function calcularLineaTributaria(
+        Producto $producto,
+        float $cantidad,
+        float $precioDigitado,
+        float $descuentoDigitado = 0.0,
+        ?ConfiguracionEmpresa $empresaConfig = null,
+        bool $exigirClasificacion = false,
+        float $soldicom = 0.0,
+        float $sobreTasa = 0.0,
+        ?DetalleVenta $snapshotPrevio = null
+    ): array {
+        $cant = round($cantidad, 3);
+        $precioInput = round($precioDigitado, 2);
+        $descuentoInput = max(0.0, round($descuentoDigitado, 2));
+        $soldicomVal = max(0.0, round($soldicom, 2));
+        $sobreTasaVal = max(0.0, round($sobreTasa, 2));
+
+        // 1. Determinar clasificación y tarifa efectiva (respetando snapshot histórico si se edita la misma línea,
+        // incluyendo ventas anteriores a las nuevas migraciones que tenían tarifa histórica en 'iva').
+        $tipoImpuesto = null;
+        $porcentajeIva = null;
+        $codigoImpuesto = null;
+
+        if ($snapshotPrevio) {
+            $tipoPrevio = $snapshotPrevio->tipo_impuesto !== null && trim((string) $snapshotPrevio->tipo_impuesto) !== ''
+                ? strtolower(trim((string) $snapshotPrevio->tipo_impuesto))
+                : null;
+            $tarifaPreviaRaw = $snapshotPrevio->porcentaje_iva ?? $snapshotPrevio->iva ?? null;
+            $tarifaPrevia = ($tarifaPreviaRaw !== null && is_numeric($tarifaPreviaRaw))
+                ? round((float) $tarifaPreviaRaw, 2)
+                : null;
+
+            if ($tipoPrevio !== null) {
+                $tipoImpuesto = $tipoPrevio;
+                $porcentajeIva = $tarifaPrevia ?? 0.0;
+                $codigoImpuesto = $snapshotPrevio->codigo_impuesto
+                    ?: ($tipoImpuesto !== Producto::TIPO_IMPUESTO_EXCLUIDO
+                        ? ($this->catalogosFacturacionService?->resolverCodigoImpuestoProducto($tipoImpuesto) ?? '1')
+                        : null);
+            } elseif ($tarifaPrevia !== null && $tarifaPrevia > 0) {
+                // Preservar tarifa histórica de ventas previas a las nuevas migraciones
+                $tipoImpuesto = Producto::TIPO_IMPUESTO_GRAVADO;
+                $porcentajeIva = $tarifaPrevia;
+                $codigoImpuesto = $snapshotPrevio->codigo_impuesto
+                    ?: ($this->catalogosFacturacionService?->resolverCodigoImpuestoProducto(Producto::TIPO_IMPUESTO_GRAVADO) ?? '1');
+            }
+        }
+
+        if ($tipoImpuesto === null) {
+            if ($producto->tieneClasificacionTributariaValida()) {
+                $tipoImpuesto = strtolower(trim((string) $producto->tipo_impuesto));
+                $porcentajeIva = round((float) $producto->porcentaje_iva, 2);
+                $codigoImpuesto = $producto->codigo_impuesto
+                    ?: $this->catalogosFacturacionService?->resolverCodigoImpuestoProducto($tipoImpuesto);
+            } elseif ($exigirClasificacion) {
+                throw new HttpException(
+                    422,
+                    "El producto '{$producto->nombre}' (ID {$producto->id}) está pendiente de clasificación tributaria (gravado, exento o excluido). Configure su tratamiento tributario antes de emitir factura electrónica."
+                );
+            }
+        }
+
+        // 2. Resolver escenario responsable_iva === false sin guardar combinaciones inconsistentes ('gravado' con 0%)
+        $responsableIva = $empresaConfig ? (bool) $empresaConfig->responsable_iva : true;
+        $manejaIvaIncluido = $empresaConfig ? (bool) $empresaConfig->maneja_iva_incluido : false;
+
+        if (!$responsableIva) {
+            $porcentajeEfectivo = 0.0;
+            if ($tipoImpuesto === Producto::TIPO_IMPUESTO_GRAVADO) {
+                $tipoImpuesto = Producto::TIPO_IMPUESTO_EXCLUIDO;
+                $codigoImpuesto = null;
+            }
+        } else {
+            $porcentajeEfectivo = ($tipoImpuesto === Producto::TIPO_IMPUESTO_GRAVADO && $porcentajeIva !== null && $porcentajeIva > 0)
+                ? $porcentajeIva
+                : 0.0;
+        }
+
+        // 3. Si es edición de una línea existente ($snapshotPrevio), verificar si el precio unitario recibido
+        // ya corresponde al precio base sin IVA guardado previamente en detalle_ventas para no descontar el IVA dos veces.
+        $precioPrevioGuardado = $snapshotPrevio !== null ? round((float) $snapshotPrevio->precio_unitario, 2) : null;
+        $esPrecioBaseExistente = $snapshotPrevio !== null
+            && $precioPrevioGuardado !== null
+            && abs($precioInput - $precioPrevioGuardado) < 0.01;
+
+        if ($esPrecioBaseExistente) {
+            $cantPrevia = round((float) $snapshotPrevio->cantidad, 3);
+            $descPrevio = round((float) ($snapshotPrevio->descuento ?? 0.0), 2);
+
+            // Si la línea existente no cambió ni en cantidad, ni en precio, ni en descuento, preservar su cálculo exacto
+            if (
+                abs($cant - $cantPrevia) < 0.0001
+                && abs($descuentoInput - $descPrevio) < 0.01
+                && round((float) $snapshotPrevio->subtotal, 2) > 0
+            ) {
+                $baseImponible = round((float) $snapshotPrevio->subtotal, 2);
+                $ivaValor = $porcentajeEfectivo > 0
+                    ? round((float) ($snapshotPrevio->iva_valor ?? round($baseImponible * ($porcentajeEfectivo / 100.0), 2)), 2)
+                    : 0.0;
+                $totalLinea = round($baseImponible + $ivaValor + $soldicomVal + $sobreTasaVal, 2);
+
+                return [
+                    'producto_id' => $producto->id,
+                    'cantidad' => $cant,
+                    'precio_unitario' => $precioPrevioGuardado,
+                    'descuento' => $descPrevio,
+                    'tipo_impuesto' => $tipoImpuesto,
+                    'porcentaje_iva' => $tipoImpuesto !== null ? $porcentajeEfectivo : null,
+                    'codigo_impuesto' => $codigoImpuesto,
+                    'iva' => $porcentajeEfectivo,
+                    'iva_valor' => $ivaValor,
+                    'soldicom' => $soldicomVal,
+                    'sobre_tasa' => $sobreTasaVal,
+                    'subtotal' => $baseImponible,
+                    'total' => $totalLinea,
+                ];
+            }
+        }
+
+        // 4. Calcular base, descuento, IVA y total cuando maneja_iva_incluido = true sobre precio con IVA incluido
+        if ($porcentajeEfectivo > 0 && $manejaIvaIncluido && !$esPrecioBaseExistente) {
+            $factor = 1.0 + ($porcentajeEfectivo / 100.0);
+            $brutoConIva = round($cant * $precioInput, 2);
+            $descuentoConIva = min($descuentoInput, $brutoConIva);
+            $netoConIva = max(0.0, round($brutoConIva - $descuentoConIva, 2));
+
+            // Calcular la base imponible directamente desde el neto con IVA para evitar error de redondeo acumulado
+            $baseImponible = round($netoConIva / $factor, 2);
+            $ivaValor = max(0.0, round($netoConIva - $baseImponible, 2));
+
+            if ($descuentoConIva > 0) {
+                $precioUnitarioBase = round($precioInput / $factor, 2);
+                $valorAntesDescuentoBase = round($cant * $precioUnitarioBase, 2);
+                $descuentoBase = max(0.0, round($valorAntesDescuentoBase - $baseImponible, 2));
+                $baseImponible = round($valorAntesDescuentoBase - $descuentoBase, 2);
+                $ivaValor = max(0.0, round($netoConIva - $baseImponible, 2));
+            } else {
+                $descuentoBase = 0.0;
+                $precioUnitarioBase = $cant > 0
+                    ? round($baseImponible / $cant, 2)
+                    : round($precioInput / $factor, 2);
+            }
+
+            $totalLinea = round($baseImponible + $ivaValor + $soldicomVal + $sobreTasaVal, 2);
+
+            return [
+                'producto_id' => $producto->id,
+                'cantidad' => $cant,
+                'precio_unitario' => $precioUnitarioBase,
+                'descuento' => $descuentoBase,
+                'tipo_impuesto' => $tipoImpuesto,
+                'porcentaje_iva' => $tipoImpuesto !== null ? $porcentajeEfectivo : null,
+                'codigo_impuesto' => $codigoImpuesto,
+                'iva' => $porcentajeEfectivo,
+                'iva_valor' => $ivaValor,
+                'soldicom' => $soldicomVal,
+                'sobre_tasa' => $sobreTasaVal,
+                'subtotal' => $baseImponible,
+                'total' => $totalLinea,
+            ];
+        }
+
+        // 5. Caso precios base sin IVA incluido (o línea existente ya en base, o tarifa 0% / exento / excluido / pendiente)
+        $valorAntesDescuento = round($cant * $precioInput, 2);
+        $descuentoBase = min($descuentoInput, $valorAntesDescuento);
+        $baseImponible = round($valorAntesDescuento - $descuentoBase, 2);
+        $ivaValor = $porcentajeEfectivo > 0
+            ? round($baseImponible * ($porcentajeEfectivo / 100.0), 2)
+            : 0.0;
+        $totalLinea = round($baseImponible + $ivaValor + $soldicomVal + $sobreTasaVal, 2);
+
+        return [
+            'producto_id' => $producto->id,
+            'cantidad' => $cant,
+            'precio_unitario' => $precioInput,
+            'descuento' => $descuentoBase,
+            'tipo_impuesto' => $tipoImpuesto,
+            'porcentaje_iva' => $tipoImpuesto !== null ? $porcentajeEfectivo : null,
+            'codigo_impuesto' => $codigoImpuesto,
+            'iva' => $porcentajeEfectivo,
+            'iva_valor' => $ivaValor,
+            'soldicom' => $soldicomVal,
+            'sobre_tasa' => $sobreTasaVal,
+            'subtotal' => $baseImponible,
+            'total' => $totalLinea,
+        ];
+    }
+
+    /**
+     * Cálculo tributario centralizado para ventas de combustible en isla (monto fijo despachado en surtidor).
+     * Preserva el total despachado ($dto->monto) para cuadre de lecturas de manguera y turno,
+     * desglosando base e IVA según la clasificación explícita del producto combustible.
+     */
+    public function calcularLineaCombustiblePorMonto(
+        Producto $producto,
+        float $cantidadGalones,
+        float $precioGalonTurno,
+        float $montoDespachado,
+        ?ConfiguracionEmpresa $empresaConfig = null,
+        bool $exigirClasificacion = false
+    ): array {
+        $cant = round($cantidadGalones, 3);
+        $montoTotal = round($montoDespachado, 2);
+
+        $tipoImpuesto = null;
+        $porcentajeIva = null;
+        $codigoImpuesto = null;
+
+        if ($producto->tieneClasificacionTributariaValida()) {
+            $tipoImpuesto = strtolower(trim((string) $producto->tipo_impuesto));
+            $porcentajeIva = round((float) $producto->porcentaje_iva, 2);
+            $codigoImpuesto = $producto->codigo_impuesto
+                ?: $this->catalogosFacturacionService?->resolverCodigoImpuestoProducto($tipoImpuesto);
+        } elseif ($exigirClasificacion) {
+            throw new HttpException(
+                422,
+                "El combustible '{$producto->nombre}' (ID {$producto->id}) no tiene clasificación tributaria configurada (gravado, exento o excluido). Configure su tratamiento tributario antes de emitir factura electrónica."
+            );
+        }
+
+        $responsableIva = $empresaConfig ? (bool) $empresaConfig->responsable_iva : true;
+
+        if (!$responsableIva) {
+            $porcentajeEfectivo = 0.0;
+            if ($tipoImpuesto === Producto::TIPO_IMPUESTO_GRAVADO) {
+                $tipoImpuesto = Producto::TIPO_IMPUESTO_EXCLUIDO;
+                $codigoImpuesto = null;
+            }
+        } else {
+            $porcentajeEfectivo = ($tipoImpuesto === Producto::TIPO_IMPUESTO_GRAVADO && $porcentajeIva !== null && $porcentajeIva > 0)
+                ? $porcentajeIva
+                : 0.0;
+        }
+
+        if ($porcentajeEfectivo > 0) {
+            $factor = 1.0 + ($porcentajeEfectivo / 100.0);
+            $baseImponible = round($montoTotal / $factor, 2);
+            $ivaValor = max(0.0, round($montoTotal - $baseImponible, 2));
+            $precioUnitarioBase = $cant > 0 ? round($baseImponible / $cant, 2) : round($precioGalonTurno / $factor, 2);
+        } else {
+            $baseImponible = $montoTotal;
+            $ivaValor = 0.0;
+            $precioUnitarioBase = round($precioGalonTurno, 2);
+        }
+
+        return [
+            'producto_id' => $producto->id,
+            'cantidad' => $cant,
+            'precio_unitario' => $precioUnitarioBase,
+            'descuento' => 0.0,
+            'tipo_impuesto' => $tipoImpuesto,
+            'porcentaje_iva' => $tipoImpuesto !== null ? $porcentajeEfectivo : null,
+            'codigo_impuesto' => $codigoImpuesto,
+            'iva' => $porcentajeEfectivo,
+            'iva_valor' => $ivaValor,
+            'soldicom' => 0.0,
+            'sobre_tasa' => 0.0,
+            'subtotal' => $baseImponible,
+            'total' => $montoTotal,
+        ];
+    }
+
+    /**
      * Procesar la facturación electrónica de forma desacoplada de la venta comercial.
-     * Cualquier error o fallo en el proveedor no afecta ni revierte la venta.
+     * Protege contra emisiones duplicadas o concurrentes y no revierte la venta comercial.
      */
     public function procesarFacturacionElectronica(Venta $venta): ?DocumentoElectronico
     {
+        $documento = null;
+        $adquirioCandadoEnvio = false;
+
         try {
             if (!$this->configuracionFacturacionRepository) {
                 return null;
@@ -1621,11 +2033,11 @@ class VentaService
 
             $configFacturacion = $this->configuracionFacturacionRepository->first();
 
-            if (!$configFacturacion || !$configFacturacion->facturacion_electronica_activa || !$venta->factura_electronica ) {
+            if (!$configFacturacion || !$configFacturacion->facturacion_electronica_activa) {
                 return null;
             }
 
-            // Verificar si el tipo de venta debe facturarse electrónicamente
+            // Verificar si la venta requiere facturación electrónica (explícita o por regla de origen)
             if (!$venta->factura_electronica) {
                 if ($venta->tipo_origen === 'pos' && !$configFacturacion->facturar_ventas_pos) {
                     return null;
@@ -1634,21 +2046,24 @@ class VentaService
                 if ($venta->tipo_origen === 'combustible' && !$configFacturacion->facturar_ventas_combustible) {
                     return null;
                 }
+
+                if (!in_array($venta->tipo_origen, ['pos', 'combustible'], true)) {
+                    return null;
+                }
             }
 
             // Cargar relaciones necesarias si no están cargadas
-            if (!$venta->relationLoaded('cliente')) {
-                $venta->load('cliente');
-            }
-            if (!$venta->relationLoaded('detalles')) {
-                $venta->load('detalles.producto');
-            }
-            if (!$venta->relationLoaded('usuario')) {
-                $venta->load('usuario');
-            }
+            $venta->loadMissing([
+                'cliente.pais',
+                'cliente.ciudad',
+                'detalles.producto.unidadMedida',
+                'pagos',
+                'usuario',
+            ]);
 
             $empresaConfig = $this->configuracionEmpresaRepository?->first();
-            $resolucionConfig = $this->resolucionFacturacionRepository?->findByTipoDocumento('factura', $empresaConfig?->id);
+            $resolucionConfig = $this->resolucionFacturacionRepository?->findByTipoDocumento('factura', $empresaConfig?->id)
+                ?? $this->resolucionFacturacionRepository?->findByTipoDocumento('factura_electronica', $empresaConfig?->id);
 
             // Validar que exista una resolución activa y con número de resolución no vacío
             if (!$resolucionConfig || !$resolucionConfig->is_active || empty($resolucionConfig->numero_resolucion)) {
@@ -1656,32 +2071,135 @@ class VentaService
                 return null;
             }
 
-            // Construir SolicitudDTO
-            $solicitud = $this->construirSolicitudFacturaDTO($venta, $empresaConfig, $configFacturacion, $resolucionConfig);
+            // Protección contra duplicados y concurrencia bajo bloqueo pesimista de la venta y sus documentos
+            $preparacion = DB::transaction(function () use ($venta, $empresaConfig, $configFacturacion, $resolucionConfig) {
+                $ventaLock = Venta::where('id', $venta->id)->lockForUpdate()->first();
+                if (!$ventaLock) {
+                    return ['accion' => 'abortar', 'documento' => null];
+                }
 
-            // Registrar DocumentoElectrónico inicial con estado 'pendiente'
-            $crearDto = new CrearDocumentoElectronicoDTO(
-                ventaId: $venta->id,
-                configuracionFacturacionId: $configFacturacion->id,
-                tipoDocumento: 'factura_electronica',
-                estado: 'pendiente',
-                proveedor: $configFacturacion->proveedor_activo ?? 'matias',
-                ambiente: $configFacturacion->ambiente ?? 'sandbox',
-                numeroDocumento: (string) $venta->numero_factura,
-                prefijo: $venta->prefijo ?? $resolucionConfig->prefijo ?? $empresaConfig?->prefijo_factura ?? 'SETP'
-            );
+                $existentes = DocumentoElectronico::where('venta_id', $ventaLock->id)
+                    ->where('tipo_documento', 'factura_electronica')
+                    ->orderByDesc('id')
+                    ->lockForUpdate()
+                    ->get();
 
-            $documento = $this->documentoElectronicoService?->registrarEmision($crearDto);
+                // 1. Si ya existe una factura emitida/aceptada con CUFE, retornar sin retransmitir
+                foreach ($existentes as $docExistente) {
+                    if (
+                        in_array(strtolower((string) $docExistente->estado), ['emitido', 'aceptado', 'aprobado'], true)
+                        && !empty($docExistente->cufe)
+                    ) {
+                        return ['accion' => 'ya_emitido', 'documento' => $docExistente];
+                    }
+                }
 
-            if (!$this->facturacionService) {
+                // 2. Si otra petición simultánea está enviando o ya fue enviado y aguarda confirmación DIAN, no duplicar
+                foreach ($existentes as $docExistente) {
+                    if (in_array(strtolower((string) $docExistente->estado), ['enviando', 'enviado'], true)) {
+                        return ['accion' => 'en_proceso', 'documento' => $docExistente];
+                    }
+                }
+
+                // 3. Si existe un documento en estado 'pendiente' que ya tiene respuesta previa de MATÍAS (ej. StatusCode 98),
+                // no reenviar automáticamente para no duplicar folio.
+                foreach ($existentes as $docExistente) {
+                    if (strtolower((string) $docExistente->estado) === 'pendiente' && !empty($docExistente->datos_tecnicos['respuesta_matias'])) {
+                        return ['accion' => 'en_proceso', 'documento' => $docExistente];
+                    }
+                }
+
+                // 4. Reutilizar registro pendiente/rechazado/error existente o crear uno nuevo
+                $docReutilizable = $existentes->first(fn ($d) => in_array(
+                    strtolower((string) $d->estado),
+                    ['pendiente', 'rechazado', 'configuracion_invalida', 'error_tecnico'],
+                    true
+                ));
+
+                $prefijoDoc = trim((string) ($docReutilizable?->prefijo ?? ''));
+                $prefijoRes = trim((string) ($resolucionConfig->prefijo ?? ''));
+                $prefijoVenta = trim((string) ($ventaLock->prefijo ?? ''));
+                $prefijoEmp = trim((string) ($empresaConfig?->prefijo_factura ?? ''));
+
+                $prefijoEfectivo = $prefijoDoc !== ''
+                    ? $prefijoDoc
+                    : ($prefijoRes !== ''
+                        ? $prefijoRes
+                        : ($prefijoVenta !== '' && !in_array($prefijoVenta, ['POS', 'AJT'], true)
+                            ? $prefijoVenta
+                            : ($prefijoEmp !== '' ? $prefijoEmp : 'SETP')));
+
+                $folioDoc = trim((string) ($docReutilizable?->numero_documento ?? ''));
+                $folioEfectivo = $folioDoc !== '' ? $folioDoc : (string) $ventaLock->numero_factura;
+
+                if (!$docReutilizable) {
+                    $crearDto = new CrearDocumentoElectronicoDTO(
+                        ventaId: $ventaLock->id,
+                        configuracionFacturacionId: $configFacturacion->id,
+                        tipoDocumento: 'factura_electronica',
+                        estado: 'enviando',
+                        proveedor: $configFacturacion->proveedor_activo ?? 'matias',
+                        ambiente: $configFacturacion->ambiente ?? 'sandbox',
+                        numeroDocumento: (string) $folioEfectivo,
+                        prefijo: (string) $prefijoEfectivo,
+                        mensaje: 'Preparando factura electrónica para transmisión a MATÍAS API.'
+                    );
+
+                    $docReutilizable = $this->documentoElectronicoService?->registrarEmision($crearDto);
+                } else {
+                    $docReutilizable->update([
+                        'estado' => 'enviando',
+                        'prefijo' => (string) $prefijoEfectivo,
+                        'numero_documento' => (string) $folioEfectivo,
+                        'mensaje' => 'Reintentando preparación y transmisión a MATÍAS API.',
+                    ]);
+                }
+
+                return [
+                    'accion' => 'transmitir',
+                    'documento' => $docReutilizable,
+                ];
+            });
+
+            $documento = $preparacion['documento'] ?? null;
+            if (($preparacion['accion'] ?? '') !== 'transmitir' || !$documento) {
                 return $documento;
             }
 
-            // Enviar solicitud de facturación electrónica
+            // Este proceso adquirió atómicamente el bloqueo de transmisión ('enviando') dentro de la transacción
+            $adquirioCandadoEnvio = true;
+
+            if (!$this->facturacionService) {
+                $this->documentoElectronicoService?->restaurarEstadoPendiente($documento->id);
+                return $documento;
+            }
+
+            // Construir SolicitudFacturaDTO unificando prefijo y número de factura con el documento reservado
+            $solicitud = $this->construirSolicitudFacturaDTO(
+                $venta,
+                $empresaConfig,
+                $configFacturacion,
+                $resolucionConfig,
+                $documento
+            );
+
+            // Persistir solicitud y payload preparado en datos_tecnicos para trazabilidad
+            $payloadPreparado = \App\Modules\Facturacion\Infrastructure\Mappers\MatiasInvoiceMapper::toMatiasPayload($solicitud);
+            $documento->update([
+                'datos_tecnicos' => array_merge(
+                    is_array($documento->datos_tecnicos) ? $documento->datos_tecnicos : [],
+                    [
+                        'solicitud' => $solicitud->toArray(),
+                        'payload' => $payloadPreparado,
+                    ]
+                ),
+            ]);
+
+            // Enviar solicitud de facturación electrónica a MATÍAS API
             $respuesta = $this->facturacionService->enviarFactura($solicitud);
 
             // Actualizar documento con la respuesta obtenida
-            if ($documento && $this->documentoElectronicoService) {
+            if ($this->documentoElectronicoService) {
                 return $this->documentoElectronicoService->actualizarDesdeRespuesta($documento->id, $respuesta);
             }
 
@@ -1693,10 +2211,12 @@ class VentaService
             ]);
 
             try {
-                if (isset($documento) && $documento && $this->documentoElectronicoService) {
+                // Solo actualizar el estado del documento si este proceso fue el que adquirió el bloqueo de envío
+                if ($adquirioCandadoEnvio && isset($documento) && $documento && $this->documentoElectronicoService) {
                     $respuestaError = RespuestaFacturacionDTO::error(
                         mensaje: 'Error durante la emisión: ' . $e->getMessage(),
-                        errores: ['exception' => $e->getMessage()]
+                        errores: ['exception' => $e->getMessage()],
+                        estado: 'rechazado'
                     );
                     return $this->documentoElectronicoService->actualizarDesdeRespuesta($documento->id, $respuestaError);
                 }
@@ -1712,15 +2232,27 @@ class VentaService
 
     /**
      * Construir SolicitudFacturaDTO a partir de la Venta y Configuración.
+     * Utiliza el snapshot tributario histórico guardado en detalle_ventas, las unidades DIAN homologadas
+     * y los medios de pago reales registrados en la venta.
      */
     protected function construirSolicitudFacturaDTO(
         Venta $venta,
         ?ConfiguracionEmpresa $empresaConfig,
         ?ConfiguracionFacturacion $configFacturacion,
-        ?ResolucionFacturacion $resolucionConfig = null
+        ?ResolucionFacturacion $resolucionConfig = null,
+        ?DocumentoElectronico $documento = null
     ): SolicitudFacturaDTO {
+        $venta->loadMissing([
+            'cliente.pais',
+            'cliente.ciudad',
+            'detalles.producto.unidadMedida',
+            'pagos',
+            'usuario',
+        ]);
+
         $cliente = $venta->cliente;
         $cliente?->loadMissing(['pais', 'ciudad']);
+        $empresaConfig?->loadMissing(['pais', 'ciudad']);
 
         if ($venta->factura_electronica) {
             if (!$cliente) {
@@ -1750,9 +2282,9 @@ class VentaService
                 'tax_regime_id' => (int) ($cliente->tax_regime_id ?? 2),
                 'tax_level_id' => (int) ($cliente->tax_level_id ?? 5),
                 'postal_code' => (string) ($cliente->codigo_postal ?? ''),
-                'country_iso' => (string) ($cliente->pais?->codigo_iso ?? ''),
-                'city_dane_code' => (string) ($cliente->ciudad?->codigo ?? ''),
-                'city_local_id' => (string) ($cliente->ciudad_id ?? ''),
+                'country_iso' => (string) ($cliente->pais?->codigo_iso ?? 'CO'),
+                'city_dane_code' => (string) ($cliente->ciudad?->codigo ?? $empresaConfig?->ciudad?->codigo ?? '41396'),
+                'city_local_id' => (string) ($cliente->ciudad_id ?? $empresaConfig?->ciudad_id ?? ''),
             ];
         } else {
             if ($cliente) {
@@ -1775,9 +2307,9 @@ class VentaService
                     'tax_regime_id' => (int) ($cliente->tax_regime_id ?? 2),
                     'tax_level_id' => (int) ($cliente->tax_level_id ?? 5),
                     'postal_code' => (string) ($cliente->codigo_postal ?? ''),
-                    'country_iso' => (string) ($cliente->pais?->codigo_iso ?? ''),
-                    'city_dane_code' => (string) ($cliente->ciudad?->codigo ?? ''),
-                    'city_local_id' => (string) ($cliente->ciudad_id ?? ''),
+                    'country_iso' => (string) ($cliente->pais?->codigo_iso ?? 'CO'),
+                    'city_dane_code' => (string) ($cliente->ciudad?->codigo ?? $empresaConfig?->ciudad?->codigo ?? '41396'),
+                    'city_local_id' => (string) ($cliente->ciudad_id ?? $empresaConfig?->ciudad_id ?? ''),
                 ];
             } else {
                 $clienteData = [
@@ -1787,21 +2319,40 @@ class VentaService
                     'numero_documento' => '222222222222',
                     'email' => 'factura@cliente.com',
                     'telefono' => '3000000000',
-                    'direccion' => '',
-                    'address' => '',
+                    'direccion' => (string) ($empresaConfig?->direccion ?? ''),
+                    'address' => (string) ($empresaConfig?->direccion ?? ''),
                     'identity_document_id' => '1',
                     'type_organization_id' => 2,
                     'tax_regime_id' => 2,
                     'tax_level_id' => 5,
-                    'postal_code' => '',
-                    'country_iso' => 'CO',
-                    'city_dane_code' => '',
+                    'postal_code' => (string) ($empresaConfig?->codigo_postal ?? ''),
+                    'country_iso' => (string) ($empresaConfig?->pais?->codigo_iso ?? 'CO'),
+                    'city_dane_code' => (string) ($empresaConfig?->ciudad?->codigo ?? '41396'),
+                    'city_local_id' => (string) ($empresaConfig?->ciudad_id ?? ''),
                 ];
             }
         }
 
-        $prefijo = $resolucionConfig?->prefijo ?? $empresaConfig?->prefijo_factura ?? 'SETP';
-        $numeroResolucion = (string) ($resolucionConfig?->numero_resolucion ?? $empresaConfig?->numero_resolucion ?? '');
+        $prefijoDoc = trim((string) ($documento?->prefijo ?? ''));
+        $prefijoRes = trim((string) ($resolucionConfig?->prefijo ?? ''));
+        $prefijoVenta = trim((string) ($venta->prefijo ?? ''));
+        $prefijoEmp = trim((string) ($empresaConfig?->prefijo_factura ?? ''));
+
+        $prefijo = $prefijoDoc !== ''
+            ? $prefijoDoc
+            : ($prefijoRes !== ''
+                ? $prefijoRes
+                : ($prefijoVenta !== '' && !in_array($prefijoVenta, ['POS', 'AJT'], true)
+                    ? $prefijoVenta
+                    : ($prefijoEmp !== '' ? $prefijoEmp : 'SETP')));
+
+        $folioDoc = trim((string) ($documento?->numero_documento ?? ''));
+        $folioEfectivo = $folioDoc !== '' ? $folioDoc : (string) $venta->numero_factura;
+
+        $resNumCfg = trim((string) ($resolucionConfig?->numero_resolucion ?? ''));
+        $resNumEmp = trim((string) ($empresaConfig?->numero_resolucion ?? ''));
+        $numeroResolucion = $resNumCfg !== '' ? $resNumCfg : $resNumEmp;
+        $proveedorActivo = $configFacturacion?->proveedor_activo ?? 'matias';
 
         $cajeroNombre = $venta->usuario?->name ?? 'Cajero ERP';
         $emisorData = [
@@ -1815,16 +2366,18 @@ class VentaService
 
         $itemsData = [];
         $subtotalLineas = 0.0;
+        $baseGravableLineas = 0.0;
         $impuestosLineas = 0.0;
+
         foreach ($venta->detalles as $indice => $detalle) {
             $cant = (float) $detalle->cantidad;
             $precio = (float) $detalle->precio_unitario;
             $subtotal = (float) $detalle->subtotal;
-            $ivaValor = (float) ($detalle->iva_valor ?? 0);
-            $ivaPorcentaje = (float) ($detalle->iva ?? 0);
-            $descuento = (float) ($detalle->descuento ?? 0);
-            $soldicom = (float) ($detalle->soldicom ?? 0);
-            $sobreTasa = (float) ($detalle->sobre_tasa ?? 0);
+            $ivaValor = round((float) ($detalle->iva_valor ?? 0), 2);
+            $ivaPorcentaje = round((float) ($detalle->porcentaje_iva ?? $detalle->iva ?? 0), 2);
+            $descuento = round((float) ($detalle->descuento ?? 0), 2);
+            $soldicom = round((float) ($detalle->soldicom ?? 0), 2);
+            $sobreTasa = round((float) ($detalle->sobre_tasa ?? 0), 2);
 
             if ($soldicom > 0 || $sobreTasa > 0) {
                 throw new \InvalidArgumentException(sprintf(
@@ -1834,48 +2387,117 @@ class VentaService
                 ));
             }
 
-            if ($ivaPorcentaje <= 0 && $ivaValor <= 0) {
-                throw new \InvalidArgumentException(sprintf(
-                    'No se puede transmitir la línea %d (producto %d): iva e iva_valor son cero y GASSTATION no guarda una clasificación que permita distinguir exento, excluido, no gravado o dato faltante.',
-                    $indice + 1,
-                    $detalle->producto_id
-                ));
+            // Resolver clasificación exclusivamente desde el snapshot histórico guardado en detalle_ventas
+            $tipoImpuesto = $detalle->tipo_impuesto !== null && trim((string) $detalle->tipo_impuesto) !== ''
+                ? strtolower(trim((string) $detalle->tipo_impuesto))
+                : null;
+
+            // Compatibilidad con detalles históricos que tenían IVA > 0 antes de existir tipo_impuesto
+            if ($tipoImpuesto === null && $ivaPorcentaje > 0 && $ivaValor >= 0) {
+                $tipoImpuesto = Producto::TIPO_IMPUESTO_GRAVADO;
             }
 
-            if ($ivaPorcentaje <= 0 || $ivaValor < 0) {
+            if ($tipoImpuesto === null) {
                 throw new \InvalidArgumentException(sprintf(
-                    'No se puede transmitir la línea %d (producto %d): iva e iva_valor no identifican un tratamiento de IVA consistente.',
+                    'No se puede transmitir la línea %d (producto %d): el detalle de venta no tiene clasificación tributaria registrada (gravado, exento o excluido).',
                     $indice + 1,
                     $detalle->producto_id
                 ));
             }
 
             $baseImponible = round($subtotal, 2);
-            $impuestoEsperado = round($baseImponible * $ivaPorcentaje / 100, 2);
-            $ivaValor = round($ivaValor, 2);
-            if ($impuestoEsperado !== $ivaValor) {
+            $codigoImpuesto = trim((string) ($detalle->codigo_impuesto ?? ''));
+
+            if ($tipoImpuesto === Producto::TIPO_IMPUESTO_GRAVADO) {
+                if ($ivaPorcentaje <= 0 || $ivaValor < 0) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'No se puede transmitir la línea %d (producto %d): está clasificada como gravada pero su tarifa de IVA (%.2f%%) no es válida.',
+                        $indice + 1,
+                        $detalle->producto_id,
+                        $ivaPorcentaje
+                    ));
+                }
+
+                $impuestoEsperado = round($baseImponible * $ivaPorcentaje / 100, 2);
+                if (abs($impuestoEsperado - $ivaValor) > 0.05) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'No se puede transmitir la línea %d (producto %d): iva_valor (%.2f) no coincide con la base del detalle (%.2f) por la tarifa registrada (%.2f%%).',
+                        $indice + 1,
+                        $detalle->producto_id,
+                        $ivaValor,
+                        $baseImponible,
+                        $ivaPorcentaje
+                    ));
+                }
+
+                $taxId = $codigoImpuesto !== ''
+                    ? $codigoImpuesto
+                    : ($this->catalogosFacturacionService?->resolverCodigoImpuestoProducto(Producto::TIPO_IMPUESTO_GRAVADO, null, $proveedorActivo) ?? '1');
+
+                $ivaPorLinea = [[
+                    'tax_id' => $taxId,
+                    'tax_amount' => number_format($ivaValor, 2, '.', ''),
+                    'taxable_amount' => number_format($baseImponible, 2, '.', ''),
+                    'percent' => $ivaPorcentaje,
+                ]];
+
+                $baseGravableLineas += $baseImponible;
+            } elseif ($tipoImpuesto === Producto::TIPO_IMPUESTO_EXENTO) {
+                if ($ivaPorcentaje != 0.0 || $ivaValor != 0.0) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'No se puede transmitir la línea %d (producto %d): está clasificada como exenta pero registra tarifa (%.2f%%) o valor de IVA (%.2f) distinto de cero.',
+                        $indice + 1,
+                        $detalle->producto_id,
+                        $ivaPorcentaje,
+                        $ivaValor
+                    ));
+                }
+
+                $taxId = $codigoImpuesto !== ''
+                    ? $codigoImpuesto
+                    : ($this->catalogosFacturacionService?->resolverCodigoImpuestoProducto(Producto::TIPO_IMPUESTO_EXENTO, null, $proveedorActivo) ?? '1');
+
+                $ivaPorLinea = [[
+                    'tax_id' => $taxId,
+                    'tax_amount' => '0.00',
+                    'taxable_amount' => number_format($baseImponible, 2, '.', ''),
+                    'percent' => 0.0,
+                ]];
+
+                $baseGravableLineas += $baseImponible;
+            } elseif ($tipoImpuesto === Producto::TIPO_IMPUESTO_EXCLUIDO) {
+                if ($ivaPorcentaje != 0.0 || $ivaValor != 0.0) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'No se puede transmitir la línea %d (producto %d): está clasificada como excluida pero registra tarifa (%.2f%%) o valor de IVA (%.2f) distinto de cero.',
+                        $indice + 1,
+                        $detalle->producto_id,
+                        $ivaPorcentaje,
+                        $ivaValor
+                    ));
+                }
+
+                $taxId = null;
+                $ivaPorLinea = [];
+            } else {
                 throw new \InvalidArgumentException(sprintf(
-                    'No se puede transmitir la línea %d (producto %d): iva_valor (%.2f) no coincide con la base del detalle (%.2f) por la tarifa registrada (%.2f%%).',
+                    'No se puede transmitir la línea %d (producto %d): clasificación tributaria "%s" desconocida.',
                     $indice + 1,
                     $detalle->producto_id,
-                    $ivaValor,
-                    $baseImponible,
-                    $ivaPorcentaje
+                    $tipoImpuesto
                 ));
             }
-
-            $ivaPorLinea = [[
-                // MATÍAS documenta el ID 1 como IVA; no se infieren otros tributos.
-                'tax_id' => '1',
-                'tax_amount' => number_format($ivaValor, 2, '.', ''),
-                'taxable_amount' => number_format($baseImponible, 2, '.', ''),
-                'percent' => $ivaPorcentaje,
-            ]];
 
             $subtotalLineas += $baseImponible;
             $impuestosLineas += $ivaValor;
             $nombreProd = $detalle->producto?->nombre ?? 'Producto';
             $codigoProd = $detalle->producto?->codigo ?? 'PROD-' . $detalle->producto_id;
+
+            // Para ventas de combustible donde cantidad tiene 3 decimales y precio_unitario fue redondeado a 2 decimales,
+            // ajustar el precio unitario de presentación en la línea electrónica si no hay descuento para que cant * precio = base
+            $precioParaLinea = $precio;
+            if ($descuento == 0.0 && $cant > 0 && round($cant * $precio, 2) !== $baseImponible) {
+                $precioParaLinea = round($baseImponible / $cant, 2);
+            }
 
             $allowanceCharges = [];
             if ($descuento > 0) {
@@ -1895,6 +2517,17 @@ class VentaService
                 ];
             }
 
+            if (!$this->catalogosFacturacionService) {
+                throw new \InvalidArgumentException(
+                    'El servicio de homologación de catálogos de facturación no está disponible.'
+                );
+            }
+
+            $unidadHomologada = $this->catalogosFacturacionService->resolverUnidadMedidaProducto(
+                $detalle->producto?->unidadMedida,
+                $proveedorActivo
+            );
+
             $itemsData[] = [
                 'code' => (string) $codigoProd,
                 'codigo' => (string) $codigoProd,
@@ -1902,42 +2535,52 @@ class VentaService
                 'nombre' => (string) $nombreProd,
                 'invoiced_quantity' => $cant,
                 'cantidad' => $cant,
-                'price_amount' => $precio,
-                'precio_unitario' => $precio,
-                'line_extension_amount' => $subtotal,
+                'price_amount' => $precioParaLinea,
+                'precio_unitario' => $precioParaLinea,
+                'line_extension_amount' => $baseImponible,
+                'tipo_impuesto' => $tipoImpuesto,
                 'tax_amount' => $ivaValor,
                 'percent' => $ivaPorcentaje,
-                'tax_id' => '1',
+                'tax_id' => $taxId,
+                'codigo_impuesto' => $taxId,
                 'tax_totals' => $ivaPorLinea,
                 'allowance_charges' => $allowanceCharges,
-                'quantity_units_id' => '1093',
-                'um' => 'M',
+                'quantity_units_id' => $unidadHomologada['quantity_units_id'],
+                'um' => $unidadHomologada['um'],
             ];
         }
 
-        $subtotalLineas = round($subtotalLineas, 2);
-        $impuestosLineas = round($impuestosLineas, 2);
-        if ($subtotalLineas !== round((float) $venta->subtotal, 2)) {
-            throw new \InvalidArgumentException(sprintf(
-                'No se puede transmitir la factura: la suma de bases de sus detalles (%.2f) no coincide con el subtotal de la venta (%.2f).',
-                $subtotalLineas,
-                (float) $venta->subtotal
-            ));
-        }
-        if ($impuestosLineas !== round((float) $venta->impuesto, 2)) {
-            throw new \InvalidArgumentException(sprintf(
-                'No se puede transmitir la factura: la suma del IVA guardado en los detalles (%.2f) no coincide con el impuesto de la venta (%.2f).',
-                $impuestosLineas,
-                (float) $venta->impuesto
-            ));
-        }
-        $totalCalculado = round($subtotalLineas + $impuestosLineas, 2);
-        if ($totalCalculado !== round((float) $venta->total, 2)) {
-            throw new \InvalidArgumentException(sprintf(
-                'No se puede transmitir la factura: bases más IVA (%.2f) no coinciden con el total cobrado (%.2f); puede haber otros tributos sin clasificación MATÍAS.',
-                $totalCalculado,
-                (float) $venta->total
-            ));
+        if ($venta->detalles->count() > 0) {
+            $subtotalLineas = round($subtotalLineas, 2);
+            $baseGravableLineas = round($baseGravableLineas, 2);
+            $impuestosLineas = round($impuestosLineas, 2);
+
+            if ($subtotalLineas !== round((float) $venta->subtotal, 2)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'No se puede transmitir la factura: la suma de bases de sus detalles (%.2f) no coincide con el subtotal de la venta (%.2f).',
+                    $subtotalLineas,
+                    (float) $venta->subtotal
+                ));
+            }
+            if ($impuestosLineas !== round((float) $venta->impuesto, 2)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'No se puede transmitir la factura: la suma del IVA guardado en los detalles (%.2f) no coincide con el impuesto de la venta (%.2f).',
+                    $impuestosLineas,
+                    (float) $venta->impuesto
+                ));
+            }
+            $totalCalculado = round($subtotalLineas + $impuestosLineas, 2);
+            if ($totalCalculado !== round((float) $venta->total, 2)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'No se puede transmitir la factura: bases más IVA (%.2f) no coinciden con el total cobrado (%.2f); puede haber otros tributos sin clasificación MATÍAS.',
+                    $totalCalculado,
+                    (float) $venta->total
+                ));
+            }
+        } else {
+            $subtotalLineas = round((float) $venta->subtotal, 2);
+            $baseGravableLineas = 0.0;
+            $impuestosLineas = round((float) $venta->impuesto, 2);
         }
 
         $totalesData = [
@@ -1946,15 +2589,17 @@ class VentaService
             'descuento' => (float) $venta->descuento,
             'total_pagar' => (float) $venta->total,
             'line_extension_amount' => $subtotalLineas,
-            'tax_exclusive_amount' => $subtotalLineas,
+            'tax_exclusive_amount' => $baseGravableLineas,
             'tax_inclusive_amount' => (float) $venta->total,
             'payable_amount' => (float) $venta->total,
         ];
 
+        $paymentsPayload = $this->construirPagosMatias($venta, $proveedorActivo);
+
         return new SolicitudFacturaDTO(
             ventaId: $venta->id,
             prefijo: $prefijo,
-            folio: (string) $venta->numero_factura,
+            folio: $folioEfectivo,
             fechaEmision: $venta->fecha_venta ? $venta->fecha_venta->format('Y-m-d H:i:s') : now()->format('Y-m-d H:i:s'),
             tipoDocumento: 'factura_venta',
             cliente: $clienteData,
@@ -1966,7 +2611,87 @@ class VentaService
             metadatos: [
                 'resolution_number' => $numeroResolucion,
                 'prefix' => $prefijo,
+                'payments' => $paymentsPayload,
             ]
         );
+    }
+
+    /**
+     * Construir el arreglo de pagos homologados para MATÍAS a partir de los pagos reales de la venta.
+     * Carga la relación pagos si aún no estaba cargada y exige homologación válida en CatalogosFacturacionService.
+     */
+    protected function construirPagosMatias(Venta $venta, string $proveedor = 'matias'): array
+    {
+        if (!$this->catalogosFacturacionService) {
+            throw new \InvalidArgumentException(
+                'El servicio de homologación de catálogos de facturación no está disponible para resolver medios de pago.'
+            );
+        }
+
+        $venta->loadMissing('pagos');
+        $totalVenta = round((float) $venta->total, 2);
+
+        if (strtolower((string) $venta->tipo_venta) === 'credito') {
+            $mapeo = $this->catalogosFacturacionService->obtenerMapeoMedioPago($proveedor, 'credito');
+
+            return [[
+                'payment_method_id' => (int) $mapeo['payment_method_id'],
+                'means_payment_id' => (int) $mapeo['means_payment_id'],
+                'value_paid' => number_format($totalVenta, 2, '.', ''),
+            ]];
+        }
+
+        if ($venta->pagos && $venta->pagos->isNotEmpty()) {
+            $payments = [];
+            $sumaPagos = 0.0;
+
+            foreach ($venta->pagos as $pago) {
+                $monto = round((float) $pago->monto, 2);
+                if ($monto <= 0) {
+                    continue;
+                }
+                $metodo = trim((string) ($pago->metodo_pago ?? ''));
+                if ($metodo === '') {
+                    throw new \InvalidArgumentException(
+                        "El pago #{$pago->id} de la venta #{$venta->id} no tiene un método de pago registrado."
+                    );
+                }
+                $mapeo = $this->catalogosFacturacionService->obtenerMapeoMedioPago($proveedor, $metodo);
+
+                $payments[] = [
+                    'payment_method_id' => (int) $mapeo['payment_method_id'],
+                    'means_payment_id' => (int) $mapeo['means_payment_id'],
+                    'value_paid' => number_format($monto, 2, '.', ''),
+                ];
+                $sumaPagos = round($sumaPagos + $monto, 2);
+            }
+
+            // Si además se aplicó anticipo o saldo pendiente parcial, completar hasta el total de la factura
+            if ($sumaPagos < $totalVenta) {
+                $diferencia = round($totalVenta - $sumaPagos, 2);
+                $metodoRestante = (float) $venta->saldo_pendiente > 0
+                    ? 'credito'
+                    : ($payments !== [] ? (string) $venta->pagos->first()->metodo_pago : 'efectivo');
+                $mapeoRest = $this->catalogosFacturacionService->obtenerMapeoMedioPago($proveedor, $metodoRestante);
+
+                $payments[] = [
+                    'payment_method_id' => (int) $mapeoRest['payment_method_id'],
+                    'means_payment_id' => (int) $mapeoRest['means_payment_id'],
+                    'value_paid' => number_format($diferencia, 2, '.', ''),
+                ];
+            }
+
+            if (!empty($payments)) {
+                return $payments;
+            }
+        }
+
+        $mapeoDefault = $this->catalogosFacturacionService->obtenerMapeoMedioPago($proveedor, 'efectivo');
+
+        return [[
+            'payment_method_id' => (int) $mapeoDefault['payment_method_id'],
+            'means_payment_id' => (int) $mapeoDefault['means_payment_id'],
+            'value_paid' => number_format($totalVenta, 2, '.', ''),
+        ]];
     }
 }

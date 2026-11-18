@@ -83,7 +83,7 @@ class StoreVentaRequest extends FormRequest
 
             'detalles.*.iva' => [
                 'nullable',
-                'integer',
+                'numeric',
                 'gte:0'
             ],
 

@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Producto extends Model
 {
+    public const TIPO_IMPUESTO_GRAVADO = 'gravado';
+    public const TIPO_IMPUESTO_EXENTO = 'exento';
+    public const TIPO_IMPUESTO_EXCLUIDO = 'excluido';
+
+    public const TIPOS_IMPUESTO_PERMITIDOS = [
+        self::TIPO_IMPUESTO_GRAVADO,
+        self::TIPO_IMPUESTO_EXENTO,
+        self::TIPO_IMPUESTO_EXCLUIDO,
+    ];
+
     protected $table = 'productos';
 
     protected $fillable = [
@@ -19,6 +29,9 @@ class Producto extends Model
         'unidad_medida_id',
         'precio_compra',
         'precio_venta',
+        'tipo_impuesto',
+        'porcentaje_iva',
+        'codigo_impuesto',
         'permite_decimal',
         'is_active',
         'codigo_barras',
@@ -27,9 +40,29 @@ class Producto extends Model
     protected $casts = [
         'precio_compra' => 'decimal:2',
         'precio_venta' => 'decimal:2',
+        'porcentaje_iva' => 'decimal:2',
         'permite_decimal' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    public function tieneClasificacionTributariaValida(): bool
+    {
+        if (!in_array($this->tipo_impuesto, self::TIPOS_IMPUESTO_PERMITIDOS, true)) {
+            return false;
+        }
+
+        if ($this->porcentaje_iva === null || !is_numeric($this->porcentaje_iva)) {
+            return false;
+        }
+
+        $tarifa = round((float) $this->porcentaje_iva, 2);
+
+        if ($this->tipo_impuesto === self::TIPO_IMPUESTO_GRAVADO) {
+            return $tarifa > 0;
+        }
+
+        return $tarifa === 0.0;
+    }
 
     public function marca(): BelongsTo
     {

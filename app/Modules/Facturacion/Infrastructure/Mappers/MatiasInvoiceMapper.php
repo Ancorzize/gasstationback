@@ -80,19 +80,80 @@ class MatiasInvoiceMapper
 
         // Mapeo de Líneas de Producto
         $lines = [];
-        foreach ($solicitud->items as $item) {
+        foreach ($solicitud->items as $indice => $item) {
             $cant = (float)($item['invoiced_quantity'] ?? $item['cantidad'] ?? 1);
             $precio = (float)($item['price_amount'] ?? $item['precio_unitario'] ?? 0);
             $lineExt = (float)($item['line_extension_amount'] ?? ($cant * $precio));
+            $tipoImpuesto = isset($item['tipo_impuesto']) && is_string($item['tipo_impuesto'])
+                ? strtolower(trim($item['tipo_impuesto']))
+                : null;
 
             $itemTaxes = [];
-            if (isset($item['tax_totals']) && is_array($item['tax_totals'])) {
+            if (array_key_exists('tax_totals', $item) && is_array($item['tax_totals'])) {
                 $itemTaxes = $item['tax_totals'];
+            } elseif ($tipoImpuesto !== null) {
+                $taxAmount = round((float)($item['tax_amount'] ?? 0), 2);
+                $percent = round((float)($item['percent'] ?? 0), 2);
+                $taxId = trim((string)($item['tax_id'] ?? $item['codigo_impuesto'] ?? ''));
+
+                if ($tipoImpuesto === \App\Models\Producto::TIPO_IMPUESTO_GRAVADO) {
+                    if ($taxId === '') {
+                        throw new \InvalidArgumentException(sprintf(
+                            'No se puede construir tax_totals en la línea %d: falta el tax_id homologado para un producto gravado.',
+                            $indice + 1
+                        ));
+                    }
+                    if ($percent <= 0) {
+                        throw new \InvalidArgumentException(sprintf(
+                            'No se puede construir tax_totals en la línea %d: un producto gravado requiere tarifa mayor a 0%%.',
+                            $indice + 1
+                        ));
+                    }
+                    $itemTaxes[] = [
+                        'tax_id' => $taxId,
+                        'tax_amount' => $taxAmount,
+                        'taxable_amount' => $lineExt,
+                        'percent' => $percent,
+                    ];
+                } elseif ($tipoImpuesto === \App\Models\Producto::TIPO_IMPUESTO_EXENTO) {
+                    if ($taxId === '') {
+                        throw new \InvalidArgumentException(sprintf(
+                            'No se puede construir tax_totals en la línea %d: falta el tax_id homologado para un producto exento.',
+                            $indice + 1
+                        ));
+                    }
+                    if ($percent !== 0.0 || $taxAmount !== 0.0) {
+                        throw new \InvalidArgumentException(sprintf(
+                            'No se puede construir tax_totals en la línea %d: un producto exento requiere tarifa 0%% e impuesto 0.00.',
+                            $indice + 1
+                        ));
+                    }
+                    $itemTaxes[] = [
+                        'tax_id' => $taxId,
+                        'tax_amount' => 0.0,
+                        'taxable_amount' => $lineExt,
+                        'percent' => 0.0,
+                    ];
+                } elseif ($tipoImpuesto === \App\Models\Producto::TIPO_IMPUESTO_EXCLUIDO) {
+                    if ($percent !== 0.0 || $taxAmount !== 0.0) {
+                        throw new \InvalidArgumentException(sprintf(
+                            'No se puede construir la línea %d: un producto excluido no puede tener tarifa ni monto de IVA mayor a cero.',
+                            $indice + 1
+                        ));
+                    }
+                    $itemTaxes = [];
+                } else {
+                    throw new \InvalidArgumentException(sprintf(
+                        'Clasificación tributaria no reconocida en la línea %d: %s.',
+                        $indice + 1,
+                        $tipoImpuesto
+                    ));
+                }
             } else {
                 $taxAmount = (float)($item['tax_amount'] ?? 0);
                 $percent = (float)($item['percent'] ?? 0);
                 if ($taxAmount > 0 || $percent > 0) {
-                    $taxId = trim((string)($item['tax_id'] ?? ''));
+                    $taxId = trim((string)($item['tax_id'] ?? $item['codigo_impuesto'] ?? '1'));
                     if ($taxId === '') {
                         throw new \InvalidArgumentException(
                             'No se puede construir tax_totals: falta el tax_id confirmado para una línea con impuesto.'
@@ -113,8 +174,10 @@ class MatiasInvoiceMapper
                 throw new \InvalidArgumentException('lines allowance_charges debe ser un arreglo.');
             }
 
+            $formattedQty = self::formatQuantity($cant);
+
             $mappedLine = [
-                'invoiced_quantity' => (string)number_format($cant, 2, '.', ''),
+                'invoiced_quantity' => $formattedQty,
                 'quantity_units_id' => (string)($item['quantity_units_id'] ?? '1093'),
                 'line_extension_amount' => (string)number_format($lineExt, 2, '.', ''),
                 'free_of_charge_indicator' => (bool)($item['free_of_charge_indicator'] ?? false),
@@ -123,7 +186,7 @@ class MatiasInvoiceMapper
                 'type_item_identifications_id' => (string)($item['type_item_identifications_id'] ?? '4'),
                 'reference_price_id' => (string)($item['reference_price_id'] ?? '1'),
                 'price_amount' => (string)number_format($precio, 2, '.', ''),
-                'base_quantity' => (string)number_format($cant, 2, '.', ''),
+                'base_quantity' => $formattedQty,
                 'um' => (string)($item['um'] ?? 'M'),
                 'tax_totals' => $itemTaxes,
             ];
@@ -139,12 +202,16 @@ class MatiasInvoiceMapper
             $lines
         )), 2);
 
+        $lineTaxableTotal = self::calculateTotalTaxableBaseFromLines($lines);
+
         // Totales Monetarios Legales
         if (isset($totales['legal_monetary_totals']) && is_array($totales['legal_monetary_totals'])) {
             $payload['legal_monetary_totals'] = $totales['legal_monetary_totals'];
         } else {
             $lineExtTot = $lineExtensionTotal;
-            $taxExcl = $lineExtensionTotal;
+            $taxExcl = isset($totales['tax_exclusive_amount']) && is_numeric($totales['tax_exclusive_amount'])
+                ? (float) $totales['tax_exclusive_amount']
+                : $lineTaxableTotal;
             $taxIncl = (float)($totales['tax_inclusive_amount'] ?? $totales['total_pagar'] ?? $lineExtTot);
             $payable = (float)($totales['payable_amount'] ?? $taxIncl);
 
@@ -156,17 +223,24 @@ class MatiasInvoiceMapper
             ];
         }
 
-        foreach (['line_extension_amount', 'tax_exclusive_amount'] as $baseField) {
-            $providedBase = $payload['legal_monetary_totals'][$baseField] ?? null;
-            if (!is_numeric($providedBase) || round((float) $providedBase, 2) !== $lineExtensionTotal) {
-                throw new \InvalidArgumentException(sprintf(
-                    'No se puede construir la factura: legal_monetary_totals.%s debe coincidir con la suma de line_extension_amount (%.2f).',
-                    $baseField,
-                    $lineExtensionTotal
-                ));
-            }
-            $payload['legal_monetary_totals'][$baseField] = number_format($lineExtensionTotal, 2, '.', '');
+        $providedLineExt = $payload['legal_monetary_totals']['line_extension_amount'] ?? null;
+        if (!is_numeric($providedLineExt) || round((float) $providedLineExt, 2) !== $lineExtensionTotal) {
+            throw new \InvalidArgumentException(sprintf(
+                'No se puede construir la factura: legal_monetary_totals.line_extension_amount debe coincidir con la suma de line_extension_amount (%.2f).',
+                $lineExtensionTotal
+            ));
         }
+        $payload['legal_monetary_totals']['line_extension_amount'] = number_format($lineExtensionTotal, 2, '.', '');
+
+        $providedTaxExcl = $payload['legal_monetary_totals']['tax_exclusive_amount'] ?? null;
+        if (!is_numeric($providedTaxExcl) || round((float) $providedTaxExcl, 2) !== $lineTaxableTotal) {
+            throw new \InvalidArgumentException(sprintf(
+                'No se puede construir la factura: legal_monetary_totals.tax_exclusive_amount (%.2f) debe coincidir con la suma de bases gravables (taxable_amount) de las líneas (%.2f).',
+                is_numeric($providedTaxExcl) ? (float) $providedTaxExcl : 0.0,
+                $lineTaxableTotal
+            ));
+        }
+        $payload['legal_monetary_totals']['tax_exclusive_amount'] = number_format($lineTaxableTotal, 2, '.', '');
 
         // Los totales de cabecera se agregan de los impuestos ya serializados
         // en las líneas. La base legal se suma una sola vez por línea.
@@ -175,6 +249,42 @@ class MatiasInvoiceMapper
         MatiasInvoicePayloadValidator::validate($payload);
 
         return $payload;
+    }
+
+    /**
+     * Formatea cantidades preservando hasta 3 decimales (ej. galones de combustible)
+     * y mínimo 2 decimales para cantidades enteras o con hasta 2 decimales.
+     */
+    private static function formatQuantity(float $quantity): string
+    {
+        $rounded3 = round($quantity, 3);
+        if (abs($rounded3 - round($rounded3, 2)) > 0.0001) {
+            return number_format($rounded3, 3, '.', '');
+        }
+
+        return number_format($rounded3, 2, '.', '');
+    }
+
+    /**
+     * Calcula la base imponible total (TaxExclusiveAmount) sumando la base única de cada línea que posee tax_totals.
+     * Las líneas excluidas (tax_totals vacío) aportan 0.00 a TaxExclusiveAmount.
+     */
+    private static function calculateTotalTaxableBaseFromLines(array $lines): float
+    {
+        $totalTaxable = 0.0;
+        foreach ($lines as $line) {
+            $uniqueBases = [];
+            foreach ($line['tax_totals'] ?? [] as $tax) {
+                if (isset($tax['taxable_amount']) && is_numeric($tax['taxable_amount'])) {
+                    $baseVal = round((float) $tax['taxable_amount'], 2);
+                    $baseKey = number_format($baseVal, 2, '.', '');
+                    $uniqueBases[$baseKey] = $baseVal;
+                }
+            }
+            $totalTaxable += array_sum($uniqueBases);
+        }
+
+        return round($totalTaxable, 2);
     }
 
     /** Elimina duplicados exactos de tributo dentro de una misma línea. */

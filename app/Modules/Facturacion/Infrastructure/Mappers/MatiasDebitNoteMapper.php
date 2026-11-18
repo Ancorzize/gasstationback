@@ -93,29 +93,68 @@ class MatiasDebitNoteMapper
 
         // Mapeo de Líneas de Producto / Servicio
         $lines = [];
-        foreach ($solicitud->items as $item) {
+        foreach ($solicitud->items as $indice => $item) {
             $cant = (float)($item['invoiced_quantity'] ?? $item['cantidad'] ?? 1);
             $precio = (float)($item['price_amount'] ?? $item['precio_unitario'] ?? 0);
-            $lineExt = (float)($item['line_extension_amount'] ?? ($cant * $precio));
+            $lineExt = round((float)($item['line_extension_amount'] ?? ($cant * $precio)), 2);
+            $tipoImpuesto = isset($item['tipo_impuesto']) && is_string($item['tipo_impuesto'])
+                ? strtolower(trim($item['tipo_impuesto']))
+                : null;
 
             $itemTaxes = [];
-            if (isset($item['tax_totals']) && is_array($item['tax_totals'])) {
+            if (array_key_exists('tax_totals', $item) && is_array($item['tax_totals'])) {
                 $itemTaxes = $item['tax_totals'];
+            } elseif ($tipoImpuesto !== null) {
+                $taxAmount = round((float)($item['tax_amount'] ?? 0), 2);
+                $percent = round((float)($item['percent'] ?? 0), 2);
+                $taxId = trim((string)($item['tax_id'] ?? $item['codigo_impuesto'] ?? '1'));
+
+                if ($tipoImpuesto === \App\Models\Producto::TIPO_IMPUESTO_GRAVADO) {
+                    if ($percent <= 0) {
+                        throw new InvalidArgumentException(sprintf(
+                            'No se puede construir tax_totals en la línea %d de Nota Débito: un producto gravado requiere tarifa mayor a 0%%.',
+                            $indice + 1
+                        ));
+                    }
+                    $itemTaxes[] = [
+                        'tax_id' => $taxId !== '' ? $taxId : '1',
+                        'tax_amount' => number_format($taxAmount, 2, '.', ''),
+                        'taxable_amount' => number_format($lineExt, 2, '.', ''),
+                        'percent' => $percent,
+                    ];
+                } elseif ($tipoImpuesto === \App\Models\Producto::TIPO_IMPUESTO_EXENTO) {
+                    $itemTaxes[] = [
+                        'tax_id' => $taxId !== '' ? $taxId : '1',
+                        'tax_amount' => '0.00',
+                        'taxable_amount' => number_format($lineExt, 2, '.', ''),
+                        'percent' => 0.0,
+                    ];
+                } elseif ($tipoImpuesto === \App\Models\Producto::TIPO_IMPUESTO_EXCLUIDO) {
+                    $itemTaxes = [];
+                } else {
+                    throw new InvalidArgumentException(sprintf(
+                        'Clasificación tributaria no reconocida en la línea %d de Nota Débito: %s.',
+                        $indice + 1,
+                        $tipoImpuesto
+                    ));
+                }
             } else {
-                $taxAmount = (float)($item['tax_amount'] ?? 0);
-                $percent = (float)($item['percent'] ?? 0);
+                $taxAmount = round((float)($item['tax_amount'] ?? 0), 2);
+                $percent = round((float)($item['percent'] ?? 0), 2);
                 if ($taxAmount > 0 || $percent > 0) {
                     $itemTaxes[] = [
-                        'tax_id' => (string)($item['tax_id'] ?? '1'),
-                        'tax_amount' => $taxAmount,
-                        'taxable_amount' => $lineExt,
+                        'tax_id' => (string)($item['tax_id'] ?? $item['codigo_impuesto'] ?? '1'),
+                        'tax_amount' => number_format($taxAmount, 2, '.', ''),
+                        'taxable_amount' => number_format($lineExt, 2, '.', ''),
                         'percent' => $percent,
                     ];
                 }
             }
 
+            $formattedQty = self::formatQuantity($cant);
+
             $lineData = [
-                'invoiced_quantity' => (string)number_format($cant, 2, '.', ''),
+                'invoiced_quantity' => $formattedQty,
                 'quantity_units_id' => (string)($item['quantity_units_id'] ?? '1093'),
                 'line_extension_amount' => (string)number_format($lineExt, 2, '.', ''),
                 'free_of_charge_indicator' => (bool)($item['free_of_charge_indicator'] ?? false),
@@ -124,7 +163,7 @@ class MatiasDebitNoteMapper
                 'type_item_identifications_id' => (string)($item['type_item_identifications_id'] ?? '4'),
                 'reference_price_id' => (string)($item['reference_price_id'] ?? '1'),
                 'price_amount' => (string)number_format($precio, 2, '.', ''),
-                'base_quantity' => (string)number_format($cant, 2, '.', ''),
+                'base_quantity' => $formattedQty,
                 'um' => (string)($item['um'] ?? 'M'),
                 'tax_totals' => $itemTaxes,
             ];
@@ -133,12 +172,20 @@ class MatiasDebitNoteMapper
         }
         $payload['lines'] = $lines;
 
+        $lineExtensionTotal = round(array_sum(array_map(
+            static fn (array $line): float => (float) $line['line_extension_amount'],
+            $lines
+        )), 2);
+        $lineTaxableTotal = self::calculateTotalTaxableBaseFromLines($lines);
+
         // Totales Monetarios Legales
         if (isset($totales['legal_monetary_totals']) && is_array($totales['legal_monetary_totals'])) {
             $payload['legal_monetary_totals'] = $totales['legal_monetary_totals'];
         } else {
-            $lineExtTot = (float)($totales['line_extension_amount'] ?? $totales['subtotal'] ?? 0);
-            $taxExcl = (float)($totales['tax_exclusive_amount'] ?? $lineExtTot);
+            $lineExtTot = (float)($totales['line_extension_amount'] ?? $totales['subtotal'] ?? $lineExtensionTotal);
+            $taxExcl = isset($totales['tax_exclusive_amount']) && is_numeric($totales['tax_exclusive_amount'])
+                ? (float) $totales['tax_exclusive_amount']
+                : $lineTaxableTotal;
             $taxIncl = (float)($totales['tax_inclusive_amount'] ?? $totales['total_pagar'] ?? $lineExtTot);
             $payable = (float)($totales['payable_amount'] ?? $taxIncl);
 
@@ -153,10 +200,70 @@ class MatiasDebitNoteMapper
         // Totales de Impuestos Generales
         if (isset($totales['tax_totals']) && is_array($totales['tax_totals'])) {
             $payload['tax_totals'] = $totales['tax_totals'];
+        } elseif (isset($meta['tax_totals']) && is_array($meta['tax_totals'])) {
+            $payload['tax_totals'] = $meta['tax_totals'];
         } else {
-            $payload['tax_totals'] = $meta['tax_totals'] ?? [];
+            $payload['tax_totals'] = self::aggregateHeaderTaxTotals($lines);
         }
 
+        \App\Modules\Facturacion\Infrastructure\Validators\MatiasInvoicePayloadValidator::validate($payload);
+
         return $payload;
+    }
+
+    private static function formatQuantity(float $quantity): string
+    {
+        $rounded3 = round($quantity, 3);
+        if (abs($rounded3 - round($rounded3, 2)) > 0.0001) {
+            return number_format($rounded3, 3, '.', '');
+        }
+
+        return number_format($rounded3, 2, '.', '');
+    }
+
+    private static function calculateTotalTaxableBaseFromLines(array $lines): float
+    {
+        $totalTaxable = 0.0;
+        foreach ($lines as $line) {
+            $uniqueBases = [];
+            foreach ($line['tax_totals'] ?? [] as $tax) {
+                if (isset($tax['taxable_amount']) && is_numeric($tax['taxable_amount'])) {
+                    $baseVal = round((float) $tax['taxable_amount'], 2);
+                    $baseKey = number_format($baseVal, 2, '.', '');
+                    $uniqueBases[$baseKey] = $baseVal;
+                }
+            }
+            $totalTaxable += array_sum($uniqueBases);
+        }
+
+        return round($totalTaxable, 2);
+    }
+
+    private static function aggregateHeaderTaxTotals(array $lines): array
+    {
+        $totals = [];
+        foreach ($lines as $line) {
+            foreach ($line['tax_totals'] ?? [] as $tax) {
+                $taxId = (string) ($tax['tax_id'] ?? '1');
+                $percent = (float) ($tax['percent'] ?? 0);
+                $key = $taxId . '|' . number_format($percent, 4, '.', '');
+                $totals[$key] ??= [
+                    'tax_id' => $taxId,
+                    'taxable_amount' => 0.0,
+                    'percent' => $percent,
+                    'tax_amount' => 0.0,
+                ];
+                $totals[$key]['taxable_amount'] += round((float) ($tax['taxable_amount'] ?? 0), 2);
+                $totals[$key]['tax_amount'] += round((float) ($tax['tax_amount'] ?? 0), 2);
+            }
+        }
+
+        foreach ($totals as &$total) {
+            $total['taxable_amount'] = number_format(round($total['taxable_amount'], 2), 2, '.', '');
+            $total['tax_amount'] = number_format(round($total['tax_amount'], 2), 2, '.', '');
+        }
+        unset($total);
+
+        return array_values($totals);
     }
 }

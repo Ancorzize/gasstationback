@@ -27,14 +27,34 @@ class DocumentoElectronicoService
 
     public function actualizarDesdeRespuesta(int $documentoId, RespuestaFacturacionDTO $respuesta): DocumentoElectronico
     {
+        $doc = $this->repository->findById($documentoId);
+        $datosTecnicosExistentes = is_array($doc?->datos_tecnicos) ? $doc->datos_tecnicos : [];
+        $datosTecnicosActualizados = !empty($respuesta->datosTecnicos)
+            ? array_merge($datosTecnicosExistentes, [
+                'respuesta_matias' => $respuesta->datosTecnicos,
+            ])
+            : $datosTecnicosExistentes;
+
+        $tieneCufe = !empty($respuesta->cufe) && trim((string) $respuesta->cufe) !== '';
+
+        if ($respuesta->exitoso && $tieneCufe) {
+            $estadoFinal = ($respuesta->estado && $respuesta->estado !== 'pendiente') ? $respuesta->estado : 'emitido';
+        } elseif ($respuesta->exitoso && !$tieneCufe) {
+            $estadoFinal = 'enviado';
+        } elseif (in_array($respuesta->estado, ['enviado', 'pendiente', 'rechazado', 'configuracion_invalida', 'desactivado', 'error_tecnico'], true)) {
+            $estadoFinal = $respuesta->estado === 'emitido' ? 'enviado' : $respuesta->estado;
+        } else {
+            $estadoFinal = 'rechazado';
+        }
+
         $dto = new ActualizarDocumentoElectronicoDTO(
-            estado: $respuesta->exitoso ? 'emitido' : 'rechazado',
+            estado: $estadoFinal,
             identificadorExterno: $respuesta->identificadorExterno,
-            cufe: $respuesta->cufe,
+            cufe: $tieneCufe ? trim((string) $respuesta->cufe) : null,
             numeroDocumento: $respuesta->numeroFactura,
             mensaje: $respuesta->mensaje,
             errores: $respuesta->errores,
-            datosTecnicos: $respuesta->datosTecnicos
+            datosTecnicos: $datosTecnicosActualizados
         );
 
         return $this->repository->update($documentoId, $dto);

@@ -18,6 +18,51 @@ class ResolucionFacturacionService
     ) {}
 
     /**
+     * Reservar e incrementar atómicamente el siguiente consecutivo de Factura Electrónica de Venta.
+     * Garantiza continuidad sin reiniciar numeración existente.
+     */
+    public function reservarConsecutivoFactura(?int $empresaId = null): array
+    {
+        return DB::transaction(function () use ($empresaId) {
+            $resolucion = $this->repository->findAndLockByTipoDocumento('factura', $empresaId);
+
+            if (!$resolucion) {
+                $resolucion = $this->repository->findAndLockByTipoDocumento('factura_electronica', $empresaId);
+            }
+
+            if (!$resolucion) {
+                throw new HttpException(422, 'No existe una resolución de facturación electrónica activa para emitir facturas de venta.');
+            }
+
+            if (empty($resolucion->numero_resolucion)) {
+                throw new HttpException(422, 'La resolución de facturación activa no tiene número de resolución configurado.');
+            }
+
+            $consecutivoReservado = (int) $resolucion->consecutivo_actual;
+
+            if ($consecutivoReservado < (int) $resolucion->rango_desde) {
+                $consecutivoReservado = (int) $resolucion->rango_desde;
+            }
+
+            if ($resolucion->rango_hasta !== null && (int) $resolucion->rango_hasta > 0 && $consecutivoReservado > (int) $resolucion->rango_hasta) {
+                throw new HttpException(422, 'El rango numérico de la resolución para Factura Electrónica se encuentra agotado.');
+            }
+
+            $this->repository->update($resolucion, [
+                'consecutivo_actual' => $consecutivoReservado + 1,
+            ]);
+
+            return [
+                'resolucion_id' => $resolucion->id,
+                'prefijo' => $resolucion->prefijo ?: 'SETP',
+                'numero_resolucion' => $resolucion->numero_resolucion,
+                'consecutivo' => $consecutivoReservado,
+                'folio' => (string) $consecutivoReservado,
+            ];
+        });
+    }
+
+    /**
      * Reservar e incrementar atómicamente el siguiente consecutivo de Documento Soporte Electrónico.
      */
     public function reservarConsecutivoDocumentoSoporte(?int $empresaId = null): array

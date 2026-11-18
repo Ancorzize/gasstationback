@@ -54,7 +54,7 @@ class UpdateVentaRequest extends FormRequest
             ],
             'detalles.*.iva' => [
                 'nullable',
-                'integer',
+                'numeric',
                 'gte:0'
             ],
             'detalles.*.iva_valor' => [

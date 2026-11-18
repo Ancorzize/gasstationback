@@ -15,6 +15,9 @@ class DetalleVenta extends Model
         'cantidad',
         'precio_unitario',
         'descuento',
+        'tipo_impuesto',
+        'porcentaje_iva',
+        'codigo_impuesto',
         'iva',
         'iva_valor',
         'soldicom',
@@ -25,10 +28,11 @@ class DetalleVenta extends Model
     ];
 
     protected $casts = [
-        'cantidad' => 'decimal:2',
+        'cantidad' => 'decimal:3',
         'precio_unitario' => 'decimal:2',
         'descuento' => 'decimal:2',
-        'iva' => 'integer',
+        'porcentaje_iva' => 'decimal:2',
+        'iva' => 'decimal:2',
         'iva_valor' => 'decimal:2',
         'soldicom' => 'decimal:2',
         'sobre_tasa' => 'decimal:2',

@@ -106,7 +106,7 @@ class DocumentoElectronicoRepository implements DocumentoElectronicoRepositoryIn
     public function marcarComoEnviando(int $documentoId): bool
     {
         $affected = DocumentoElectronico::where('id', $documentoId)
-            ->whereIn('estado', ['pendiente', 'rechazado'])
+            ->whereIn('estado', ['pendiente', 'rechazado', 'configuracion_invalida', 'error_tecnico'])
             ->update(['estado' => 'enviando']);
 
         return $affected > 0;

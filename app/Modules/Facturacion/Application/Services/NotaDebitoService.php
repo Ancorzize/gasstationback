@@ -30,8 +30,11 @@ class NotaDebitoService
         protected FacturacionManager $facturacionManager,
         protected ResolucionFacturacionService $resolucionService,
         protected DocumentoElectronicoService $documentoElectronicoService,
-        protected VentaService $ventaService
-    ) {}
+        protected VentaService $ventaService,
+        protected ?CatalogosFacturacionService $catalogosService = null
+    ) {
+        $this->catalogosService = $catalogosService ?? app(CatalogosFacturacionService::class);
+    }
 
     /**
      * Orquestar la preparación y persistencia de una Nota Débito Electrónica para una Venta.
@@ -146,6 +149,9 @@ class NotaDebitoService
             ];
 
             // Líneas de items
+            $venta->loadMissing(['detalles.producto.unidadMedida']);
+            $proveedorActivo = $config->proveedor_activo ?? 'matias';
+
             $itemsData = [];
             $tipoAjuste = $datosNotaDebito['tipo_ajuste'] ?? null;
             $itemsParam = $datosNotaDebito['items'] ?? [];
@@ -158,44 +164,34 @@ class NotaDebitoService
                     $detId = (int) ($it['detalle_venta_id'] ?? 0);
                     $cantAdicional = (float) ($it['cantidad_adicional'] ?? $it['cantidad'] ?? 0);
                     if ($detId > 0 && $cantAdicional > 0) {
-                        $solicitadosMap[$detId] = $cantAdicional;
+                        $solicitadosMap[$detId] = round($cantAdicional, 3);
                     }
                 }
 
                 $subtotalTotal = 0.0;
+                $baseGravableTotal = 0.0;
                 $impuestosTotal = 0.0;
 
-                foreach ($venta->detalles as $detalle) {
+                foreach ($venta->detalles as $indice => $detalle) {
                     if (!isset($solicitadosMap[$detalle->id])) {
                         continue;
                     }
 
                     $cantAdicional = $solicitadosMap[$detalle->id];
-                    $precio = (float) $detalle->precio_unitario;
-                    $subtotalLine = round($cantAdicional * $precio, 2);
-                    $ivaPorcentaje = (float) ($detalle->iva ?? 0);
-                    $ivaValorLine = round($subtotalLine * ($ivaPorcentaje / 100), 2);
-                    $nombreProd = $detalle->producto?->nombre ?? 'Producto';
-                    $codigoProd = $detalle->producto?->codigo ?? 'PROD-' . $detalle->producto_id;
+                    $lineaFiscal = $this->construirLineaFiscalDesdeDetalle(
+                        $detalle,
+                        $cantAdicional,
+                        round((float) $detalle->cantidad, 3),
+                        $proveedorActivo,
+                        $indice + 1,
+                        false
+                    );
 
-                    $subtotalTotal += $subtotalLine;
-                    $impuestosTotal += $ivaValorLine;
+                    $subtotalTotal = round($subtotalTotal + $lineaFiscal['line_extension_amount'], 2);
+                    $baseGravableTotal = round($baseGravableTotal + $lineaFiscal['base_gravable'], 2);
+                    $impuestosTotal = round($impuestosTotal + $lineaFiscal['tax_amount'], 2);
 
-                    $itemsData[] = [
-                        'code' => (string) $codigoProd,
-                        'codigo' => (string) $codigoProd,
-                        'description' => (string) $nombreProd,
-                        'nombre' => (string) $nombreProd,
-                        'invoiced_quantity' => $cantAdicional,
-                        'cantidad' => $cantAdicional,
-                        'price_amount' => $precio,
-                        'precio_unitario' => $precio,
-                        'line_extension_amount' => $subtotalLine,
-                        'tax_amount' => $ivaValorLine,
-                        'percent' => $ivaPorcentaje,
-                        'quantity_units_id' => '1093',
-                        'um' => 'M',
-                    ];
+                    $itemsData[] = $lineaFiscal['item'];
                 }
 
                 if (count($itemsData) === 0) {
@@ -210,7 +206,7 @@ class NotaDebitoService
                     'descuento' => 0.0,
                     'total_pagar' => (float) $totalPagar,
                     'line_extension_amount' => (float) $subtotalTotal,
-                    'tax_exclusive_amount' => (float) $subtotalTotal,
+                    'tax_exclusive_amount' => (float) $baseGravableTotal,
                     'tax_inclusive_amount' => (float) $totalPagar,
                     'payable_amount' => (float) $totalPagar,
                 ];
@@ -228,8 +224,12 @@ class NotaDebitoService
                     'price_amount' => $subtotal,
                     'precio_unitario' => $subtotal,
                     'line_extension_amount' => $subtotal,
+                    'tipo_impuesto' => \App\Models\Producto::TIPO_IMPUESTO_EXCLUIDO,
                     'tax_amount' => 0.0,
                     'percent' => 0.0,
+                    'tax_id' => null,
+                    'codigo_impuesto' => null,
+                    'tax_totals' => [],
                     'quantity_units_id' => '1093',
                     'um' => 'M',
                 ];
@@ -240,42 +240,32 @@ class NotaDebitoService
                     'descuento' => 0.0,
                     'total_pagar' => $subtotal,
                     'line_extension_amount' => $subtotal,
-                    'tax_exclusive_amount' => $subtotal,
+                    'tax_exclusive_amount' => 0.0,
                     'tax_inclusive_amount' => $subtotal,
                     'payable_amount' => $subtotal,
                 ];
             } else {
                 // Caso por defecto: Recargo sobre la totalidad de los ítems originales
                 $subtotalTotal = 0.0;
+                $baseGravableTotal = 0.0;
                 $impuestosTotal = 0.0;
 
-                foreach ($venta->detalles as $detalle) {
-                    $cant = (float) $detalle->cantidad;
-                    $precio = (float) $detalle->precio_unitario;
-                    $subtotal = (float) $detalle->subtotal;
-                    $ivaValor = (float) ($detalle->iva_valor ?? 0);
-                    $ivaPorcentaje = (float) ($detalle->iva ?? 0);
-                    $nombreProd = $detalle->producto?->nombre ?? 'Producto';
-                    $codigoProd = $detalle->producto?->codigo ?? 'PROD-' . $detalle->producto_id;
+                foreach ($venta->detalles as $indice => $detalle) {
+                    $cant = round((float) $detalle->cantidad, 3);
+                    $lineaFiscal = $this->construirLineaFiscalDesdeDetalle(
+                        $detalle,
+                        $cant,
+                        $cant,
+                        $proveedorActivo,
+                        $indice + 1,
+                        true
+                    );
 
-                    $subtotalTotal += $subtotal;
-                    $impuestosTotal += $ivaValor;
+                    $subtotalTotal = round($subtotalTotal + $lineaFiscal['line_extension_amount'], 2);
+                    $baseGravableTotal = round($baseGravableTotal + $lineaFiscal['base_gravable'], 2);
+                    $impuestosTotal = round($impuestosTotal + $lineaFiscal['tax_amount'], 2);
 
-                    $itemsData[] = [
-                        'code' => (string) $codigoProd,
-                        'codigo' => (string) $codigoProd,
-                        'description' => (string) $nombreProd,
-                        'nombre' => (string) $nombreProd,
-                        'invoiced_quantity' => $cant,
-                        'cantidad' => $cant,
-                        'price_amount' => $precio,
-                        'precio_unitario' => $precio,
-                        'line_extension_amount' => $subtotal,
-                        'tax_amount' => $ivaValor,
-                        'percent' => $ivaPorcentaje,
-                        'quantity_units_id' => '1093',
-                        'um' => 'M',
-                    ];
+                    $itemsData[] = $lineaFiscal['item'];
                 }
 
                 $totalPagar = round($subtotalTotal + $impuestosTotal, 2);
@@ -286,7 +276,7 @@ class NotaDebitoService
                     'descuento' => 0.0,
                     'total_pagar' => (float) $totalPagar,
                     'line_extension_amount' => (float) $subtotalTotal,
-                    'tax_exclusive_amount' => (float) $subtotalTotal,
+                    'tax_exclusive_amount' => (float) $baseGravableTotal,
                     'tax_inclusive_amount' => (float) $totalPagar,
                     'payable_amount' => (float) $totalPagar,
                 ];
@@ -465,5 +455,144 @@ class NotaDebitoService
     public function reintentarNotaDebitoRechazada(int $documentoElectronicoId): RespuestaNotaDebitoDTO
     {
         return $this->transmitirNotaDebitoPendiente($documentoElectronicoId);
+    }
+
+    /**
+     * Construye una línea fiscal para Nota Débito respetando el snapshot histórico de DetalleVenta.
+     */
+    protected function construirLineaFiscalDesdeDetalle(
+        \App\Models\DetalleVenta $detalle,
+        float $cantidadDebitar,
+        float $cantidadOriginal,
+        string $proveedorActivo,
+        int $numeroLinea,
+        bool $usarSubtotalOriginal = false
+    ): array {
+        $soldicom = round((float) ($detalle->soldicom ?? 0), 2);
+        $sobreTasa = round((float) ($detalle->sobre_tasa ?? 0), 2);
+        if ($soldicom > 0 || $sobreTasa > 0) {
+            throw new HttpException(
+                422,
+                "No se puede preparar la línea {$numeroLinea} (producto {$detalle->producto_id}): contiene Sordicom o sobretasa sin homologación MATÍAS confirmada."
+            );
+        }
+
+        $precio = round((float) $detalle->precio_unitario, 2);
+        $esTotalLinea = $usarSubtotalOriginal && abs($cantidadDebitar - $cantidadOriginal) < 0.0001 && round((float) $detalle->subtotal, 2) > 0;
+        $subtotalLine = $esTotalLinea
+            ? round((float) $detalle->subtotal, 2)
+            : round($cantidadDebitar * $precio, 2);
+
+        $ivaPorcentaje = round((float) ($detalle->porcentaje_iva ?? $detalle->iva ?? 0), 2);
+        $tipoImpuesto = ($detalle->tipo_impuesto !== null && trim((string) $detalle->tipo_impuesto) !== '')
+            ? strtolower(trim((string) $detalle->tipo_impuesto))
+            : null;
+
+        if ($tipoImpuesto === null && $ivaPorcentaje > 0) {
+            $tipoImpuesto = \App\Models\Producto::TIPO_IMPUESTO_GRAVADO;
+        }
+
+        if ($tipoImpuesto === null) {
+            throw new HttpException(
+                422,
+                "No se puede preparar la Nota Débito en la línea {$numeroLinea} (producto {$detalle->producto_id}): el detalle de venta no tiene clasificación tributaria histórica (gravado, exento o excluido)."
+            );
+        }
+
+        $codigoImpuesto = trim((string) ($detalle->codigo_impuesto ?? ''));
+        $taxTotals = [];
+        $baseGravable = 0.0;
+        $ivaValorLine = 0.0;
+        $taxId = null;
+
+        if ($tipoImpuesto === \App\Models\Producto::TIPO_IMPUESTO_GRAVADO) {
+            if ($ivaPorcentaje <= 0) {
+                throw new HttpException(
+                    422,
+                    "La línea {$numeroLinea} (producto {$detalle->producto_id}) figura como gravada pero su tarifa de IVA ({$ivaPorcentaje}%) no es válida."
+                );
+            }
+
+            $ivaOriginal = round((float) ($detalle->iva_valor ?? 0), 2);
+            $ivaValorLine = $esTotalLinea
+                ? $ivaOriginal
+                : round($subtotalLine * ($ivaPorcentaje / 100.0), 2);
+
+            $taxId = $codigoImpuesto !== ''
+                ? $codigoImpuesto
+                : ($this->catalogosService?->resolverCodigoImpuestoProducto(\App\Models\Producto::TIPO_IMPUESTO_GRAVADO, null, $proveedorActivo) ?? '1');
+
+            $taxTotals[] = [
+                'tax_id' => $taxId,
+                'tax_amount' => number_format($ivaValorLine, 2, '.', ''),
+                'taxable_amount' => number_format($subtotalLine, 2, '.', ''),
+                'percent' => $ivaPorcentaje,
+            ];
+            $baseGravable = $subtotalLine;
+        } elseif ($tipoImpuesto === \App\Models\Producto::TIPO_IMPUESTO_EXENTO) {
+            $ivaPorcentaje = 0.0;
+            $ivaValorLine = 0.0;
+            $taxId = $codigoImpuesto !== ''
+                ? $codigoImpuesto
+                : ($this->catalogosService?->resolverCodigoImpuestoProducto(\App\Models\Producto::TIPO_IMPUESTO_EXENTO, null, $proveedorActivo) ?? '1');
+
+            $taxTotals[] = [
+                'tax_id' => $taxId,
+                'tax_amount' => '0.00',
+                'taxable_amount' => number_format($subtotalLine, 2, '.', ''),
+                'percent' => 0.0,
+            ];
+            $baseGravable = $subtotalLine;
+        } elseif ($tipoImpuesto === \App\Models\Producto::TIPO_IMPUESTO_EXCLUIDO) {
+            $ivaPorcentaje = 0.0;
+            $ivaValorLine = 0.0;
+            $taxId = null;
+            $taxTotals = [];
+            $baseGravable = 0.0;
+        } else {
+            throw new HttpException(
+                422,
+                "Clasificación tributaria histórica '{$tipoImpuesto}' no reconocida en la línea {$numeroLinea}."
+            );
+        }
+
+        $unidadMedida = $detalle->producto?->unidadMedida;
+        if ($unidadMedida && $this->catalogosService) {
+            try {
+                $unidadHomologada = $this->catalogosService->resolverUnidadMedidaProducto($unidadMedida, $proveedorActivo);
+            } catch (\InvalidArgumentException $e) {
+                throw new HttpException(422, $e->getMessage());
+            }
+        } else {
+            $unidadHomologada = ['quantity_units_id' => '1093', 'um' => 'M'];
+        }
+
+        $nombreProd = $detalle->producto?->nombre ?? 'Producto';
+        $codigoProd = $detalle->producto?->codigo ?? 'PROD-' . $detalle->producto_id;
+
+        return [
+            'line_extension_amount' => $subtotalLine,
+            'base_gravable' => $baseGravable,
+            'tax_amount' => $ivaValorLine,
+            'item' => [
+                'code' => (string) $codigoProd,
+                'codigo' => (string) $codigoProd,
+                'description' => (string) $nombreProd,
+                'nombre' => (string) $nombreProd,
+                'invoiced_quantity' => $cantidadDebitar,
+                'cantidad' => $cantidadDebitar,
+                'price_amount' => $precio,
+                'precio_unitario' => $precio,
+                'line_extension_amount' => $subtotalLine,
+                'tipo_impuesto' => $tipoImpuesto,
+                'tax_amount' => $ivaValorLine,
+                'percent' => $ivaPorcentaje,
+                'tax_id' => $taxId,
+                'codigo_impuesto' => $taxId,
+                'tax_totals' => $taxTotals,
+                'quantity_units_id' => $unidadHomologada['quantity_units_id'],
+                'um' => $unidadHomologada['um'],
+            ],
+        ];
     }
 }

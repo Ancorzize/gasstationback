@@ -13,6 +13,9 @@ class CreateProductoDTO
         public int $unidad_medida_id,
         public ?float $precio_compra,
         public float $precio_venta,
+        public string $tipo_impuesto,
+        public float $porcentaje_iva,
+        public ?string $codigo_impuesto,
         public bool $permite_decimal,
         public ?string $codigo_barras,
     ) {}

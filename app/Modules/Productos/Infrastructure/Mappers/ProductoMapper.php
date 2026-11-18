@@ -18,6 +18,11 @@ class ProductoMapper
             unidad_medida_id: (int) $data['unidad_medida_id'],
             precio_compra: isset($data['precio_compra']) ? (float) $data['precio_compra'] : null,
             precio_venta: (float) $data['precio_venta'],
+            tipo_impuesto: strtolower(trim((string) $data['tipo_impuesto'])),
+            porcentaje_iva: round((float) ($data['porcentaje_iva'] ?? 0), 2),
+            codigo_impuesto: isset($data['codigo_impuesto']) && trim((string) $data['codigo_impuesto']) !== ''
+                ? trim((string) $data['codigo_impuesto'])
+                : null,
             permite_decimal: (bool) $data['permite_decimal'],
             codigo_barras: $data['codigo_barras'] ?? null,
         );
@@ -26,7 +31,7 @@ class ProductoMapper
     public static function fromArrayToUpdateDTO(array $data): UpdateProductoDTO
     {
         return new UpdateProductoDTO(
-           codigo: $data['codigo'],
+            codigo: $data['codigo'],
             codigo_barras: $data['codigo_barras'] ?? null,
             nombre: $data['nombre'],
             descripcion: $data['descripcion'] ?? null,
@@ -37,7 +42,12 @@ class ProductoMapper
                 ? (float) $data['precio_compra']
                 : null,
             precio_venta: (float) $data['precio_venta'],
+            tipo_impuesto: strtolower(trim((string) $data['tipo_impuesto'])),
+            porcentaje_iva: round((float) ($data['porcentaje_iva'] ?? 0), 2),
+            codigo_impuesto: isset($data['codigo_impuesto']) && trim((string) $data['codigo_impuesto']) !== ''
+                ? trim((string) $data['codigo_impuesto'])
+                : null,
             permite_decimal: (bool) $data['permite_decimal'],
-                );
+        );
     }
 }
