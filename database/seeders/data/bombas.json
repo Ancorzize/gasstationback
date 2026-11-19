@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "estacion_id": 1,
+        "codigo": "D001",
+        "nombre": "DISPENSADOR PRINCIPAL",
+        "is_active": true,
+        "created_at": "2026-08-07 18:18:51",
+        "updated_at": "2026-08-07 18:18:51"
+    },
+    {
+        "id": 2,
+        "estacion_id": 1,
+        "codigo": "d002",
+        "nombre": "DISPENSADOR AUXILIAR",
+        "is_active": true,
+        "created_at": "2026-08-07 18:19:05",
+        "updated_at": "2026-08-07 18:19:05"
+    }
+]

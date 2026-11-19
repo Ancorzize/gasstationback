@@ -1,0 +1,30 @@
+[
+    {
+        "id": 1,
+        "name": "admin",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 2,
+        "name": "cajero",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 3,
+        "name": "vendedor",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 4,
+        "name": "islero",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    }
+]

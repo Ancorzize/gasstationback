@@ -1,0 +1,137 @@
+[
+    {
+        "id": 1,
+        "departamento_id": 1,
+        "nombre": "Medellín",
+        "codigo": "05001",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 2,
+        "departamento_id": 1,
+        "nombre": "Envigado",
+        "codigo": "05266",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 3,
+        "departamento_id": 2,
+        "nombre": "Bogotá",
+        "codigo": "11001",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 4,
+        "departamento_id": 3,
+        "nombre": "Cali",
+        "codigo": "76001",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 5,
+        "departamento_id": 4,
+        "nombre": "La Plata",
+        "codigo": "41396",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 6,
+        "departamento_id": 4,
+        "nombre": "Neiva",
+        "codigo": "41001",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 7,
+        "departamento_id": 4,
+        "nombre": "Pitalito",
+        "codigo": "41551",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 8,
+        "departamento_id": 4,
+        "nombre": "Garzón",
+        "codigo": "41298",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 9,
+        "departamento_id": 4,
+        "nombre": "San Agustín",
+        "codigo": "41668",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 10,
+        "departamento_id": 4,
+        "nombre": "Campoalegre",
+        "codigo": "41132",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 11,
+        "departamento_id": 4,
+        "nombre": "Gigante",
+        "codigo": "41306",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 12,
+        "departamento_id": 4,
+        "nombre": "Isnos",
+        "codigo": "41359",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 13,
+        "departamento_id": 4,
+        "nombre": "Aipe",
+        "codigo": "41016",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 14,
+        "departamento_id": 4,
+        "nombre": "Rivera",
+        "codigo": "41615",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 15,
+        "departamento_id": 4,
+        "nombre": "Palermo",
+        "codigo": "41524",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    }
+]

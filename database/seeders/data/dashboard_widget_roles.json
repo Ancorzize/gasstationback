@@ -1,0 +1,335 @@
+[
+    {
+        "id": 75,
+        "dashboard_widget_id": 26,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 76,
+        "dashboard_widget_id": 23,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 77,
+        "dashboard_widget_id": 33,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 78,
+        "dashboard_widget_id": 37,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 79,
+        "dashboard_widget_id": 20,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 80,
+        "dashboard_widget_id": 19,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 81,
+        "dashboard_widget_id": 31,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 82,
+        "dashboard_widget_id": 2,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 83,
+        "dashboard_widget_id": 6,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 84,
+        "dashboard_widget_id": 7,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 85,
+        "dashboard_widget_id": 17,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 86,
+        "dashboard_widget_id": 3,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 87,
+        "dashboard_widget_id": 18,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 88,
+        "dashboard_widget_id": 21,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 89,
+        "dashboard_widget_id": 22,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 90,
+        "dashboard_widget_id": 8,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 91,
+        "dashboard_widget_id": 34,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 92,
+        "dashboard_widget_id": 36,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 93,
+        "dashboard_widget_id": 16,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 94,
+        "dashboard_widget_id": 27,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 95,
+        "dashboard_widget_id": 35,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 96,
+        "dashboard_widget_id": 30,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 97,
+        "dashboard_widget_id": 14,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 98,
+        "dashboard_widget_id": 4,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 99,
+        "dashboard_widget_id": 15,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 100,
+        "dashboard_widget_id": 24,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 101,
+        "dashboard_widget_id": 9,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 102,
+        "dashboard_widget_id": 12,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 103,
+        "dashboard_widget_id": 10,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 104,
+        "dashboard_widget_id": 11,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 105,
+        "dashboard_widget_id": 1,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 106,
+        "dashboard_widget_id": 25,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 107,
+        "dashboard_widget_id": 13,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 108,
+        "dashboard_widget_id": 28,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 109,
+        "dashboard_widget_id": 32,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 110,
+        "dashboard_widget_id": 5,
+        "role_id": 1,
+        "orden": 999,
+        "visible": true,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    },
+    {
+        "id": 111,
+        "dashboard_widget_id": 29,
+        "role_id": 1,
+        "orden": 999,
+        "visible": false,
+        "created_at": "2026-08-21 09:51:44",
+        "updated_at": "2026-08-21 09:51:44"
+    }
+]

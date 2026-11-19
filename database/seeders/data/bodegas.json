@@ -1,0 +1,30 @@
+[
+    {
+        "id": 1,
+        "nombre": "BODEGA PRINCIPAL",
+        "codigo": "BOD-001",
+        "descripcion": null,
+        "direccion": null,
+        "telefono": null,
+        "responsable_id": null,
+        "is_principal": true,
+        "is_active": true,
+        "created_at": "2026-08-07 18:24:06",
+        "updated_at": "2026-08-07 18:24:06",
+        "tipo_bodega": "principal"
+    },
+    {
+        "id": 2,
+        "nombre": "INVENTARIO ISLA",
+        "codigo": "BOD-002",
+        "descripcion": null,
+        "direccion": null,
+        "telefono": null,
+        "responsable_id": null,
+        "is_principal": false,
+        "is_active": true,
+        "created_at": "2026-08-07 18:24:19",
+        "updated_at": "2026-08-07 18:24:19",
+        "tipo_bodega": "principal"
+    }
+]

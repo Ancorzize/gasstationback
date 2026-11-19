@@ -1,0 +1,98 @@
+[
+    {
+        "id": 1,
+        "nombre": "Unidad",
+        "abreviatura": "UN",
+        "descripcion": "Unidad individual.",
+        "is_active": true,
+        "deleted_at": null,
+        "created_at": "2026-08-07 22:04:30",
+        "updated_at": "2026-08-07 22:04:30",
+        "codigo_dian": null,
+        "simbolo_dian": null
+    },
+    {
+        "id": 2,
+        "nombre": "Galón",
+        "abreviatura": "GAL",
+        "descripcion": "Unidad de volumen en galones.",
+        "is_active": true,
+        "deleted_at": null,
+        "created_at": "2026-08-07 22:04:30",
+        "updated_at": "2026-08-07 22:04:30",
+        "codigo_dian": null,
+        "simbolo_dian": null
+    },
+    {
+        "id": 3,
+        "nombre": "Litro",
+        "abreviatura": "LT",
+        "descripcion": "Unidad de volumen en litros.",
+        "is_active": true,
+        "deleted_at": null,
+        "created_at": "2026-08-07 22:04:30",
+        "updated_at": "2026-08-07 22:04:30",
+        "codigo_dian": null,
+        "simbolo_dian": null
+    },
+    {
+        "id": 4,
+        "nombre": "Mililitro",
+        "abreviatura": "MLT",
+        "descripcion": "Unidad de volumen en mililitros.",
+        "is_active": true,
+        "deleted_at": null,
+        "created_at": "2026-08-07 22:04:30",
+        "updated_at": "2026-11-18 21:32:58",
+        "codigo_dian": null,
+        "simbolo_dian": null
+    },
+    {
+        "id": 5,
+        "nombre": "Caneca",
+        "abreviatura": "CAN",
+        "descripcion": "Caneca o recipiente de gran capacidad.",
+        "is_active": true,
+        "deleted_at": null,
+        "created_at": "2026-08-07 22:04:30",
+        "updated_at": "2026-08-07 22:04:30",
+        "codigo_dian": null,
+        "simbolo_dian": null
+    },
+    {
+        "id": 6,
+        "nombre": "Tambor",
+        "abreviatura": "TAM",
+        "descripcion": "Tambor o barril de almacenamiento.",
+        "is_active": true,
+        "deleted_at": null,
+        "created_at": "2026-08-07 22:04:30",
+        "updated_at": "2026-08-07 22:04:30",
+        "codigo_dian": null,
+        "simbolo_dian": null
+    },
+    {
+        "id": 7,
+        "nombre": "Caja",
+        "abreviatura": "CJ",
+        "descripcion": "Caja o empaque comercial.",
+        "is_active": true,
+        "deleted_at": null,
+        "created_at": "2026-08-07 22:04:30",
+        "updated_at": "2026-08-07 22:04:30",
+        "codigo_dian": null,
+        "simbolo_dian": null
+    },
+    {
+        "id": 8,
+        "nombre": "Kit",
+        "abreviatura": "KIT",
+        "descripcion": "Conjunto de productos vendidos como un solo artículo.",
+        "is_active": true,
+        "deleted_at": null,
+        "created_at": "2026-08-07 22:04:30",
+        "updated_at": "2026-08-07 22:04:30",
+        "codigo_dian": null,
+        "simbolo_dian": null
+    }
+]

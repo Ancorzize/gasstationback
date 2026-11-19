@@ -2,157 +2,75 @@
 
 namespace Database\Seeders;
 
-use App\Models\Pais;
-use App\Models\Ciudad;
-use App\Models\Departamento;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class UbicacionSeeder extends Seeder
 {
     public function run(): void
     {
-        $colombia = Pais::firstOrCreate(
-            ['nombre' => 'Colombia'],
-            [
-                'codigo_iso' => 'CO',
-                'is_active' => true,
-            ]
-        );
+        $pathPaises = database_path('seeders/data/paises.json');
+        $pathDeptos = database_path('seeders/data/departamentos.json');
+        $pathCiudades = database_path('seeders/data/ciudades.json');
 
-        $antioquia = Departamento::firstOrCreate(
-            [
-                'pais_id' => $colombia->id,
-                'nombre' => 'Antioquia',
-            ],
-            [
-                'codigo' => '05',
-                'is_active' => true,
-            ]
-        );
+        if (file_exists($pathPaises)) {
+            $paises = json_decode(file_get_contents($pathPaises), true);
+            foreach ($paises as $item) {
+                DB::table('paises')->updateOrInsert(
+                    ['id' => $item['id']],
+                    [
+                        'nombre' => $item['nombre'],
+                        'codigo_iso' => $item['codigo_iso'],
+                        'is_active' => (bool) $item['is_active'],
+                        'created_at' => $item['created_at'] ?? now(),
+                        'updated_at' => $item['updated_at'] ?? now(),
+                    ]
+                );
+            }
+            $this->syncSequence('paises');
+        }
 
-        $cundinamarca = Departamento::firstOrCreate(
-            [
-                'pais_id' => $colombia->id,
-                'nombre' => 'Cundinamarca',
-            ],
-            [
-                'codigo' => '25',
-                'is_active' => true,
-            ]
-        );
+        if (file_exists($pathDeptos)) {
+            $deptos = json_decode(file_get_contents($pathDeptos), true);
+            foreach ($deptos as $item) {
+                DB::table('departamentos')->updateOrInsert(
+                    ['id' => $item['id']],
+                    [
+                        'pais_id' => $item['pais_id'],
+                        'nombre' => $item['nombre'],
+                        'codigo' => $item['codigo'],
+                        'is_active' => (bool) $item['is_active'],
+                        'created_at' => $item['created_at'] ?? now(),
+                        'updated_at' => $item['updated_at'] ?? now(),
+                    ]
+                );
+            }
+            $this->syncSequence('departamentos');
+        }
 
-        $valle = Departamento::firstOrCreate(
-            [
-                'pais_id' => $colombia->id,
-                'nombre' => 'Valle del Cauca',
-            ],
-            [
-                'codigo' => '76',
-                'is_active' => true,
-            ]
-        );
+        if (file_exists($pathCiudades)) {
+            $ciudades = json_decode(file_get_contents($pathCiudades), true);
+            foreach ($ciudades as $item) {
+                DB::table('ciudades')->updateOrInsert(
+                    ['id' => $item['id']],
+                    [
+                        'departamento_id' => $item['departamento_id'],
+                        'nombre' => $item['nombre'],
+                        'codigo' => $item['codigo'],
+                        'is_active' => (bool) $item['is_active'],
+                        'created_at' => $item['created_at'] ?? now(),
+                        'updated_at' => $item['updated_at'] ?? now(),
+                    ]
+                );
+            }
+            $this->syncSequence('ciudades');
+        }
+    }
 
-        $huila = Departamento::firstOrCreate(
-            [
-                'pais_id' => $colombia->id,
-                'nombre' => 'Huila',
-            ],
-            [
-                'codigo' => '41',
-                'is_active' => true,
-            ]
-        );
-
-        $ciudades = [
-            [
-                'departamento_id' => $antioquia->id,
-                'nombre' => 'Medellín',
-                'codigo' => '05001',
-            ],
-            [
-                'departamento_id' => $antioquia->id,
-                'nombre' => 'Envigado',
-                'codigo' => '05266',
-            ],
-            [
-                'departamento_id' => $cundinamarca->id,
-                'nombre' => 'Bogotá',
-                'codigo' => '11001',
-            ],
-            [
-                'departamento_id' => $valle->id,
-                'nombre' => 'Cali',
-                'codigo' => '76001',
-            ],
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'La Plata',
-                'codigo' => '41396',
-            ],
-            
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'Neiva',
-                'codigo' => '41001',
-            ],
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'Pitalito',
-                'codigo' => '41551',
-            ],
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'Garzón',
-                'codigo' => '41298',
-            ],
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'San Agustín',
-                'codigo' => '41668',
-            ],
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'Campoalegre',
-                'codigo' => '41132',
-            ],
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'Gigante',
-                'codigo' => '41306',
-            ],
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'Isnos',
-                'codigo' => '41359',
-            ],
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'Aipe',
-                'codigo' => '41016',
-            ],
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'Rivera',
-                'codigo' => '41615',
-            ],
-            [
-                'departamento_id' => $huila->id,
-                'nombre' => 'Palermo',
-                'codigo' => '41524',
-            ],
-        ];
-
-        foreach ($ciudades as $ciudad) {
-            Ciudad::firstOrCreate(
-                [
-                    'departamento_id' => $ciudad['departamento_id'],
-                    'nombre' => $ciudad['nombre'],
-                ],
-                [
-                    'codigo' => $ciudad['codigo'],
-                    'is_active' => true,
-                ]
-            );
+    protected function syncSequence(string $table): void
+    {
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("SELECT setval(pg_get_serial_sequence('{$table}', 'id'), COALESCE((SELECT MAX(id) FROM {$table}), 1));");
         }
     }
 }

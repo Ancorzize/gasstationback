@@ -1,0 +1,74 @@
+[
+    {
+        "id": 1,
+        "nombre": "NOMINA",
+        "descripcion": "SALARIOS",
+        "is_active": true,
+        "created_at": "2026-08-28 22:44:30",
+        "updated_at": "2026-08-28 22:44:30"
+    },
+    {
+        "id": 2,
+        "nombre": "SERVICIOS PUBLICOS",
+        "descripcion": "energia,agua,gas,internet etc",
+        "is_active": true,
+        "created_at": "2026-08-28 22:45:06",
+        "updated_at": "2026-08-28 22:45:06"
+    },
+    {
+        "id": 3,
+        "nombre": "TRANSPORTE",
+        "descripcion": "fletes",
+        "is_active": true,
+        "created_at": "2026-08-28 22:45:46",
+        "updated_at": "2026-08-28 22:45:46"
+    },
+    {
+        "id": 4,
+        "nombre": "MANTENIMIENTOS",
+        "descripcion": "reparaciones,jardineria,",
+        "is_active": true,
+        "created_at": "2026-08-28 22:46:55",
+        "updated_at": "2026-08-28 22:46:55"
+    },
+    {
+        "id": 5,
+        "nombre": "BANCARIOS",
+        "descripcion": "4X1000, IVA TRANSACCION,DATAFONO,RETIROS",
+        "is_active": true,
+        "created_at": "2026-08-28 22:48:09",
+        "updated_at": "2026-08-28 22:48:09"
+    },
+    {
+        "id": 6,
+        "nombre": "MEJORAMIENTOS",
+        "descripcion": "OBRAS CIVILES, AMPLIACIONES",
+        "is_active": true,
+        "created_at": "2026-08-28 22:49:07",
+        "updated_at": "2026-08-28 22:49:07"
+    },
+    {
+        "id": 7,
+        "nombre": "ARRENDAMIENTOS",
+        "descripcion": "EDS,INTERESES",
+        "is_active": true,
+        "created_at": "2026-08-28 22:49:46",
+        "updated_at": "2026-08-28 22:49:46"
+    },
+    {
+        "id": 8,
+        "nombre": "ADMINISTRATIVOS",
+        "descripcion": "papeleria ,dotaciones,implementos aseo ,",
+        "is_active": true,
+        "created_at": "2026-08-28 22:51:43",
+        "updated_at": "2026-08-28 22:51:43"
+    },
+    {
+        "id": 9,
+        "nombre": "PLANILLAS SALUD",
+        "descripcion": "SALUD, ARL,PENSION,",
+        "is_active": true,
+        "created_at": "2026-08-28 22:54:42",
+        "updated_at": "2026-08-28 22:54:42"
+    }
+]

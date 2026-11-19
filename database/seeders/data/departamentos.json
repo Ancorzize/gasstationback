@@ -1,0 +1,38 @@
+[
+    {
+        "id": 1,
+        "pais_id": 1,
+        "nombre": "Antioquia",
+        "codigo": "05",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 2,
+        "pais_id": 1,
+        "nombre": "Cundinamarca",
+        "codigo": "25",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 3,
+        "pais_id": 1,
+        "nombre": "Valle del Cauca",
+        "codigo": "76",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    },
+    {
+        "id": 4,
+        "pais_id": 1,
+        "nombre": "Huila",
+        "codigo": "41",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:27",
+        "updated_at": "2026-08-07 13:58:27"
+    }
+]

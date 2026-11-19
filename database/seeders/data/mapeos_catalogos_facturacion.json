@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "proveedor": "matias",
+        "categoria": "unidad_medida",
+        "codigo_interno": "mlt",
+        "codigo_externo": "852",
+        "codigo_externo_secundario": "MLT",
+        "descripcion": "Unidad de medida Mililitro",
+        "is_active": true,
+        "created_at": "2026-11-18 21:52:24",
+        "updated_at": "2026-11-18 21:54:37"
+    },
+    {
+        "id": 2,
+        "proveedor": "matias",
+        "categoria": "medio_pago",
+        "codigo_interno": "efectivo",
+        "codigo_externo": "10",
+        "codigo_externo_secundario": "1",
+        "descripcion": "Pago de contado en efectivo",
+        "is_active": true,
+        "created_at": "2026-11-18 22:01:53",
+        "updated_at": "2026-11-18 22:01:53"
+    }
+]

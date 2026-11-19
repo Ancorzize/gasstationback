@@ -1,0 +1,83 @@
+[
+    {
+        "id": 1,
+        "nombre": "Combustible",
+        "descripcion": "Gasolina, ACPM y demás combustibles líquidos.",
+        "is_active": true,
+        "created_at": "2026-08-07 22:00:25",
+        "updated_at": "2026-08-07 22:00:25",
+        "destino_recaudo_id": 1
+    },
+    {
+        "id": 2,
+        "nombre": "Aceites para Motor",
+        "descripcion": "Aceites minerales, sintéticos y semisintéticos.",
+        "is_active": true,
+        "created_at": "2026-08-07 22:00:25",
+        "updated_at": "2026-08-07 22:00:25",
+        "destino_recaudo_id": 2
+    },
+    {
+        "id": 3,
+        "nombre": "Aditivos",
+        "descripcion": "Aditivos para combustible y aceite.",
+        "is_active": true,
+        "created_at": "2026-08-07 22:00:25",
+        "updated_at": "2026-08-07 22:00:25",
+        "destino_recaudo_id": 2
+    },
+    {
+        "id": 4,
+        "nombre": "Grasas y Lubricantes",
+        "descripcion": "Grasas automotrices e industriales.",
+        "is_active": true,
+        "created_at": "2026-08-07 22:00:25",
+        "updated_at": "2026-08-07 22:00:25",
+        "destino_recaudo_id": 2
+    },
+    {
+        "id": 5,
+        "nombre": "Líquidos Automotrices",
+        "descripcion": "Líquidos hidráulicos, frenos y transmisión.",
+        "is_active": true,
+        "created_at": "2026-08-07 22:00:25",
+        "updated_at": "2026-08-07 22:00:25",
+        "destino_recaudo_id": 2
+    },
+    {
+        "id": 6,
+        "nombre": "Refrigerantes",
+        "descripcion": "Refrigerantes y anticongelantes.",
+        "is_active": true,
+        "created_at": "2026-08-07 22:00:25",
+        "updated_at": "2026-08-07 22:00:25",
+        "destino_recaudo_id": 2
+    },
+    {
+        "id": 7,
+        "nombre": "Filtros",
+        "descripcion": "Filtros de aceite, aire, combustible y cabina.",
+        "is_active": true,
+        "created_at": "2026-08-07 22:00:25",
+        "updated_at": "2026-08-07 22:00:25",
+        "destino_recaudo_id": 2
+    },
+    {
+        "id": 8,
+        "nombre": "Siliconas y Limpiadores",
+        "descripcion": "Siliconas, limpiadores y productos de mantenimiento.",
+        "is_active": true,
+        "created_at": "2026-08-07 22:00:25",
+        "updated_at": "2026-08-07 22:00:25",
+        "destino_recaudo_id": 2
+    },
+    {
+        "id": 9,
+        "nombre": "Accesorios",
+        "descripcion": "Accesorios y productos complementarios.",
+        "is_active": true,
+        "created_at": "2026-08-07 22:00:25",
+        "updated_at": "2026-08-07 22:00:25",
+        "destino_recaudo_id": 2
+    }
+]

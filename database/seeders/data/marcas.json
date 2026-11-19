@@ -1,0 +1,98 @@
+[
+    {
+        "id": 1,
+        "nombre": "Terpel",
+        "descripcion": "Lubricantes y combustibles Terpel.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 2,
+        "nombre": "Mobil",
+        "descripcion": "Lubricantes Mobil.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 3,
+        "nombre": "Motul",
+        "descripcion": "Lubricantes Motul.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 4,
+        "nombre": "Castrol",
+        "descripcion": "Lubricantes Castrol.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 5,
+        "nombre": "Simoniz",
+        "descripcion": "Productos de limpieza y mantenimiento Simoniz.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 6,
+        "nombre": "Husqvarna",
+        "descripcion": "Lubricantes y productos Husqvarna.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 7,
+        "nombre": "Power Oil",
+        "descripcion": "Lubricantes Power Oil.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 8,
+        "nombre": "Yamalube",
+        "descripcion": "Lubricantes Yamalube.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 9,
+        "nombre": "Bosch",
+        "descripcion": "Refrigerantes, filtros y productos Bosch.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 10,
+        "nombre": "Celerity",
+        "descripcion": "Lubricantes Celerity.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 11,
+        "nombre": "Qualitor",
+        "descripcion": "Aditivos Qualitor.",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null
+    },
+    {
+        "id": 12,
+        "nombre": "Super Moto",
+        "descripcion": null,
+        "is_active": true,
+        "created_at": "2026-08-07 17:28:32",
+        "updated_at": "2026-08-07 17:28:32"
+    }
+]

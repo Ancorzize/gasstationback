@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "name": "Nómina mensual",
+        "code": "MENSUAL",
+        "period_type": "monthly",
+        "is_active": true,
+        "created_at": "2026-10-15 21:03:44",
+        "updated_at": "2026-10-15 21:03:44"
+    },
+    {
+        "id": 2,
+        "name": "Nómina quincenal",
+        "code": "QUINCENAL",
+        "period_type": "biweekly",
+        "is_active": true,
+        "created_at": "2026-10-15 21:03:45",
+        "updated_at": "2026-10-15 21:03:45"
+    }
+]

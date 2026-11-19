@@ -1,0 +1,891 @@
+[
+    {
+        "id": 1,
+        "name": "ver_clientes",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:20",
+        "updated_at": "2026-08-07 13:57:20"
+    },
+    {
+        "id": 2,
+        "name": "crear_clientes",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:20",
+        "updated_at": "2026-08-07 13:57:20"
+    },
+    {
+        "id": 3,
+        "name": "editar_clientes",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 4,
+        "name": "eliminar_clientes",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 5,
+        "name": "ver_usuarios",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 6,
+        "name": "crear_usuarios",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 7,
+        "name": "editar_usuarios",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 8,
+        "name": "cambiar_estado_usuarios",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 9,
+        "name": "ver_roles",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 10,
+        "name": "editar_roles",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 11,
+        "name": "ver_proveedores",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 12,
+        "name": "crear_proveedores",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 13,
+        "name": "editar_proveedores",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 14,
+        "name": "eliminar_proveedores",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 15,
+        "name": "ver_marcas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 16,
+        "name": "crear_marcas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 17,
+        "name": "editar_marcas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 18,
+        "name": "cambiar_estado_marcas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 19,
+        "name": "eliminar_marcas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 20,
+        "name": "ver_categorias_producto",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 21,
+        "name": "crear_categorias_producto",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 22,
+        "name": "editar_categorias_producto",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 23,
+        "name": "cambiar_estado_categorias_producto",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 24,
+        "name": "eliminar_categorias_producto",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 25,
+        "name": "ver_unidades_medida",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 26,
+        "name": "crear_unidades_medida",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 27,
+        "name": "editar_unidades_medida",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 28,
+        "name": "cambiar_estado_unidades_medida",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 29,
+        "name": "eliminar_unidades_medida",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 30,
+        "name": "ver_productos",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 31,
+        "name": "crear_productos",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 32,
+        "name": "editar_productos",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 33,
+        "name": "cambiar_estado_productos",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 34,
+        "name": "eliminar_productos",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 35,
+        "name": "ver_servicios",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 36,
+        "name": "crear_servicios",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 37,
+        "name": "editar_servicios",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 38,
+        "name": "cambiar_estado_servicios",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 39,
+        "name": "eliminar_servicios",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 40,
+        "name": "ver_configuracion_empresa",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 41,
+        "name": "editar_configuracion_empresa",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 42,
+        "name": "ver_bodegas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 43,
+        "name": "crear_bodegas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 44,
+        "name": "editar_bodegas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 45,
+        "name": "cambiar_estado_bodegas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 46,
+        "name": "eliminar_bodegas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 47,
+        "name": "ver_inventario",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 48,
+        "name": "ver_mis_productos_bodega",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 49,
+        "name": "ver_movimientos_inventario",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:21",
+        "updated_at": "2026-08-07 13:57:21"
+    },
+    {
+        "id": 50,
+        "name": "crear_movimientos_inventario",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 51,
+        "name": "importar_inventario",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 52,
+        "name": "ver_compras",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 53,
+        "name": "crear_compras",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 54,
+        "name": "editar_compras",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 55,
+        "name": "confirmar_compras",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 56,
+        "name": "ver_pagos_compra",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 57,
+        "name": "registrar_pagos_compra",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 58,
+        "name": "ver_caja",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 59,
+        "name": "abrir_caja",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 60,
+        "name": "cerrar_caja",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 61,
+        "name": "ver_movimientos_caja",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 62,
+        "name": "ver_caja_menu",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 63,
+        "name": "ver_categorias_gasto",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 64,
+        "name": "crear_categorias_gasto",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 65,
+        "name": "editar_categorias_gasto",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 66,
+        "name": "cambiar_estado_categorias_gasto",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 67,
+        "name": "ver_gastos",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 68,
+        "name": "crear_gastos",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 69,
+        "name": "anular_gastos",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 70,
+        "name": "ver_cartera",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 71,
+        "name": "configurar_credito_clientes",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 72,
+        "name": "ver_estado_cuenta_clientes",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 73,
+        "name": "registrar_abonos_cartera",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 74,
+        "name": "ver_movimientos_cartera",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 75,
+        "name": "ver_reporte_cartera",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 76,
+        "name": "anular_abonos_cartera",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 77,
+        "name": "ver_estaciones",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 78,
+        "name": "crear_estaciones",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 79,
+        "name": "editar_estaciones",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 80,
+        "name": "cambiar_estado_estaciones",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 81,
+        "name": "ver_bombas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 82,
+        "name": "crear_bombas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 83,
+        "name": "editar_bombas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 84,
+        "name": "cambiar_estado_bombas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 85,
+        "name": "ver_mangueras",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 86,
+        "name": "crear_mangueras",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 87,
+        "name": "editar_mangueras",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 88,
+        "name": "cambiar_estado_mangueras",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 89,
+        "name": "ver_turnos_islero",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 90,
+        "name": "abrir_turnos_islero",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 91,
+        "name": "cerrar_turnos_islero",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 92,
+        "name": "ver_cartera_clientes",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 93,
+        "name": "ver_ventas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 94,
+        "name": "crear_ventas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 95,
+        "name": "anular_ventas",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 96,
+        "name": "ver_reportes_turnos_islero",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 97,
+        "name": "ver_resumen_cierre_turnos_islero",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:22",
+        "updated_at": "2026-08-07 13:57:22"
+    },
+    {
+        "id": 98,
+        "name": "ver_precios_combustible",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 99,
+        "name": "crear_precios_combustible",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 100,
+        "name": "cambiar_estado_precios_combustible",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 101,
+        "name": "ver_destinos_recaudo",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 102,
+        "name": "crear_destino_recaudo",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 103,
+        "name": "editar_destino_recaudo",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 104,
+        "name": "eliminar_destino_recaudo",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 105,
+        "name": "configurar_dashboard",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 13:57:23",
+        "updated_at": "2026-08-07 13:57:23"
+    },
+    {
+        "id": 106,
+        "name": "ver_indicadores_financieros",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-07 20:27:52",
+        "updated_at": "2026-08-07 20:27:52"
+    },
+    {
+        "id": 107,
+        "name": "crear_saldos_iniciales_cartera",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-12 22:37:09",
+        "updated_at": "2026-08-12 22:37:09"
+    },
+    {
+        "id": 108,
+        "name": "ingreso_manual_caja",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-30 17:33:38",
+        "updated_at": "2026-08-30 17:33:38"
+    },
+    {
+        "id": 109,
+        "name": "retiro_manual_caja",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-30 17:33:40",
+        "updated_at": "2026-08-30 17:33:40"
+    },
+    {
+        "id": 110,
+        "name": "transferencia_caja",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-30 17:33:41",
+        "updated_at": "2026-08-30 17:33:41"
+    },
+    {
+        "id": 111,
+        "name": "aprobar_cierres_turnos_islero",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-30 17:33:43",
+        "updated_at": "2026-08-30 17:33:43"
+    },
+    {
+        "id": 112,
+        "name": "devolver_cierres_turnos_islero",
+        "guard_name": "sanctum",
+        "created_at": "2026-08-30 17:33:45",
+        "updated_at": "2026-08-30 17:33:45"
+    },
+    {
+        "id": 113,
+        "name": "vender_combustible",
+        "guard_name": "sanctum",
+        "created_at": "2026-09-15 21:57:02",
+        "updated_at": "2026-09-15 21:57:02"
+    },
+    {
+        "id": 114,
+        "name": "vender_lubricantes",
+        "guard_name": "sanctum",
+        "created_at": "2026-09-15 21:57:03",
+        "updated_at": "2026-09-15 21:57:03"
+    },
+    {
+        "id": 115,
+        "name": "ver_mapeos_catalogos",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:00:59",
+        "updated_at": "2026-10-15 21:00:59"
+    },
+    {
+        "id": 116,
+        "name": "crear_mapeos_catalogos",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:01:01",
+        "updated_at": "2026-10-15 21:01:01"
+    },
+    {
+        "id": 117,
+        "name": "editar_mapeos_catalogos",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:01:03",
+        "updated_at": "2026-10-15 21:01:03"
+    },
+    {
+        "id": 118,
+        "name": "eliminar_mapeos_catalogos",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:01:05",
+        "updated_at": "2026-10-15 21:01:05"
+    },
+    {
+        "id": 119,
+        "name": "ver_resoluciones_facturacion",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:01:07",
+        "updated_at": "2026-10-15 21:01:07"
+    },
+    {
+        "id": 120,
+        "name": "crear_resoluciones_facturacion",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:01:08",
+        "updated_at": "2026-10-15 21:01:08"
+    },
+    {
+        "id": 121,
+        "name": "editar_resoluciones_facturacion",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:01:10",
+        "updated_at": "2026-10-15 21:01:10"
+    },
+    {
+        "id": 122,
+        "name": "eliminar_resoluciones_facturacion",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:01:12",
+        "updated_at": "2026-10-15 21:01:12"
+    },
+    {
+        "id": 123,
+        "name": "ver_documentos_electronicos",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:01:14",
+        "updated_at": "2026-10-15 21:01:14"
+    },
+    {
+        "id": 124,
+        "name": "ver_empleados",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:01:59",
+        "updated_at": "2026-10-15 21:01:59"
+    },
+    {
+        "id": 125,
+        "name": "ver_periodos_nomina",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:02:01",
+        "updated_at": "2026-10-15 21:02:01"
+    },
+    {
+        "id": 126,
+        "name": "ver_liquidaciones_nomina",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:02:02",
+        "updated_at": "2026-10-15 21:02:02"
+    },
+    {
+        "id": 127,
+        "name": "ver_nomina_electronica",
+        "guard_name": "sanctum",
+        "created_at": "2026-10-15 21:02:04",
+        "updated_at": "2026-10-15 21:02:04"
+    }
+]

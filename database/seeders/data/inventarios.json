@@ -1,0 +1,1266 @@
+[
+    {
+        "id": 1,
+        "producto_id": 1,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 2,
+        "producto_id": 1,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 3,
+        "producto_id": 2,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:08:09"
+    },
+    {
+        "id": 4,
+        "producto_id": 2,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:08:09"
+    },
+    {
+        "id": 5,
+        "producto_id": 3,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 6,
+        "producto_id": 3,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-14 09:08:56"
+    },
+    {
+        "id": 7,
+        "producto_id": 4,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-28 17:24:15"
+    },
+    {
+        "id": 8,
+        "producto_id": 4,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-29 15:23:22"
+    },
+    {
+        "id": 9,
+        "producto_id": 5,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 10,
+        "producto_id": 5,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-28 18:05:29"
+    },
+    {
+        "id": 11,
+        "producto_id": 6,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:32:22"
+    },
+    {
+        "id": 12,
+        "producto_id": 6,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 15:59:55"
+    },
+    {
+        "id": 13,
+        "producto_id": 7,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-05 09:23:28"
+    },
+    {
+        "id": 14,
+        "producto_id": 7,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-05 14:36:27"
+    },
+    {
+        "id": 15,
+        "producto_id": 8,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 16,
+        "producto_id": 8,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-12 16:17:05"
+    },
+    {
+        "id": 17,
+        "producto_id": 9,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:22:20"
+    },
+    {
+        "id": 18,
+        "producto_id": 9,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:23:50"
+    },
+    {
+        "id": 19,
+        "producto_id": 10,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:35:03"
+    },
+    {
+        "id": 20,
+        "producto_id": 10,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 16:50:05"
+    },
+    {
+        "id": 21,
+        "producto_id": 11,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 22,
+        "producto_id": 11,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-29 15:23:22"
+    },
+    {
+        "id": 23,
+        "producto_id": 12,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-05 11:05:08"
+    },
+    {
+        "id": 24,
+        "producto_id": 12,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 17:25:36"
+    },
+    {
+        "id": 25,
+        "producto_id": 13,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-10 12:10:06"
+    },
+    {
+        "id": 26,
+        "producto_id": 13,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-15 09:55:44"
+    },
+    {
+        "id": 27,
+        "producto_id": 14,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-13 12:23:14"
+    },
+    {
+        "id": 28,
+        "producto_id": 14,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-11-16 10:36:51"
+    },
+    {
+        "id": 29,
+        "producto_id": 15,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:20:32"
+    },
+    {
+        "id": 30,
+        "producto_id": 15,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 17:25:36"
+    },
+    {
+        "id": 31,
+        "producto_id": 16,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-22 09:49:09"
+    },
+    {
+        "id": 32,
+        "producto_id": 16,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 17:42:44"
+    },
+    {
+        "id": 33,
+        "producto_id": 17,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:32:22"
+    },
+    {
+        "id": 34,
+        "producto_id": 17,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-01 19:09:19"
+    },
+    {
+        "id": 35,
+        "producto_id": 18,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:32:38"
+    },
+    {
+        "id": 36,
+        "producto_id": 18,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:32:38"
+    },
+    {
+        "id": 37,
+        "producto_id": 19,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:35:03"
+    },
+    {
+        "id": 38,
+        "producto_id": 19,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-11-16 16:40:15"
+    },
+    {
+        "id": 39,
+        "producto_id": 20,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:32:22"
+    },
+    {
+        "id": 40,
+        "producto_id": 20,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-02 15:38:54"
+    },
+    {
+        "id": 41,
+        "producto_id": 21,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 42,
+        "producto_id": 21,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 43,
+        "producto_id": 22,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 44,
+        "producto_id": 22,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 45,
+        "producto_id": 23,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:35:32"
+    },
+    {
+        "id": 46,
+        "producto_id": 23,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:35:32"
+    },
+    {
+        "id": 47,
+        "producto_id": 24,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:36:10"
+    },
+    {
+        "id": 48,
+        "producto_id": 24,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:36:10"
+    },
+    {
+        "id": 49,
+        "producto_id": 25,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:37:19"
+    },
+    {
+        "id": 50,
+        "producto_id": 25,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:37:19"
+    },
+    {
+        "id": 51,
+        "producto_id": 26,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 52,
+        "producto_id": 26,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 53,
+        "producto_id": 27,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-26 12:18:52"
+    },
+    {
+        "id": 54,
+        "producto_id": 27,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-01 19:09:19"
+    },
+    {
+        "id": 55,
+        "producto_id": 28,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:39:14"
+    },
+    {
+        "id": 56,
+        "producto_id": 28,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:39:14"
+    },
+    {
+        "id": 57,
+        "producto_id": 29,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:40:17"
+    },
+    {
+        "id": 58,
+        "producto_id": 29,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:40:17"
+    },
+    {
+        "id": 59,
+        "producto_id": 30,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:32:22"
+    },
+    {
+        "id": 60,
+        "producto_id": 30,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 17:42:44"
+    },
+    {
+        "id": 61,
+        "producto_id": 31,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:42:02"
+    },
+    {
+        "id": 62,
+        "producto_id": 31,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:42:02"
+    },
+    {
+        "id": 63,
+        "producto_id": 32,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 64,
+        "producto_id": 32,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 65,
+        "producto_id": 33,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-13 12:23:15"
+    },
+    {
+        "id": 66,
+        "producto_id": 33,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-14 10:01:12"
+    },
+    {
+        "id": 67,
+        "producto_id": 34,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:42:58"
+    },
+    {
+        "id": 68,
+        "producto_id": 34,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:42:58"
+    },
+    {
+        "id": 69,
+        "producto_id": 35,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:43:56"
+    },
+    {
+        "id": 70,
+        "producto_id": 35,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:43:56"
+    },
+    {
+        "id": 71,
+        "producto_id": 36,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:44:34"
+    },
+    {
+        "id": 72,
+        "producto_id": 36,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:44:34"
+    },
+    {
+        "id": 73,
+        "producto_id": 37,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 17:07:53"
+    },
+    {
+        "id": 74,
+        "producto_id": 37,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:45:14"
+    },
+    {
+        "id": 75,
+        "producto_id": 38,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:45:55"
+    },
+    {
+        "id": 76,
+        "producto_id": 38,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:45:55"
+    },
+    {
+        "id": 77,
+        "producto_id": 39,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-08 16:01:00"
+    },
+    {
+        "id": 78,
+        "producto_id": 39,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 17:42:44"
+    },
+    {
+        "id": 79,
+        "producto_id": 40,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:35:03"
+    },
+    {
+        "id": 80,
+        "producto_id": 40,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 16:10:22"
+    },
+    {
+        "id": 81,
+        "producto_id": 41,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-05 11:05:09"
+    },
+    {
+        "id": 82,
+        "producto_id": 41,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 18:47:48"
+    },
+    {
+        "id": 83,
+        "producto_id": 42,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-08 16:01:00"
+    },
+    {
+        "id": 84,
+        "producto_id": 42,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:28:09"
+    },
+    {
+        "id": 85,
+        "producto_id": 43,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-08 16:01:00"
+    },
+    {
+        "id": 86,
+        "producto_id": 43,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:29:12"
+    },
+    {
+        "id": 87,
+        "producto_id": 44,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:35:03"
+    },
+    {
+        "id": 88,
+        "producto_id": 44,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-02 17:03:32"
+    },
+    {
+        "id": 89,
+        "producto_id": 45,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:35:03"
+    },
+    {
+        "id": 90,
+        "producto_id": 45,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-02 17:03:31"
+    },
+    {
+        "id": 91,
+        "producto_id": 46,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 92,
+        "producto_id": 46,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-29 15:23:22"
+    },
+    {
+        "id": 93,
+        "producto_id": 47,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-05 11:05:09"
+    },
+    {
+        "id": 94,
+        "producto_id": 47,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-05 11:05:09"
+    },
+    {
+        "id": 95,
+        "producto_id": 48,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-22 09:56:49"
+    },
+    {
+        "id": 96,
+        "producto_id": 48,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-22 17:30:59"
+    },
+    {
+        "id": 97,
+        "producto_id": 49,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-08 16:01:00"
+    },
+    {
+        "id": 98,
+        "producto_id": 49,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 17:59:24"
+    },
+    {
+        "id": 99,
+        "producto_id": 50,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-14 10:51:24"
+    },
+    {
+        "id": 100,
+        "producto_id": 50,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-02 11:40:00"
+    },
+    {
+        "id": 101,
+        "producto_id": 51,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:20:33"
+    },
+    {
+        "id": 102,
+        "producto_id": 51,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-30 18:13:31"
+    },
+    {
+        "id": 103,
+        "producto_id": 52,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:28:09"
+    },
+    {
+        "id": 104,
+        "producto_id": 52,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:28:09"
+    },
+    {
+        "id": 105,
+        "producto_id": 53,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:28:09"
+    },
+    {
+        "id": 106,
+        "producto_id": 53,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:28:09"
+    },
+    {
+        "id": 107,
+        "producto_id": 54,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:32:23"
+    },
+    {
+        "id": 108,
+        "producto_id": 54,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-02 15:38:54"
+    },
+    {
+        "id": 109,
+        "producto_id": 55,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 17:48:18"
+    },
+    {
+        "id": 110,
+        "producto_id": 55,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 17:49:16"
+    },
+    {
+        "id": 111,
+        "producto_id": 56,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-08 16:01:00"
+    },
+    {
+        "id": 112,
+        "producto_id": 56,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 17:42:44"
+    },
+    {
+        "id": 113,
+        "producto_id": 57,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:28:09"
+    },
+    {
+        "id": 114,
+        "producto_id": 57,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:28:09"
+    },
+    {
+        "id": 115,
+        "producto_id": 58,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:32:23"
+    },
+    {
+        "id": 116,
+        "producto_id": 58,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-03 16:10:22"
+    },
+    {
+        "id": 117,
+        "producto_id": 59,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-29 12:37:32"
+    },
+    {
+        "id": 118,
+        "producto_id": 59,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-31 17:57:46"
+    },
+    {
+        "id": 119,
+        "producto_id": 60,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 17:18:56"
+    },
+    {
+        "id": 120,
+        "producto_id": 60,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:28:09"
+    },
+    {
+        "id": 121,
+        "producto_id": 61,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-10 12:10:07"
+    },
+    {
+        "id": 122,
+        "producto_id": 61,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-10 12:10:07"
+    },
+    {
+        "id": 123,
+        "producto_id": 62,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:35:03"
+    },
+    {
+        "id": 124,
+        "producto_id": 62,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-02 15:38:54"
+    },
+    {
+        "id": 125,
+        "producto_id": 63,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-08 16:01:01"
+    },
+    {
+        "id": 126,
+        "producto_id": 63,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-01 19:09:19"
+    },
+    {
+        "id": 127,
+        "producto_id": 64,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-07 16:08:31"
+    },
+    {
+        "id": 128,
+        "producto_id": 64,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-08 10:14:15"
+    },
+    {
+        "id": 129,
+        "producto_id": 65,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-10 12:10:07"
+    },
+    {
+        "id": 130,
+        "producto_id": 65,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-24 16:27:51"
+    },
+    {
+        "id": 131,
+        "producto_id": 66,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-29 11:32:23"
+    },
+    {
+        "id": 132,
+        "producto_id": 66,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-01 19:09:19"
+    },
+    {
+        "id": 133,
+        "producto_id": 67,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 134,
+        "producto_id": 67,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-08 01:16:58"
+    },
+    {
+        "id": 135,
+        "producto_id": 68,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-22 09:56:49"
+    },
+    {
+        "id": 136,
+        "producto_id": 68,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-24 16:27:51"
+    },
+    {
+        "id": 137,
+        "producto_id": 69,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-14 10:51:24"
+    },
+    {
+        "id": 138,
+        "producto_id": 69,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-14 10:51:24"
+    },
+    {
+        "id": 139,
+        "producto_id": 70,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:29:12"
+    },
+    {
+        "id": 140,
+        "producto_id": 70,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:29:12"
+    },
+    {
+        "id": 141,
+        "producto_id": 71,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:28:09"
+    },
+    {
+        "id": 142,
+        "producto_id": 71,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:28:09"
+    },
+    {
+        "id": 143,
+        "producto_id": 72,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-05 11:21:01"
+    },
+    {
+        "id": 144,
+        "producto_id": 72,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-09-03 19:10:03"
+    },
+    {
+        "id": 145,
+        "producto_id": 73,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:29:12"
+    },
+    {
+        "id": 146,
+        "producto_id": 73,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:29:12"
+    },
+    {
+        "id": 147,
+        "producto_id": 74,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 17:18:56"
+    },
+    {
+        "id": 148,
+        "producto_id": 74,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-10-06 11:29:12"
+    },
+    {
+        "id": 149,
+        "producto_id": 75,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-09 20:14:41"
+    },
+    {
+        "id": 150,
+        "producto_id": 75,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-11-02 22:47:24"
+    },
+    {
+        "id": 151,
+        "producto_id": 76,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-08-09 20:14:14"
+    },
+    {
+        "id": 152,
+        "producto_id": 76,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-08 01:16:58",
+        "updated_at": "2026-11-04 23:12:56"
+    },
+    {
+        "id": 153,
+        "producto_id": 77,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-08-25 11:27:11",
+        "updated_at": "2026-11-18 21:58:03"
+    },
+    {
+        "id": 154,
+        "producto_id": 77,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-08-28 17:24:16",
+        "updated_at": "2026-11-18 22:02:18"
+    },
+    {
+        "id": 155,
+        "producto_id": 78,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-09-11 16:09:32",
+        "updated_at": "2026-10-06 11:42:04"
+    },
+    {
+        "id": 156,
+        "producto_id": 79,
+        "bodega_id": 1,
+        "cantidad": "0.00",
+        "created_at": "2026-09-11 16:09:32",
+        "updated_at": "2026-09-29 11:20:33"
+    },
+    {
+        "id": 157,
+        "producto_id": 79,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-09-12 09:16:03",
+        "updated_at": "2026-11-02 22:54:27"
+    },
+    {
+        "id": 158,
+        "producto_id": 78,
+        "bodega_id": 2,
+        "cantidad": "0.00",
+        "created_at": "2026-09-29 11:32:23",
+        "updated_at": "2026-10-06 11:42:04"
+    }
+]

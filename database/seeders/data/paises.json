@@ -1,0 +1,10 @@
+[
+    {
+        "id": 1,
+        "nombre": "Colombia",
+        "codigo_iso": "CO",
+        "is_active": true,
+        "created_at": "2026-08-07 13:58:26",
+        "updated_at": "2026-08-07 13:58:26"
+    }
+]

@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "nombre": "Combustible",
+        "descripcion": "Ventas de combustible",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null,
+        "codigo": "COMB"
+    },
+    {
+        "id": 2,
+        "nombre": "Lubricantes",
+        "descripcion": "Lubricantes",
+        "is_active": true,
+        "created_at": null,
+        "updated_at": null,
+        "codigo": "LUBR"
+    }
+]

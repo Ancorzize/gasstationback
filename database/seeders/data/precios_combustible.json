@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "producto_id": 76,
+        "precio": "11900.00",
+        "fecha_inicio": "2026-08-06 00:00:00",
+        "fecha_fin": null,
+        "is_active": true,
+        "created_at": "2026-08-09 19:21:02",
+        "updated_at": "2026-08-09 19:21:02"
+    },
+    {
+        "id": 2,
+        "producto_id": 75,
+        "precio": "16660.00",
+        "fecha_inicio": "2026-08-06 00:00:00",
+        "fecha_fin": null,
+        "is_active": true,
+        "created_at": "2026-08-09 19:21:33",
+        "updated_at": "2026-08-09 19:21:33"
+    }
+]

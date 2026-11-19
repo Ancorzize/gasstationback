@@ -1,0 +1,82 @@
+[
+    {
+        "id": 1,
+        "bomba_id": 1,
+        "producto_id": 76,
+        "codigo": "AN1",
+        "nombre": "AN1",
+        "is_active": true,
+        "created_at": "2026-08-07 18:20:00",
+        "updated_at": "2026-08-07 18:20:00"
+    },
+    {
+        "id": 2,
+        "bomba_id": 1,
+        "producto_id": 75,
+        "codigo": "AN2",
+        "nombre": "AN2",
+        "is_active": true,
+        "created_at": "2026-08-07 18:20:31",
+        "updated_at": "2026-08-07 18:20:31"
+    },
+    {
+        "id": 3,
+        "bomba_id": 1,
+        "producto_id": 76,
+        "codigo": "BN1",
+        "nombre": "BN1",
+        "is_active": true,
+        "created_at": "2026-08-07 18:21:02",
+        "updated_at": "2026-08-07 18:21:02"
+    },
+    {
+        "id": 4,
+        "bomba_id": 1,
+        "producto_id": 75,
+        "codigo": "BN2",
+        "nombre": "BN2",
+        "is_active": true,
+        "created_at": "2026-08-07 18:21:30",
+        "updated_at": "2026-08-07 18:21:30"
+    },
+    {
+        "id": 5,
+        "bomba_id": 2,
+        "producto_id": 76,
+        "codigo": "B1",
+        "nombre": "B1",
+        "is_active": true,
+        "created_at": "2026-08-07 18:21:58",
+        "updated_at": "2026-08-07 18:21:58"
+    },
+    {
+        "id": 6,
+        "bomba_id": 2,
+        "producto_id": 75,
+        "codigo": "A1",
+        "nombre": "A1",
+        "is_active": true,
+        "created_at": "2026-08-07 18:22:17",
+        "updated_at": "2026-08-07 18:22:17"
+    },
+    {
+        "id": 7,
+        "bomba_id": 2,
+        "producto_id": 76,
+        "codigo": "B2",
+        "nombre": "B2",
+        "is_active": true,
+        "created_at": "2026-08-07 18:22:35",
+        "updated_at": "2026-08-07 18:22:35"
+    },
+    {
+        "id": 8,
+        "bomba_id": 2,
+        "producto_id": 75,
+        "codigo": "A2",
+        "nombre": "A2",
+        "is_active": true,
+        "created_at": "2026-08-07 18:22:56",
+        "updated_at": "2026-08-07 18:22:56"
+    }
+]
