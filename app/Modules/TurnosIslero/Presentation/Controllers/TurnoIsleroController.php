@@ -12,6 +12,7 @@ use App\Modules\TurnosIslero\Presentation\Requests\AbrirTurnoIsleroRequest;
 use App\Modules\TurnosIslero\Presentation\Requests\CerrarTurnoIsleroRequest;
 use App\Modules\TurnosIslero\Presentation\Resources\TurnoIsleroResource;
 use App\Modules\TurnosIslero\Presentation\Requests\SolicitarCierreTurnoIsleroRequest;
+use App\Modules\TurnosIslero\Presentation\Requests\RegistrarDescargueTurnoRequest;
 use Illuminate\Validation\ValidationException;
 use App\Modules\Ventas\Presentation\Resources\VentaResource;
 use App\Modules\Cartera\Presentation\Resources\AbonoCarteraResource;
@@ -322,6 +323,52 @@ class TurnoIsleroController extends Controller
                 'items' => $items,
             ], "Listado de operaciones de tipo '{$tipo}'.");
 
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function descargues(Request $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('ver_turnos_islero')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            return ApiResponse::success(
+                $this->turnoService->listarDescargues($id),
+                'Listado de descargues del turno.'
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function registrarDescargue(RegistrarDescargueTurnoRequest $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('ver_turnos_islero')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $validated = $request->validated();
+
+            $resultado = $this->turnoService->registrarDescargue(
+                $id,
+                $request->user()->id,
+                (float) $validated['monto'],
+                $validated['observacion'] ?? null
+            );
+
+            return ApiResponse::success(
+                $resultado,
+                'Descargue registrado correctamente.',
+                201
+            );
         } catch (HttpException $e) {
             return ApiResponse::error($e->getMessage(), $e->getStatusCode());
         } catch (\Throwable $e) {

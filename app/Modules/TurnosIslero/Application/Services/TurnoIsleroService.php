@@ -968,6 +968,8 @@ class TurnoIsleroService
             })
             ->values();
 
+        $descarguesInfo = $this->formatearDescarguesTurno($turno->id);
+
         return [
             'turno' => [
                 'id' => $turno->id,
@@ -1039,6 +1041,9 @@ class TurnoIsleroService
                 $totalReportadoSugerido - $totalSistema,
                 2
             ),
+
+            'descargues' => $descarguesInfo['descargues'],
+            'total_descargues' => $descarguesInfo['total_descargues'],
 
             'nota' => 'La lectura sugerida se calcula con las ventas de combustible registradas por manguera. El islero debe confirmarla o corregirla con la lectura física real.',
         ];
@@ -1771,6 +1776,8 @@ class TurnoIsleroService
         /*
         * Devolver información actual para la revisión administrativa.
         */
+        $descarguesInfo = $this->formatearDescarguesTurno($turno->id);
+
         return [
             'turno' => $turno,
 
@@ -1820,6 +1827,9 @@ class TurnoIsleroService
 
             'lecturas' =>
                 $lecturas,
+
+            'descargues' => $descarguesInfo['descargues'],
+            'total_descargues' => $descarguesInfo['total_descargues'],
         ];
     }
 
@@ -1897,5 +1907,114 @@ class TurnoIsleroService
         }
 
         return $this->turnoRepository->getOperacionesByTurnoAndTipo($turno->id, $tipo);
+    }
+
+    public function listarDescargues(int $turnoId): array
+    {
+        $turno = $this->findById($turnoId);
+        $info = $this->formatearDescarguesTurno($turno->id);
+
+        return [
+            'turno_id' => $turno->id,
+            'estado' => $turno->estado,
+            'descargues' => $info['descargues'],
+            'total_descargues' => $info['total_descargues'],
+        ];
+    }
+
+    public function registrarDescargue(
+        int $turnoId,
+        int $userId,
+        float $monto,
+        ?string $observacion = null
+    ): array {
+        return DB::transaction(function () use ($turnoId, $userId, $monto, $observacion) {
+            $turno = $this->findById($turnoId);
+
+            if ((int) $turno->user_id !== (int) $userId) {
+                throw new HttpException(
+                    403,
+                    'El turno no pertenece al usuario autenticado.'
+                );
+            }
+
+            if ($turno->estado !== 'abierto') {
+                throw new HttpException(
+                    422,
+                    'Solo se pueden registrar descargues mientras el turno esté abierto.'
+                );
+            }
+
+            $montoNormalizado = round($monto, 2);
+            if ($montoNormalizado <= 0) {
+                throw new HttpException(
+                    422,
+                    'El monto del descargue debe ser mayor a cero.'
+                );
+            }
+
+            $descargue = $this->turnoRepository->createDescargue([
+                'turno_islero_id' => $turno->id,
+                'user_id' => $userId,
+                'monto' => $montoNormalizado,
+                'fecha_descargue' => now(),
+                'observacion' => $observacion !== null && trim($observacion) !== ''
+                    ? trim($observacion)
+                    : null,
+            ]);
+
+            $info = $this->formatearDescarguesTurno($turno->id);
+
+            return [
+                'descargue' => [
+                    'id' => $descargue->id,
+                    'turno_islero_id' => $descargue->turno_islero_id,
+                    'user_id' => $descargue->user_id,
+                    'usuario' => $descargue->usuario ? [
+                        'id' => $descargue->usuario->id,
+                        'name' => $descargue->usuario->name,
+                        'email' => $descargue->usuario->email,
+                    ] : null,
+                    'monto' => round((float) $descargue->monto, 2),
+                    'fecha_descargue' => $descargue->fecha_descargue,
+                    'observacion' => $descargue->observacion,
+                    'created_at' => $descargue->created_at,
+                ],
+                'descargues' => $info['descargues'],
+                'total_descargues' => $info['total_descargues'],
+            ];
+        });
+    }
+
+    private function formatearDescarguesTurno(int $turnoId): array
+    {
+        $descargues = $this->turnoRepository->getDescarguesByTurno($turnoId);
+
+        $items = $descargues->map(function ($descargue) {
+            return [
+                'id' => $descargue->id,
+                'turno_islero_id' => $descargue->turno_islero_id,
+                'user_id' => $descargue->user_id,
+                'usuario' => $descargue->usuario ? [
+                    'id' => $descargue->usuario->id,
+                    'name' => $descargue->usuario->name,
+                    'email' => $descargue->usuario->email,
+                ] : null,
+                'monto' => round((float) $descargue->monto, 2),
+                'fecha_descargue' => $descargue->fecha_descargue,
+                'observacion' => $descargue->observacion,
+                'created_at' => $descargue->created_at,
+            ];
+        })->values()->all();
+
+        $totalDescargues = round(
+            (float) $descargues->sum('monto'),
+            2
+        );
+
+        return [
+            'descargues' => $items,
+            'total_descargues' => $totalDescargues,
+        ];
     }
 }

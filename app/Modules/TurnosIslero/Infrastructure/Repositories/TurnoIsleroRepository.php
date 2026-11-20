@@ -4,6 +4,7 @@ namespace App\Modules\TurnosIslero\Infrastructure\Repositories;
 
 use App\Models\Manguera;
 use App\Models\TurnoIslero;
+use App\Models\TurnoIsleroDescargue;
 use App\Models\LecturaManguera;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -20,12 +21,13 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 {
     public function getAll(array $filters = []): Collection
     {
-       $query = TurnoIslero::query()
+        $query = TurnoIslero::query()
             ->with([
                 'estacion',
                 'usuario',
                 'lecturas.manguera.producto',
                 'recaudos.destinoRecaudo',
+                'descargues.usuario',
             ]);
 
         if (!empty($filters['search'])) {
@@ -88,13 +90,14 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
             'lecturas.manguera.producto.categoriaProducto',
             'lecturas.manguera.producto.unidadMedida',
             'recaudos.destinoRecaudo',
+            'descargues.usuario',
         ])->find($id);
     }
 
     public function getTurnoAbiertoByUser(int $userId): ?TurnoIslero
     {
         return TurnoIslero::query()
-            ->with(['estacion', 'usuario', 'lecturas.manguera.producto'])
+            ->with(['estacion', 'usuario', 'lecturas.manguera.producto', 'descargues.usuario'])
             ->where('user_id', $userId)
             ->where('estado', 'abierto')
             ->first();
@@ -775,5 +778,20 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
 
             default => collect(),
         };
+    }
+
+    public function getDescarguesByTurno(int $turnoId): Collection
+    {
+        return TurnoIsleroDescargue::query()
+            ->with('usuario')
+            ->where('turno_islero_id', $turnoId)
+            ->orderBy('fecha_descargue')
+            ->orderBy('id')
+            ->get();
+    }
+
+    public function createDescargue(array $data): TurnoIsleroDescargue
+    {
+        return TurnoIsleroDescargue::create($data)->load('usuario');
     }
 }

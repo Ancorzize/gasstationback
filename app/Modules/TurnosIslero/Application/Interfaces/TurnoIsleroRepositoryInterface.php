@@ -3,6 +3,7 @@
 namespace App\Modules\TurnosIslero\Application\Interfaces;
 
 use App\Models\TurnoIslero;
+use App\Models\TurnoIsleroDescargue;
 use App\Models\Caja;
 use App\Models\MovimientoCaja;
 use App\Models\LecturaManguera;
@@ -99,4 +100,8 @@ interface TurnoIsleroRepositoryInterface
     public function getResumenOperacionesByTurno(int $turnoId): array;
 
     public function getOperacionesByTurnoAndTipo(int $turnoId, string $tipo): Collection;
+
+    public function getDescarguesByTurno(int $turnoId): Collection;
+
+    public function createDescargue(array $data): TurnoIsleroDescargue;
 }

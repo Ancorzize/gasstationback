@@ -92,6 +92,31 @@ class TurnoIsleroResource extends JsonResource
                 });
             }
         ),
+            'descargues' => $this->whenLoaded(
+                'descargues',
+                function () {
+                    return $this->descargues->map(function ($descargue) {
+                        return [
+                            'id' => $descargue->id,
+                            'turno_islero_id' => $descargue->turno_islero_id,
+                            'user_id' => $descargue->user_id,
+                            'usuario' => $descargue->usuario ? [
+                                'id' => $descargue->usuario->id,
+                                'name' => $descargue->usuario->name,
+                                'email' => $descargue->usuario->email,
+                            ] : null,
+                            'monto' => round((float) $descargue->monto, 2),
+                            'fecha_descargue' => $descargue->fecha_descargue,
+                            'observacion' => $descargue->observacion,
+                            'created_at' => $descargue->created_at,
+                        ];
+                    })->values();
+                }
+            ),
+            'total_descargues' => $this->whenLoaded(
+                'descargues',
+                fn () => round((float) $this->descargues->sum('monto'), 2)
+            ),
         ];
     }
 }

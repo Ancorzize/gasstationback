@@ -93,4 +93,12 @@ class TurnoIslero extends Model
             'turno_islero_id'
         );
     }
+
+    public function descargues(): HasMany
+    {
+        return $this->hasMany(
+            TurnoIsleroDescargue::class,
+            'turno_islero_id'
+        )->orderBy('fecha_descargue')->orderBy('id');
+    }
 }
