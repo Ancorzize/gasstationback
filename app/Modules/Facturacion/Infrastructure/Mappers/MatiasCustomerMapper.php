@@ -64,15 +64,13 @@ class MatiasCustomerMapper
             $cityMappingKey = strtolower("extranjera:{$countryIso}:{$localCityId}");
         }
 
-        // MATIAS confirma ciudad 622 para La Plata, Huila (DANE 41396).
-        // Las demás ciudades conservan su homologación dinámica existente.
-        $cityId = $countryIso === 'CO' && $cityDaneCode === '41396'
-            ? '622'
-            : app(CatalogosFacturacionService::class)->obtenerCodigoExterno(
-                'matias',
-                'ciudad',
-                $cityMappingKey
-            );
+        // Todas las ciudades se homologan dinámicamente desde mapeos_catalogos_facturacion
+        // (proveedor = 'matias', categoria = 'ciudad', codigo_interno = código DANE de 5 dígitos).
+        $cityId = app(CatalogosFacturacionService::class)->obtenerCodigoExterno(
+            'matias',
+            'ciudad',
+            $cityMappingKey
+        );
 
         if ($cityId === null || trim($cityId) === '') {
             $cityReference = $countryIso === 'CO' ? "DANE {$cityDaneCode}" : $cityMappingKey;

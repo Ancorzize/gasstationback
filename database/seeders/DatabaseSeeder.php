@@ -47,6 +47,7 @@ class DatabaseSeeder extends Seeder
             ConfiguracionFacturacionSeeder::class,
             ResolucionesFacturacionSeeder::class,
             MapeosCatalogosFacturacionSeeder::class,
+            MatiasCiudadesCatalogoSeeder::class,
 
             // 9. Precios vigentes de combustible
             PreciosCombustibleSeeder::class,
