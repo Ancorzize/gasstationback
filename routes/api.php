@@ -186,6 +186,8 @@ Route::middleware(['auth:sanctum'])->prefix('resoluciones-facturacion')->group(f
 
 Route::middleware(['auth:sanctum'])->prefix('documentos-electronicos')->group(function () {
     Route::get('/', [DocumentoElectronicoController::class, 'index']);
+    Route::post('/reintentar-rechazados', [DocumentoElectronicoController::class, 'reintentarMasivoRechazados']);
+    Route::post('/{id}/reintentar-factura', [DocumentoElectronicoController::class, 'reintentarFactura']);
     Route::post('/preparar-ds', [DocumentoElectronicoController::class, 'prepararDS']);
     Route::post('/reintentar-ds-rechazados', [DocumentoElectronicoController::class, 'reintentarMasivoDS']);
     Route::post('/{id}/transmitir-ds', [DocumentoElectronicoController::class, 'transmitirDS']);

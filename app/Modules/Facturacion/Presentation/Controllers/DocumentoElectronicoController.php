@@ -9,6 +9,7 @@ use App\Modules\Facturacion\Application\Services\DocumentoElectronicoService;
 use App\Modules\Facturacion\Application\Services\DocumentoSoporteService;
 use App\Modules\Facturacion\Application\Services\NotaCreditoService;
 use App\Modules\Facturacion\Application\Services\NotaDebitoService;
+use App\Modules\Ventas\Application\Services\VentaService;
 use App\Modules\Facturacion\Presentation\Requests\GetDocumentosElectronicosRequest;
 use App\Modules\Facturacion\Presentation\Requests\PrepararDocumentoSoporteRequest;
 use App\Modules\Facturacion\Presentation\Requests\PrepararNotaCreditoRequest;
@@ -22,7 +23,8 @@ class DocumentoElectronicoController extends Controller
         protected DocumentoElectronicoService $documentoService,
         protected DocumentoSoporteService $documentoSoporteService,
         protected NotaCreditoService $notaCreditoService,
-        protected NotaDebitoService $notaDebitoService
+        protected NotaDebitoService $notaDebitoService,
+        protected VentaService $ventaService
     ) {}
 
     public function index(GetDocumentosElectronicosRequest $request)
@@ -178,6 +180,67 @@ class DocumentoElectronicoController extends Controller
                 $resultado['total_encontrados'] > 0
                     ? 'Proceso de reintento masivo finalizado.'
                     : 'No existen documentos soporte en estado rechazado para reintentar.',
+                200
+            );
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor al procesar el reintento masivo: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Reintentar manualmente la transmisión de una Factura Electrónica rechazada o con error.
+     */
+    public function reintentarFactura(Request $request, $id)
+    {
+        try {
+            if (!$request->user()->can('ver_documentos_electronicos')) {
+                return ApiResponse::error('Sin permisos para reintentar facturas electrónicas.', 403);
+            }
+
+            $documento = $this->ventaService->reintentarFacturaRechazada((int) $id);
+            $exitoso = in_array(strtolower((string) $documento->estado), ['emitido', 'aceptado', 'aprobado'], true);
+
+            return ApiResponse::success(
+                new DocumentoElectronicoResource($documento),
+                $exitoso
+                    ? 'Factura electrónica retransmitida y emitida correctamente.'
+                    : ($documento->mensaje ?? 'Reintento procesado; la factura continúa sin aprobación DIAN.'),
+                200
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor al reintentar la factura electrónica: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Reintentar masivamente Facturas Electrónicas y Documentos Soporte en estado rechazado o error.
+     */
+    public function reintentarMasivoRechazados(Request $request)
+    {
+        try {
+            if (!$request->user()->can('ver_documentos_electronicos')) {
+                return ApiResponse::error('Sin permisos para reintentar documentos electrónicos.', 403);
+            }
+
+            $resFacturas = $this->ventaService->reintentarMasivoFacturasRechazadas();
+            $resDS = $this->documentoSoporteService->reintentarMasivoDocumentosRechazados();
+
+            $resultado = [
+                'total_encontrados' => ($resFacturas['total_encontrados'] ?? 0) + ($resDS['total_encontrados'] ?? 0),
+                'procesados' => ($resFacturas['procesados'] ?? 0) + ($resDS['procesados'] ?? 0),
+                'emitidos' => ($resFacturas['emitidos'] ?? 0) + ($resDS['emitidos'] ?? 0),
+                'rechazados' => ($resFacturas['rechazados'] ?? 0) + ($resDS['rechazados'] ?? 0),
+                'pendientes' => ($resFacturas['pendientes'] ?? 0) + ($resDS['pendientes'] ?? 0),
+                'detalles' => array_merge($resFacturas['detalles'] ?? [], $resDS['detalles'] ?? []),
+            ];
+
+            return ApiResponse::success(
+                $resultado,
+                $resultado['total_encontrados'] > 0
+                    ? 'Proceso de reintento masivo de documentos rechazados finalizado.'
+                    : 'No existen facturas ni documentos soporte en estado rechazado para reintentar.',
                 200
             );
         } catch (\Throwable $e) {

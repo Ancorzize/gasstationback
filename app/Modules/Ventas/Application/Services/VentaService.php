@@ -2231,6 +2231,132 @@ class VentaService
     }
 
     /**
+     * Reintentar manualmente la transmisión de una Factura Electrónica rechazada o con error.
+     * Reutiliza el mismo DocumentoElectronico, prefijo y número consecutivo sin consumir un nuevo folio.
+     */
+    public function reintentarFacturaRechazada(int $documentoId): DocumentoElectronico
+    {
+        $documento = DocumentoElectronico::find($documentoId);
+
+        if (!$documento) {
+            throw new HttpException(404, "El documento electrónico #{$documentoId} no fue encontrado.");
+        }
+
+        if (!in_array(strtolower((string) $documento->tipo_documento), ['factura_electronica', 'factura'], true)) {
+            throw new HttpException(
+                422,
+                "El documento electrónico #{$documentoId} no corresponde a una factura electrónica."
+            );
+        }
+
+        $estadoActual = strtolower((string) $documento->estado);
+        if (!in_array($estadoActual, ['rechazado', 'configuracion_invalida', 'error_tecnico', 'error'], true)) {
+            throw new HttpException(
+                422,
+                "Solo se pueden reintentar facturas electrónicas en estado rechazado o error (estado actual: '{$documento->estado}')."
+            );
+        }
+
+        if (empty($documento->venta_id)) {
+            throw new HttpException(
+                422,
+                "El documento electrónico #{$documentoId} no tiene una venta asociada para reconstruir la factura."
+            );
+        }
+
+        $venta = Venta::find($documento->venta_id);
+        if (!$venta) {
+            throw new HttpException(
+                404,
+                "La venta #{$documento->venta_id} asociada al documento electrónico #{$documentoId} no fue encontrada."
+            );
+        }
+
+        $resultado = $this->procesarFacturacionElectronica($venta);
+
+        return ($resultado ?? $documento->fresh())->loadMissing(['venta.cliente']);
+    }
+
+    /**
+     * Reintentar masivamente todas las Facturas Electrónicas en estado rechazado o error.
+     */
+    public function reintentarMasivoFacturasRechazadas(): array
+    {
+        $rechazadas = DocumentoElectronico::whereIn('tipo_documento', ['factura_electronica', 'factura'])
+            ->whereIn('estado', ['rechazado', 'configuracion_invalida', 'error_tecnico', 'error'])
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $totalEncontrados = $rechazadas->count();
+
+        if ($totalEncontrados === 0) {
+            return [
+                'total_encontrados' => 0,
+                'procesados' => 0,
+                'emitidos' => 0,
+                'rechazados' => 0,
+                'pendientes' => 0,
+                'detalles' => [],
+            ];
+        }
+
+        $procesados = 0;
+        $emitidos = 0;
+        $rechazadosCount = 0;
+        $pendientesCount = 0;
+        $detalles = [];
+
+        foreach ($rechazadas as $doc) {
+            $estadoAnterior = $doc->estado;
+
+            try {
+                $docActualizado = $this->reintentarFacturaRechazada($doc->id);
+                $procesados++;
+
+                $estadoFinal = strtolower((string) ($docActualizado->estado ?? 'desconocido'));
+
+                if (in_array($estadoFinal, ['emitido', 'aceptado', 'aprobado'], true)) {
+                    $emitidos++;
+                } elseif (in_array($estadoFinal, ['pendiente', 'enviado'], true)) {
+                    $pendientesCount++;
+                } else {
+                    $rechazadosCount++;
+                }
+
+                $detalles[] = [
+                    'documento_electronico_id' => $doc->id,
+                    'tipo_documento' => $doc->tipo_documento,
+                    'numero_documento' => trim(($doc->prefijo ? $doc->prefijo . '-' : '') . ($doc->numero_documento ?? '')),
+                    'estado_anterior' => $estadoAnterior,
+                    'estado_final' => $docActualizado->estado,
+                    'mensaje' => $docActualizado->mensaje ?? 'Reintento procesado.',
+                ];
+            } catch (\Throwable $e) {
+                $procesados++;
+                $rechazadosCount++;
+
+                $detalles[] = [
+                    'documento_electronico_id' => $doc->id,
+                    'tipo_documento' => $doc->tipo_documento,
+                    'numero_documento' => trim(($doc->prefijo ? $doc->prefijo . '-' : '') . ($doc->numero_documento ?? '')),
+                    'estado_anterior' => $estadoAnterior,
+                    'estado_final' => 'rechazado',
+                    'mensaje' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return [
+            'total_encontrados' => $totalEncontrados,
+            'procesados' => $procesados,
+            'emitidos' => $emitidos,
+            'rechazados' => $rechazadosCount,
+            'pendientes' => $pendientesCount,
+            'detalles' => $detalles,
+        ];
+    }
+
+    /**
      * Construir SolicitudFacturaDTO a partir de la Venta y Configuración.
      * Utiliza el snapshot tributario histórico guardado en detalle_ventas, las unidades DIAN homologadas
      * y los medios de pago reales registrados en la venta.
