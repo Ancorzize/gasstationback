@@ -1957,7 +1957,10 @@ class VentaService
         bool $exigirClasificacion = false
     ): array {
         $cant = round($cantidadGalones, 3);
-        $montoTotal = round($montoDespachado, 2);
+        $precioGalon = round($precioGalonTurno, 2);
+        // Calcular el total exacto como galones (3 decimales) × precio vigente del galón
+        // para preservar intacto el precio unitario del galón en ventas y facturas DIAN.
+        $montoTotal = round($cant * $precioGalon, 2);
 
         $tipoImpuesto = null;
         $porcentajeIva = null;
