@@ -79,19 +79,43 @@ class MatiasCustomerMapper
             );
         }
 
+        $rawIdentityDoc = trim((string) ($customer['identity_document_id'] ?? $customer['tipo_documento_id'] ?? '1'));
+        if ($rawIdentityDoc === '') {
+            $rawIdentityDoc = '1';
+        }
+
+        $mappedIdentityDoc = app(CatalogosFacturacionService::class)->obtenerCodigoExterno(
+            'matias',
+            'tipo_documento',
+            $rawIdentityDoc
+        );
+
+        if ($mappedIdentityDoc !== null && trim($mappedIdentityDoc) !== '') {
+            $identityDocumentId = trim($mappedIdentityDoc);
+        } elseif ($rawIdentityDoc === '1') {
+            // Fallback por defecto para Consumidor Final cuando el cliente no define tipo_documento_id.
+            $identityDocumentId = '1';
+        } else {
+            throw new InvalidArgumentException(
+                "No existe homologación MATIAS para el tipo de documento '{$rawIdentityDoc}' en el catálogo de facturación electrónica (categoría 'tipo_documento')."
+            );
+        }
+
         unset(
             $customer['country_id'],
             $customer['city_id'],
             $customer['country_iso'],
             $customer['city_dane_code'],
             $customer['city_local_id'],
-            $customer['direccion']
+            $customer['direccion'],
+            $customer['tipo_documento_id']
         );
 
         if (trim((string) ($customer['postal_code'] ?? '')) === '') {
             unset($customer['postal_code']);
         }
 
+        $customer['identity_document_id'] = $identityDocumentId;
         $customer['country_id'] = $countryId;
         $customer['city_id'] = $cityId;
         if ($address === '') {
