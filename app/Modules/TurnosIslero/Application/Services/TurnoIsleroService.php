@@ -281,6 +281,9 @@ class TurnoIsleroService
                     );
                 }
 
+                $usuarioAprobador = \App\Models\User::find($dto->user_id);
+                $puedeEditarLecturaInicial = $usuarioAprobador && $usuarioAprobador->can('aprobar_cierres_turnos_islero');
+
                 foreach ($dto->lecturas_finales as $item) {
                     $mangueraId = (int) $item['manguera_id'];
                     $lecturaFinal = (float) $item['lectura_final'];
@@ -298,7 +301,29 @@ class TurnoIsleroService
                         );
                     }
 
-                    if ($lecturaFinal < (float) $lectura->lectura_inicial) {
+                    $lecturaInicialEfectiva = (float) $lectura->lectura_inicial;
+                    $actualizarLecturaInicial = false;
+
+                    if (
+                        $puedeEditarLecturaInicial
+                        && array_key_exists('lectura_inicial', $item)
+                        && $item['lectura_inicial'] !== null
+                        && $item['lectura_inicial'] !== ''
+                    ) {
+                        $nuevaLecturaInicial = round((float) $item['lectura_inicial'], 3);
+                        if ($nuevaLecturaInicial < 0) {
+                            throw new HttpException(
+                                422,
+                                "La lectura inicial de la manguera {$mangueraId} no puede ser negativa."
+                            );
+                        }
+                        if ($nuevaLecturaInicial !== round($lecturaInicialEfectiva, 3)) {
+                            $lecturaInicialEfectiva = $nuevaLecturaInicial;
+                            $actualizarLecturaInicial = true;
+                        }
+                    }
+
+                    if ($lecturaFinal < $lecturaInicialEfectiva) {
                         throw new HttpException(
                             422,
                             "La lectura final de la manguera {$mangueraId} no puede ser menor que la lectura inicial."
@@ -306,7 +331,7 @@ class TurnoIsleroService
                     }
 
                     $galonesVendidos = round(
-                        $lecturaFinal - (float) $lectura->lectura_inicial,
+                        $lecturaFinal - $lecturaInicialEfectiva,
                         3
                     );
 
@@ -315,13 +340,19 @@ class TurnoIsleroService
                         2
                     );
 
+                    $datosLectura = [
+                        'lectura_final' => $lecturaFinal,
+                        'galones_vendidos' => $galonesVendidos,
+                        'total_venta' => $totalVentaFisica,
+                    ];
+
+                    if ($actualizarLecturaInicial) {
+                        $datosLectura['lectura_inicial'] = $lecturaInicialEfectiva;
+                    }
+
                     $this->turnoRepository->updateLectura(
                         $lectura,
-                        [
-                            'lectura_final' => $lecturaFinal,
-                            'galones_vendidos' => $galonesVendidos,
-                            'total_venta' => $totalVentaFisica,
-                        ]
+                        $datosLectura
                     );
 
                     $totalVentasCombustibleFisica += $totalVentaFisica;

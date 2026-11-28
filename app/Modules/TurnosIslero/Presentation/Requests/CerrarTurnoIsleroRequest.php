@@ -35,6 +35,12 @@ class CerrarTurnoIsleroRequest extends FormRequest
                 'gte:0',
             ],
 
+            'lecturas_finales.*.lectura_inicial' => [
+                'nullable',
+                'numeric',
+                'gte:0',
+            ],
+
             'destinos_recaudo' => [
                 'required',
                 'array',
