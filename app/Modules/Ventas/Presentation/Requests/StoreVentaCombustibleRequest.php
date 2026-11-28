@@ -20,7 +20,8 @@ class StoreVentaCombustibleRequest extends FormRequest
             'usar_anticipo' => ['nullable', 'boolean'],
             'monto_anticipo' => ['nullable', 'numeric', 'gt:0'],
             'metodo_pago' => ['nullable','required_unless:tipo_venta,credito','in:efectivo,transferencia,consignacion,datafono,qr'],
-            'monto' => ['required', 'numeric', 'gt:0'],
+            'monto' => ['nullable', 'required_without:cantidad_galones', 'numeric', 'gt:0'],
+            'cantidad_galones' => ['nullable', 'required_without:monto', 'numeric', 'gt:0'],
             'observacion' => ['nullable', 'string'],
             'factura_electronica' => ['nullable', 'boolean'],
         ];
@@ -35,8 +36,10 @@ class StoreVentaCombustibleRequest extends FormRequest
             'tipo_venta.in' => 'El tipo de venta no es válido.',
             'metodo_pago.required' => 'El método de pago es obligatorio.',
             'metodo_pago.in' => 'El método de pago no es válido.',
-            'monto.required' => 'El monto es obligatorio.',
+            'monto.required_without' => 'Debe ingresar el monto o la cantidad de galones.',
             'monto.gt' => 'El monto debe ser mayor a cero.',
+            'cantidad_galones.required_without' => 'Debe ingresar la cantidad de galones o el monto.',
+            'cantidad_galones.gt' => 'La cantidad de galones debe ser mayor a cero.',
         ];
     }
 }

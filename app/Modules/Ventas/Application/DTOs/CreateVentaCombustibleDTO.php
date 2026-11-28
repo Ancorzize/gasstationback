@@ -15,5 +15,6 @@ class CreateVentaCombustibleDTO
         public bool $factura_electronica = false,
         public bool $usar_anticipo = false,
         public ?float $monto_anticipo = null,
+        public ?float $cantidad_galones = null,
     ) {}
 }

@@ -908,7 +908,13 @@ class VentaService
                 throw new HttpException(422, 'La manguera no tiene precio de galón válido para este turno.');
             }
 
-            $cantidadGalones = round($dto->monto / $precioGalon, 3);
+            if ($dto->cantidad_galones !== null && $dto->cantidad_galones > 0) {
+                $cantidadGalones = round((float) $dto->cantidad_galones, 3);
+                $montoDespachado = round($cantidadGalones * $precioGalon, 2);
+            } else {
+                $cantidadGalones = round($dto->monto / $precioGalon, 3);
+                $montoDespachado = (float) $dto->monto;
+            }
 
             if ($cantidadGalones <= 0) {
                 throw new HttpException(422, 'La cantidad de galones calculada no es válida.');
@@ -933,7 +939,7 @@ class VentaService
                 producto: $manguera->producto,
                 cantidadGalones: $cantidadGalones,
                 precioGalonTurno: $precioGalon,
-                montoDespachado: (float) $dto->monto,
+                montoDespachado: $montoDespachado,
                 empresaConfig: $empresaConfig,
                 exigirClasificacion: $requiereFacturacionElectronica
             );

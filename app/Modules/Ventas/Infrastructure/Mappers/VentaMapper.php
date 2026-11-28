@@ -55,13 +55,14 @@ class VentaMapper
             manguera_id: (int) $data['manguera_id'],
             tipo_venta: $data['tipo_venta'],
             cliente_id: isset($data['cliente_id']) ? (int) $data['cliente_id'] : null,
-            metodo_pago: $data['metodo_pago'],
-            monto: (float) $data['monto'],
+            metodo_pago: $data['metodo_pago'] ?? 'efectivo',
+            monto: isset($data['monto']) && $data['monto'] !== '' ? (float) $data['monto'] : 0.0,
             observacion: $data['observacion'] ?? null,
             user_id: $userId,
             factura_electronica: !empty($data['factura_electronica']),
             usar_anticipo: !empty($data['usar_anticipo']),
             monto_anticipo: isset($data['monto_anticipo']) && $data['monto_anticipo'] !== '' ? (float) $data['monto_anticipo'] : null,
+            cantidad_galones: isset($data['cantidad_galones']) && $data['cantidad_galones'] !== '' ? (float) $data['cantidad_galones'] : null,
         );
     }
 }
