@@ -75,6 +75,8 @@ class InventarioController extends Controller
             if (
                 !$request->user()->can('ver_mis_productos_bodega')
                 && !$request->user()->can('ver_inventario')
+                && !$request->user()->can('ver_turnos_islero')
+                && !$request->user()->can('vender_lubricantes')
             ) {
                 return ApiResponse::error('Sin permisos.', 403);
             }
