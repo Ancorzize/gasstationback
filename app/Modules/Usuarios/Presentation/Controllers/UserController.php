@@ -124,4 +124,56 @@ class UserController extends Controller
             return ApiResponse::error('Error interno del servidor.', 500);
         }
     }
+
+    public function qr(Request $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('ver_usuarios') && !$request->user()->can('editar_usuarios')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $user = $this->userService->findById($id);
+            $qrToken = $user->ensureQrLoginToken();
+
+            return ApiResponse::success([
+                'qr_token' => $qrToken,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'rol' => $user->getRoleNames()->first(),
+                ],
+            ], 'Código QR del usuario obtenido correctamente.');
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
+    public function regenerateQr(Request $request, int $id)
+    {
+        try {
+            if (!$request->user()->can('editar_usuarios')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $user = $this->userService->findById($id);
+            $qrToken = $user->regenerateQrLoginToken();
+
+            return ApiResponse::success([
+                'qr_token' => $qrToken,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'rol' => $user->getRoleNames()->first(),
+                ],
+            ], 'Código QR del usuario regenerado correctamente.');
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
 }

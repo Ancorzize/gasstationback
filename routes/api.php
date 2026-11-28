@@ -53,6 +53,7 @@ use App\Modules\Nomina\Presentation\Controllers\PayrollParameterController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login-qr', [AuthController::class, 'loginWithQr'])->middleware('throttle:15,1');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
@@ -63,6 +64,8 @@ Route::prefix('auth')->group(function () {
 Route::middleware(['auth:sanctum'])->prefix('usuarios')->group(function () {
     Route::get('/roles', [RoleController::class, 'index']);
     Route::get('/', [UserController::class, 'index']);
+    Route::get('/{id}/qr', [UserController::class, 'qr']);
+    Route::post('/{id}/qr/regenerar', [UserController::class, 'regenerateQr']);
     Route::get('/{id}', [UserController::class, 'show']);
     Route::post('/', [UserController::class, 'store']);
     Route::put('/{id}', [UserController::class, 'update']);
@@ -203,6 +206,8 @@ Route::middleware(['auth:sanctum'])->prefix('documentos-electronicos')->group(fu
 
 Route::middleware(['auth:sanctum'])->prefix('perfil')->group(function () {
     Route::put('/', [PerfilController::class, 'update']);
+    Route::get('/qr', [PerfilController::class, 'qr']);
+    Route::post('/qr/regenerar', [PerfilController::class, 'regenerateQr']);
 });
 
 Route::middleware(['auth:sanctum'])->prefix('bodegas')->group(function () {

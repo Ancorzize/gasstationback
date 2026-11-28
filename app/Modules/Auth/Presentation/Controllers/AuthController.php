@@ -43,6 +43,31 @@ class AuthController extends Controller
         }
     }
 
+    public function loginWithQr(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'qr_token' => ['required', 'string', 'max:128'],
+            ], [
+                'qr_token.required' => 'El código QR es obligatorio.',
+            ]);
+
+            $result = $this->authService->loginWithQr($validated['qr_token']);
+
+            return ApiResponse::success([
+                'token' => $result['token'],
+                'user' => new AuthUserResource($result['user']),
+                'rol' => $result['rol'],
+            ], 'Inicio de sesión con QR exitoso.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return ApiResponse::error($e->validator->errors()->first(), 422);
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
+
     public function logout(Request $request)
     {
         try {

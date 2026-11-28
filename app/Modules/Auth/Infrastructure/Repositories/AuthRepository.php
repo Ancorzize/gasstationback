@@ -12,6 +12,11 @@ class AuthRepository implements AuthRepositoryInterface
         return User::where('email', $email)->first();
     }
 
+    public function findUserByQrToken(string $qrToken): ?User
+    {
+        return User::where('qr_login_token', $qrToken)->first();
+    }
+
     public function createToken(User $user, string $tokenName = 'auth_token'): string
     {
         return $user->createToken($tokenName)->plainTextToken;

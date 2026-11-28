@@ -35,6 +35,33 @@ class AuthService
         ];
     }
 
+    public function loginWithQr(string $qrToken): array
+    {
+        $cleanToken = trim($qrToken);
+
+        if ($cleanToken === '') {
+            throw new HttpException(401, 'Código QR inválido.');
+        }
+
+        $user = $this->authRepository->findUserByQrToken($cleanToken);
+
+        if (!$user) {
+            throw new HttpException(401, 'Código QR no válido o revocado.');
+        }
+
+        if (!$user->is_active) {
+            throw new HttpException(403, 'El usuario está inactivo.');
+        }
+
+        $token = $this->authRepository->createToken($user);
+
+        return [
+            'token' => $token,
+            'user' => $user,
+            'rol' => $user->getRoleNames()->first(),
+        ];
+    }
+
     public function logout(User $user): void
     {
         $this->authRepository->deleteCurrentToken($user);
