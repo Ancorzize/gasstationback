@@ -104,4 +104,8 @@ interface TurnoIsleroRepositoryInterface
     public function getDescarguesByTurno(int $turnoId): Collection;
 
     public function createDescargue(array $data): TurnoIsleroDescargue;
+
+    public function findDescargueByIdAndTurno(int $descargueId, int $turnoId): ?TurnoIsleroDescargue;
+
+    public function updateDescargue(TurnoIsleroDescargue $descargue, array $data): TurnoIsleroDescargue;
 }

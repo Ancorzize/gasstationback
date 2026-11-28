@@ -2017,6 +2017,90 @@ class TurnoIsleroService
         });
     }
 
+    public function actualizarDescargue(
+        int $turnoId,
+        int $descargueId,
+        int $userId,
+        float $monto,
+        ?string $observacion = null
+    ): array {
+        return DB::transaction(function () use ($turnoId, $descargueId, $userId, $monto, $observacion) {
+            $turno = $this->findById($turnoId);
+
+            $descargue = $this->turnoRepository->findDescargueByIdAndTurno($descargueId, $turno->id);
+            if (!$descargue) {
+                throw new HttpException(404, 'El descargue no existe o no pertenece al turno.');
+            }
+
+            $usuario = \App\Models\User::find($userId);
+            $esAdminAprobador = $usuario && $usuario->can('aprobar_cierres_turnos_islero');
+
+            if ($turno->estado === 'cerrado') {
+                throw new HttpException(
+                    422,
+                    'No se pueden editar descargues de un turno cerrado.'
+                );
+            }
+
+            if ($turno->estado === 'abierto') {
+                if ((int) $turno->user_id !== (int) $userId && !$esAdminAprobador) {
+                    throw new HttpException(
+                        403,
+                        'El turno no pertenece al usuario autenticado.'
+                    );
+                }
+            } elseif ($turno->estado === 'pendiente_cierre') {
+                if (!$esAdminAprobador) {
+                    throw new HttpException(
+                        403,
+                        'Solo un administrador autorizado puede editar descargues de un turno pendiente de cierre.'
+                    );
+                }
+            } else {
+                throw new HttpException(
+                    422,
+                    'No se pueden editar descargues en el estado actual del turno.'
+                );
+            }
+
+            $montoNormalizado = round($monto, 2);
+            if ($montoNormalizado <= 0) {
+                throw new HttpException(
+                    422,
+                    'El monto del descargue debe ser mayor a cero.'
+                );
+            }
+
+            $actualizado = $this->turnoRepository->updateDescargue($descargue, [
+                'monto' => $montoNormalizado,
+                'observacion' => $observacion !== null && trim($observacion) !== ''
+                    ? trim($observacion)
+                    : null,
+            ]);
+
+            $info = $this->formatearDescarguesTurno($turno->id);
+
+            return [
+                'descargue' => [
+                    'id' => $actualizado->id,
+                    'turno_islero_id' => $actualizado->turno_islero_id,
+                    'user_id' => $actualizado->user_id,
+                    'usuario' => $actualizado->usuario ? [
+                        'id' => $actualizado->usuario->id,
+                        'name' => $actualizado->usuario->name,
+                        'email' => $actualizado->usuario->email,
+                    ] : null,
+                    'monto' => round((float) $actualizado->monto, 2),
+                    'fecha_descargue' => $actualizado->fecha_descargue,
+                    'observacion' => $actualizado->observacion,
+                    'created_at' => $actualizado->created_at,
+                ],
+                'descargues' => $info['descargues'],
+                'total_descargues' => $info['total_descargues'],
+            ];
+        });
+    }
+
     private function formatearDescarguesTurno(int $turnoId): array
     {
         $descargues = $this->turnoRepository->getDescarguesByTurno($turnoId);

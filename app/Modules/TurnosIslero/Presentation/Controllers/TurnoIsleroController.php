@@ -375,4 +375,32 @@ class TurnoIsleroController extends Controller
             return ApiResponse::error('Error interno del servidor.', 500);
         }
     }
+
+    public function actualizarDescargue(RegistrarDescargueTurnoRequest $request, int $id, int $descargueId)
+    {
+        try {
+            if (!$request->user()->can('ver_turnos_islero')) {
+                return ApiResponse::error('Sin permisos.', 403);
+            }
+
+            $validated = $request->validated();
+
+            $resultado = $this->turnoService->actualizarDescargue(
+                $id,
+                $descargueId,
+                $request->user()->id,
+                (float) $validated['monto'],
+                $validated['observacion'] ?? null
+            );
+
+            return ApiResponse::success(
+                $resultado,
+                'Descargue actualizado correctamente.'
+            );
+        } catch (HttpException $e) {
+            return ApiResponse::error($e->getMessage(), $e->getStatusCode());
+        } catch (\Throwable $e) {
+            return ApiResponse::error('Error interno del servidor.', 500);
+        }
+    }
 }

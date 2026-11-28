@@ -794,4 +794,20 @@ class TurnoIsleroRepository implements TurnoIsleroRepositoryInterface
     {
         return TurnoIsleroDescargue::create($data)->load('usuario');
     }
+
+    public function findDescargueByIdAndTurno(int $descargueId, int $turnoId): ?TurnoIsleroDescargue
+    {
+        return TurnoIsleroDescargue::query()
+            ->with('usuario')
+            ->where('id', $descargueId)
+            ->where('turno_islero_id', $turnoId)
+            ->first();
+    }
+
+    public function updateDescargue(TurnoIsleroDescargue $descargue, array $data): TurnoIsleroDescargue
+    {
+        $descargue->update($data);
+
+        return $descargue->fresh(['usuario']);
+    }
 }

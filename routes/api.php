@@ -342,6 +342,7 @@ Route::middleware(['auth:sanctum'])->prefix('turnos-islero')->group(function () 
     Route::get('/{id}/operaciones/{tipo}', [TurnoIsleroController::class, 'listarOperacionesPorTipo']);
     Route::get('/{id}/descargues', [TurnoIsleroController::class, 'descargues']);
     Route::post('/{id}/descargues', [TurnoIsleroController::class, 'registrarDescargue']);
+    Route::put('/{id}/descargues/{descargueId}', [TurnoIsleroController::class, 'actualizarDescargue']);
     Route::get('/{id}', [TurnoIsleroController::class, 'show']);
     Route::post('/abrir', [TurnoIsleroController::class, 'abrir']);
     Route::post('/{id}/solicitar-cierre', [TurnoIsleroController::class, 'solicitarCierre']);
